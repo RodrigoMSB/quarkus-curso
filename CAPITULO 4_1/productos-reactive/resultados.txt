@@ -1,0 +1,2141 @@
+==========================================
+PRUEBAS API REACTIVA - QUARKUS
+==========================================
+
+1️⃣  Listar todos los productos:
+[
+  {
+    "id": 4,
+    "nombre": "Monitor LG 27",
+    "descripcion": "Monitor gaming 144Hz",
+    "precio": 450.0,
+    "stock": 8
+  },
+  {
+    "id": 5,
+    "nombre": "Producto Masivo 1",
+    "descripcion": "Generado automáticamente",
+    "precio": 460.1840951337137,
+    "stock": 56
+  },
+  {
+    "id": 6,
+    "nombre": "Producto Masivo 2",
+    "descripcion": "Generado automáticamente",
+    "precio": 611.9185346905942,
+    "stock": 99
+  },
+  {
+    "id": 7,
+    "nombre": "Producto Masivo 3",
+    "descripcion": "Generado automáticamente",
+    "precio": 399.7659688451484,
+    "stock": 92
+  },
+  {
+    "id": 8,
+    "nombre": "Producto Masivo 4",
+    "descripcion": "Generado automáticamente",
+    "precio": 659.7527169920295,
+    "stock": 24
+  },
+  {
+    "id": 9,
+    "nombre": "Producto Masivo 5",
+    "descripcion": "Generado automáticamente",
+    "precio": 779.5866700152523,
+    "stock": 52
+  },
+  {
+    "id": 10,
+    "nombre": "Producto Masivo 6",
+    "descripcion": "Generado automáticamente",
+    "precio": 29.06688519094802,
+    "stock": 64
+  },
+  {
+    "id": 11,
+    "nombre": "Producto Masivo 7",
+    "descripcion": "Generado automáticamente",
+    "precio": 672.1539108543348,
+    "stock": 50
+  },
+  {
+    "id": 12,
+    "nombre": "Producto Masivo 8",
+    "descripcion": "Generado automáticamente",
+    "precio": 886.9703367828723,
+    "stock": 37
+  },
+  {
+    "id": 13,
+    "nombre": "Producto Masivo 9",
+    "descripcion": "Generado automáticamente",
+    "precio": 244.68994949182553,
+    "stock": 64
+  },
+  {
+    "id": 14,
+    "nombre": "Producto Masivo 10",
+    "descripcion": "Generado automáticamente",
+    "precio": 266.2377935662461,
+    "stock": 34
+  },
+  {
+    "id": 15,
+    "nombre": "Producto Masivo 11",
+    "descripcion": "Generado automáticamente",
+    "precio": 501.218320133292,
+    "stock": 49
+  },
+  {
+    "id": 16,
+    "nombre": "Producto Masivo 12",
+    "descripcion": "Generado automáticamente",
+    "precio": 348.89857124681413,
+    "stock": 36
+  },
+  {
+    "id": 17,
+    "nombre": "Producto Masivo 13",
+    "descripcion": "Generado automáticamente",
+    "precio": 986.9052540751314,
+    "stock": 87
+  },
+  {
+    "id": 18,
+    "nombre": "Producto Masivo 14",
+    "descripcion": "Generado automáticamente",
+    "precio": 888.1821850025481,
+    "stock": 9
+  },
+  {
+    "id": 19,
+    "nombre": "Producto Masivo 15",
+    "descripcion": "Generado automáticamente",
+    "precio": 417.4544399711967,
+    "stock": 65
+  },
+  {
+    "id": 20,
+    "nombre": "Producto Masivo 16",
+    "descripcion": "Generado automáticamente",
+    "precio": 409.84164612592974,
+    "stock": 0
+  },
+  {
+    "id": 21,
+    "nombre": "Producto Masivo 17",
+    "descripcion": "Generado automáticamente",
+    "precio": 779.3626131387732,
+    "stock": 34
+  },
+  {
+    "id": 22,
+    "nombre": "Producto Masivo 18",
+    "descripcion": "Generado automáticamente",
+    "precio": 495.0094943323355,
+    "stock": 59
+  },
+  {
+    "id": 23,
+    "nombre": "Producto Masivo 19",
+    "descripcion": "Generado automáticamente",
+    "precio": 436.09996979314104,
+    "stock": 54
+  },
+  {
+    "id": 24,
+    "nombre": "Producto Masivo 20",
+    "descripcion": "Generado automáticamente",
+    "precio": 14.123355076486877,
+    "stock": 28
+  },
+  {
+    "id": 25,
+    "nombre": "Producto Masivo 21",
+    "descripcion": "Generado automáticamente",
+    "precio": 170.7885200959237,
+    "stock": 9
+  },
+  {
+    "id": 26,
+    "nombre": "Producto Masivo 22",
+    "descripcion": "Generado automáticamente",
+    "precio": 655.0918623925071,
+    "stock": 41
+  },
+  {
+    "id": 27,
+    "nombre": "Producto Masivo 23",
+    "descripcion": "Generado automáticamente",
+    "precio": 897.70838091517,
+    "stock": 67
+  },
+  {
+    "id": 28,
+    "nombre": "Producto Masivo 24",
+    "descripcion": "Generado automáticamente",
+    "precio": 468.753213082702,
+    "stock": 26
+  },
+  {
+    "id": 29,
+    "nombre": "Producto Masivo 25",
+    "descripcion": "Generado automáticamente",
+    "precio": 982.9701073928649,
+    "stock": 84
+  },
+  {
+    "id": 30,
+    "nombre": "Producto Masivo 26",
+    "descripcion": "Generado automáticamente",
+    "precio": 440.81269253682296,
+    "stock": 79
+  },
+  {
+    "id": 31,
+    "nombre": "Producto Masivo 27",
+    "descripcion": "Generado automáticamente",
+    "precio": 728.9493095077565,
+    "stock": 50
+  },
+  {
+    "id": 32,
+    "nombre": "Producto Masivo 28",
+    "descripcion": "Generado automáticamente",
+    "precio": 291.8275720038186,
+    "stock": 98
+  },
+  {
+    "id": 33,
+    "nombre": "Producto Masivo 29",
+    "descripcion": "Generado automáticamente",
+    "precio": 597.5869676278813,
+    "stock": 40
+  },
+  {
+    "id": 34,
+    "nombre": "Producto Masivo 30",
+    "descripcion": "Generado automáticamente",
+    "precio": 805.440593377929,
+    "stock": 1
+  },
+  {
+    "id": 35,
+    "nombre": "Producto Masivo 31",
+    "descripcion": "Generado automáticamente",
+    "precio": 174.41722513751833,
+    "stock": 74
+  },
+  {
+    "id": 36,
+    "nombre": "Producto Masivo 32",
+    "descripcion": "Generado automáticamente",
+    "precio": 989.9468006980819,
+    "stock": 31
+  },
+  {
+    "id": 37,
+    "nombre": "Producto Masivo 33",
+    "descripcion": "Generado automáticamente",
+    "precio": 708.1919998418973,
+    "stock": 68
+  },
+  {
+    "id": 38,
+    "nombre": "Producto Masivo 34",
+    "descripcion": "Generado automáticamente",
+    "precio": 289.4100653849213,
+    "stock": 60
+  },
+  {
+    "id": 39,
+    "nombre": "Producto Masivo 35",
+    "descripcion": "Generado automáticamente",
+    "precio": 300.22959188343356,
+    "stock": 42
+  },
+  {
+    "id": 40,
+    "nombre": "Producto Masivo 36",
+    "descripcion": "Generado automáticamente",
+    "precio": 877.9298296075804,
+    "stock": 53
+  },
+  {
+    "id": 41,
+    "nombre": "Producto Masivo 37",
+    "descripcion": "Generado automáticamente",
+    "precio": 463.1223210258184,
+    "stock": 57
+  },
+  {
+    "id": 42,
+    "nombre": "Producto Masivo 38",
+    "descripcion": "Generado automáticamente",
+    "precio": 794.2901883795832,
+    "stock": 98
+  },
+  {
+    "id": 43,
+    "nombre": "Producto Masivo 39",
+    "descripcion": "Generado automáticamente",
+    "precio": 820.1959364641975,
+    "stock": 65
+  },
+  {
+    "id": 44,
+    "nombre": "Producto Masivo 40",
+    "descripcion": "Generado automáticamente",
+    "precio": 304.1072740062387,
+    "stock": 65
+  },
+  {
+    "id": 45,
+    "nombre": "Producto Masivo 41",
+    "descripcion": "Generado automáticamente",
+    "precio": 175.12162934154807,
+    "stock": 6
+  },
+  {
+    "id": 46,
+    "nombre": "Producto Masivo 42",
+    "descripcion": "Generado automáticamente",
+    "precio": 412.72264520551363,
+    "stock": 27
+  },
+  {
+    "id": 47,
+    "nombre": "Producto Masivo 43",
+    "descripcion": "Generado automáticamente",
+    "precio": 45.338854108460616,
+    "stock": 7
+  },
+  {
+    "id": 48,
+    "nombre": "Producto Masivo 44",
+    "descripcion": "Generado automáticamente",
+    "precio": 894.4745028501563,
+    "stock": 15
+  },
+  {
+    "id": 49,
+    "nombre": "Producto Masivo 45",
+    "descripcion": "Generado automáticamente",
+    "precio": 23.455349674284864,
+    "stock": 40
+  },
+  {
+    "id": 50,
+    "nombre": "Producto Masivo 46",
+    "descripcion": "Generado automáticamente",
+    "precio": 552.6100033371499,
+    "stock": 20
+  },
+  {
+    "id": 51,
+    "nombre": "Producto Masivo 47",
+    "descripcion": "Generado automáticamente",
+    "precio": 7.548463462138666,
+    "stock": 41
+  },
+  {
+    "id": 52,
+    "nombre": "Producto Masivo 48",
+    "descripcion": "Generado automáticamente",
+    "precio": 678.9857705750294,
+    "stock": 53
+  },
+  {
+    "id": 53,
+    "nombre": "Producto Masivo 49",
+    "descripcion": "Generado automáticamente",
+    "precio": 424.29952332997533,
+    "stock": 17
+  },
+  {
+    "id": 54,
+    "nombre": "Producto Masivo 50",
+    "descripcion": "Generado automáticamente",
+    "precio": 843.8360143860016,
+    "stock": 57
+  },
+  {
+    "id": 55,
+    "nombre": "Producto Masivo 51",
+    "descripcion": "Generado automáticamente",
+    "precio": 58.15122950582741,
+    "stock": 65
+  },
+  {
+    "id": 56,
+    "nombre": "Producto Masivo 52",
+    "descripcion": "Generado automáticamente",
+    "precio": 213.27066702113962,
+    "stock": 68
+  },
+  {
+    "id": 57,
+    "nombre": "Producto Masivo 53",
+    "descripcion": "Generado automáticamente",
+    "precio": 995.1850332658499,
+    "stock": 53
+  },
+  {
+    "id": 58,
+    "nombre": "Producto Masivo 54",
+    "descripcion": "Generado automáticamente",
+    "precio": 565.7986819077389,
+    "stock": 59
+  },
+  {
+    "id": 59,
+    "nombre": "Producto Masivo 55",
+    "descripcion": "Generado automáticamente",
+    "precio": 492.174703029414,
+    "stock": 72
+  },
+  {
+    "id": 60,
+    "nombre": "Producto Masivo 56",
+    "descripcion": "Generado automáticamente",
+    "precio": 59.05430830445535,
+    "stock": 20
+  },
+  {
+    "id": 61,
+    "nombre": "Producto Masivo 57",
+    "descripcion": "Generado automáticamente",
+    "precio": 289.27816392081905,
+    "stock": 9
+  },
+  {
+    "id": 62,
+    "nombre": "Producto Masivo 58",
+    "descripcion": "Generado automáticamente",
+    "precio": 584.0376414006217,
+    "stock": 2
+  },
+  {
+    "id": 63,
+    "nombre": "Producto Masivo 59",
+    "descripcion": "Generado automáticamente",
+    "precio": 999.089386209561,
+    "stock": 71
+  },
+  {
+    "id": 64,
+    "nombre": "Producto Masivo 60",
+    "descripcion": "Generado automáticamente",
+    "precio": 236.5622332416828,
+    "stock": 6
+  },
+  {
+    "id": 65,
+    "nombre": "Producto Masivo 61",
+    "descripcion": "Generado automáticamente",
+    "precio": 725.2787964610147,
+    "stock": 4
+  },
+  {
+    "id": 66,
+    "nombre": "Producto Masivo 62",
+    "descripcion": "Generado automáticamente",
+    "precio": 34.237102087808616,
+    "stock": 1
+  },
+  {
+    "id": 67,
+    "nombre": "Producto Masivo 63",
+    "descripcion": "Generado automáticamente",
+    "precio": 990.8086395378058,
+    "stock": 98
+  },
+  {
+    "id": 68,
+    "nombre": "Producto Masivo 64",
+    "descripcion": "Generado automáticamente",
+    "precio": 512.1915548076826,
+    "stock": 26
+  },
+  {
+    "id": 69,
+    "nombre": "Producto Masivo 65",
+    "descripcion": "Generado automáticamente",
+    "precio": 388.71779730079805,
+    "stock": 69
+  },
+  {
+    "id": 70,
+    "nombre": "Producto Masivo 66",
+    "descripcion": "Generado automáticamente",
+    "precio": 241.88542498745304,
+    "stock": 1
+  },
+  {
+    "id": 71,
+    "nombre": "Producto Masivo 67",
+    "descripcion": "Generado automáticamente",
+    "precio": 107.72841333965522,
+    "stock": 76
+  },
+  {
+    "id": 72,
+    "nombre": "Producto Masivo 68",
+    "descripcion": "Generado automáticamente",
+    "precio": 634.7293684859935,
+    "stock": 32
+  },
+  {
+    "id": 73,
+    "nombre": "Producto Masivo 69",
+    "descripcion": "Generado automáticamente",
+    "precio": 630.4341184035568,
+    "stock": 32
+  },
+  {
+    "id": 74,
+    "nombre": "Producto Masivo 70",
+    "descripcion": "Generado automáticamente",
+    "precio": 615.8727135230022,
+    "stock": 22
+  },
+  {
+    "id": 75,
+    "nombre": "Producto Masivo 71",
+    "descripcion": "Generado automáticamente",
+    "precio": 453.58763717603404,
+    "stock": 6
+  },
+  {
+    "id": 76,
+    "nombre": "Producto Masivo 72",
+    "descripcion": "Generado automáticamente",
+    "precio": 883.3998403310102,
+    "stock": 86
+  },
+  {
+    "id": 77,
+    "nombre": "Producto Masivo 73",
+    "descripcion": "Generado automáticamente",
+    "precio": 638.0137856208022,
+    "stock": 15
+  },
+  {
+    "id": 78,
+    "nombre": "Producto Masivo 74",
+    "descripcion": "Generado automáticamente",
+    "precio": 504.3076774421138,
+    "stock": 30
+  },
+  {
+    "id": 79,
+    "nombre": "Producto Masivo 75",
+    "descripcion": "Generado automáticamente",
+    "precio": 359.930715091338,
+    "stock": 98
+  },
+  {
+    "id": 80,
+    "nombre": "Producto Masivo 76",
+    "descripcion": "Generado automáticamente",
+    "precio": 541.0211479659065,
+    "stock": 54
+  },
+  {
+    "id": 81,
+    "nombre": "Producto Masivo 77",
+    "descripcion": "Generado automáticamente",
+    "precio": 405.9713010244699,
+    "stock": 81
+  },
+  {
+    "id": 1,
+    "nombre": "Laptop Dell XPS 15 Pro",
+    "descripcion": "Laptop profesional actualizada",
+    "precio": 1800.0,
+    "stock": 20
+  },
+  {
+    "id": 82,
+    "nombre": "Producto Masivo 78",
+    "descripcion": "Generado automáticamente",
+    "precio": 250.83491532861203,
+    "stock": 51
+  },
+  {
+    "id": 83,
+    "nombre": "Producto Masivo 79",
+    "descripcion": "Generado automáticamente",
+    "precio": 730.9532207697717,
+    "stock": 68
+  },
+  {
+    "id": 84,
+    "nombre": "Producto Masivo 80",
+    "descripcion": "Generado automáticamente",
+    "precio": 155.55349616917724,
+    "stock": 8
+  },
+  {
+    "id": 85,
+    "nombre": "Producto Masivo 81",
+    "descripcion": "Generado automáticamente",
+    "precio": 780.4549872904213,
+    "stock": 50
+  },
+  {
+    "id": 86,
+    "nombre": "Producto Masivo 82",
+    "descripcion": "Generado automáticamente",
+    "precio": 939.7340627404116,
+    "stock": 34
+  },
+  {
+    "id": 87,
+    "nombre": "Producto Masivo 83",
+    "descripcion": "Generado automáticamente",
+    "precio": 269.51230761944913,
+    "stock": 73
+  },
+  {
+    "id": 88,
+    "nombre": "Producto Masivo 84",
+    "descripcion": "Generado automáticamente",
+    "precio": 703.319521834923,
+    "stock": 28
+  },
+  {
+    "id": 89,
+    "nombre": "Producto Masivo 85",
+    "descripcion": "Generado automáticamente",
+    "precio": 504.25761220133734,
+    "stock": 96
+  },
+  {
+    "id": 90,
+    "nombre": "Producto Masivo 86",
+    "descripcion": "Generado automáticamente",
+    "precio": 568.0817947956382,
+    "stock": 39
+  },
+  {
+    "id": 91,
+    "nombre": "Producto Masivo 87",
+    "descripcion": "Generado automáticamente",
+    "precio": 135.08278628490166,
+    "stock": 56
+  },
+  {
+    "id": 92,
+    "nombre": "Producto Masivo 88",
+    "descripcion": "Generado automáticamente",
+    "precio": 17.178362113811186,
+    "stock": 5
+  },
+  {
+    "id": 93,
+    "nombre": "Producto Masivo 89",
+    "descripcion": "Generado automáticamente",
+    "precio": 437.91341154506694,
+    "stock": 67
+  },
+  {
+    "id": 94,
+    "nombre": "Producto Masivo 90",
+    "descripcion": "Generado automáticamente",
+    "precio": 633.2580929869721,
+    "stock": 0
+  },
+  {
+    "id": 95,
+    "nombre": "Producto Masivo 91",
+    "descripcion": "Generado automáticamente",
+    "precio": 834.4403473545738,
+    "stock": 11
+  },
+  {
+    "id": 96,
+    "nombre": "Producto Masivo 92",
+    "descripcion": "Generado automáticamente",
+    "precio": 92.93446955184348,
+    "stock": 5
+  },
+  {
+    "id": 97,
+    "nombre": "Producto Masivo 93",
+    "descripcion": "Generado automáticamente",
+    "precio": 382.6626175086222,
+    "stock": 7
+  },
+  {
+    "id": 98,
+    "nombre": "Producto Masivo 94",
+    "descripcion": "Generado automáticamente",
+    "precio": 374.07813012489254,
+    "stock": 94
+  },
+  {
+    "id": 99,
+    "nombre": "Producto Masivo 95",
+    "descripcion": "Generado automáticamente",
+    "precio": 395.8529190168494,
+    "stock": 10
+  },
+  {
+    "id": 100,
+    "nombre": "Producto Masivo 96",
+    "descripcion": "Generado automáticamente",
+    "precio": 137.2626342983747,
+    "stock": 35
+  },
+  {
+    "id": 101,
+    "nombre": "Producto Masivo 97",
+    "descripcion": "Generado automáticamente",
+    "precio": 181.06522924207601,
+    "stock": 67
+  },
+  {
+    "id": 102,
+    "nombre": "Producto Masivo 98",
+    "descripcion": "Generado automáticamente",
+    "precio": 153.83066909978703,
+    "stock": 13
+  },
+  {
+    "id": 103,
+    "nombre": "Producto Masivo 99",
+    "descripcion": "Generado automáticamente",
+    "precio": 127.5618385968682,
+    "stock": 30
+  },
+  {
+    "id": 104,
+    "nombre": "Producto Masivo 100",
+    "descripcion": "Generado automáticamente",
+    "precio": 470.4303493545781,
+    "stock": 22
+  },
+  {
+    "id": 105,
+    "nombre": "Monitor LG 27",
+    "descripcion": "Monitor gaming",
+    "precio": 450.0,
+    "stock": 8
+  },
+  {
+    "id": 106,
+    "nombre": "Producto Masivo 1",
+    "descripcion": "Generado automáticamente",
+    "precio": 21.044648404811127,
+    "stock": 36
+  },
+  {
+    "id": 107,
+    "nombre": "Producto Masivo 2",
+    "descripcion": "Generado automáticamente",
+    "precio": 723.5046348374088,
+    "stock": 21
+  },
+  {
+    "id": 108,
+    "nombre": "Producto Masivo 3",
+    "descripcion": "Generado automáticamente",
+    "precio": 511.3336116608366,
+    "stock": 93
+  },
+  {
+    "id": 109,
+    "nombre": "Producto Masivo 4",
+    "descripcion": "Generado automáticamente",
+    "precio": 647.0988075704503,
+    "stock": 7
+  },
+  {
+    "id": 110,
+    "nombre": "Producto Masivo 5",
+    "descripcion": "Generado automáticamente",
+    "precio": 119.14295362128135,
+    "stock": 26
+  },
+  {
+    "id": 111,
+    "nombre": "Producto Masivo 6",
+    "descripcion": "Generado automáticamente",
+    "precio": 353.48489669867877,
+    "stock": 47
+  },
+  {
+    "id": 112,
+    "nombre": "Producto Masivo 7",
+    "descripcion": "Generado automáticamente",
+    "precio": 31.863736454415093,
+    "stock": 98
+  },
+  {
+    "id": 113,
+    "nombre": "Producto Masivo 8",
+    "descripcion": "Generado automáticamente",
+    "precio": 408.48364400980665,
+    "stock": 93
+  },
+  {
+    "id": 114,
+    "nombre": "Producto Masivo 9",
+    "descripcion": "Generado automáticamente",
+    "precio": 208.7687421325394,
+    "stock": 90
+  },
+  {
+    "id": 115,
+    "nombre": "Producto Masivo 10",
+    "descripcion": "Generado automáticamente",
+    "precio": 71.99839170709099,
+    "stock": 32
+  },
+  {
+    "id": 116,
+    "nombre": "Producto Masivo 11",
+    "descripcion": "Generado automáticamente",
+    "precio": 992.8140304635647,
+    "stock": 93
+  },
+  {
+    "id": 117,
+    "nombre": "Producto Masivo 12",
+    "descripcion": "Generado automáticamente",
+    "precio": 329.1570327663277,
+    "stock": 22
+  },
+  {
+    "id": 118,
+    "nombre": "Producto Masivo 13",
+    "descripcion": "Generado automáticamente",
+    "precio": 509.2189027887563,
+    "stock": 68
+  },
+  {
+    "id": 119,
+    "nombre": "Producto Masivo 14",
+    "descripcion": "Generado automáticamente",
+    "precio": 498.59224425290836,
+    "stock": 50
+  },
+  {
+    "id": 120,
+    "nombre": "Producto Masivo 15",
+    "descripcion": "Generado automáticamente",
+    "precio": 620.2641396523029,
+    "stock": 49
+  },
+  {
+    "id": 121,
+    "nombre": "Producto Masivo 16",
+    "descripcion": "Generado automáticamente",
+    "precio": 271.7718420681723,
+    "stock": 53
+  },
+  {
+    "id": 122,
+    "nombre": "Producto Masivo 17",
+    "descripcion": "Generado automáticamente",
+    "precio": 101.25562864860105,
+    "stock": 78
+  },
+  {
+    "id": 123,
+    "nombre": "Producto Masivo 18",
+    "descripcion": "Generado automáticamente",
+    "precio": 10.924632677796753,
+    "stock": 59
+  },
+  {
+    "id": 124,
+    "nombre": "Producto Masivo 19",
+    "descripcion": "Generado automáticamente",
+    "precio": 4.359300465109017,
+    "stock": 9
+  },
+  {
+    "id": 125,
+    "nombre": "Producto Masivo 20",
+    "descripcion": "Generado automáticamente",
+    "precio": 12.98967282105834,
+    "stock": 77
+  },
+  {
+    "id": 126,
+    "nombre": "Producto Masivo 21",
+    "descripcion": "Generado automáticamente",
+    "precio": 885.0198321650258,
+    "stock": 97
+  },
+  {
+    "id": 127,
+    "nombre": "Producto Masivo 22",
+    "descripcion": "Generado automáticamente",
+    "precio": 233.14994663037726,
+    "stock": 56
+  },
+  {
+    "id": 128,
+    "nombre": "Producto Masivo 23",
+    "descripcion": "Generado automáticamente",
+    "precio": 679.9347445757841,
+    "stock": 20
+  },
+  {
+    "id": 129,
+    "nombre": "Producto Masivo 24",
+    "descripcion": "Generado automáticamente",
+    "precio": 653.8935961860348,
+    "stock": 90
+  },
+  {
+    "id": 130,
+    "nombre": "Producto Masivo 25",
+    "descripcion": "Generado automáticamente",
+    "precio": 546.0621147611349,
+    "stock": 14
+  },
+  {
+    "id": 131,
+    "nombre": "Producto Masivo 26",
+    "descripcion": "Generado automáticamente",
+    "precio": 84.17963379685322,
+    "stock": 36
+  },
+  {
+    "id": 132,
+    "nombre": "Producto Masivo 27",
+    "descripcion": "Generado automáticamente",
+    "precio": 896.8987047117931,
+    "stock": 93
+  },
+  {
+    "id": 133,
+    "nombre": "Producto Masivo 28",
+    "descripcion": "Generado automáticamente",
+    "precio": 678.167050263394,
+    "stock": 99
+  },
+  {
+    "id": 134,
+    "nombre": "Producto Masivo 29",
+    "descripcion": "Generado automáticamente",
+    "precio": 205.27293806342107,
+    "stock": 30
+  },
+  {
+    "id": 135,
+    "nombre": "Producto Masivo 30",
+    "descripcion": "Generado automáticamente",
+    "precio": 874.0994677839096,
+    "stock": 89
+  },
+  {
+    "id": 136,
+    "nombre": "Producto Masivo 31",
+    "descripcion": "Generado automáticamente",
+    "precio": 881.1547617131886,
+    "stock": 40
+  },
+  {
+    "id": 137,
+    "nombre": "Producto Masivo 32",
+    "descripcion": "Generado automáticamente",
+    "precio": 771.3201361620463,
+    "stock": 42
+  },
+  {
+    "id": 138,
+    "nombre": "Producto Masivo 33",
+    "descripcion": "Generado automáticamente",
+    "precio": 678.4926345059856,
+    "stock": 47
+  },
+  {
+    "id": 139,
+    "nombre": "Producto Masivo 34",
+    "descripcion": "Generado automáticamente",
+    "precio": 187.025060441135,
+    "stock": 83
+  },
+  {
+    "id": 140,
+    "nombre": "Producto Masivo 35",
+    "descripcion": "Generado automáticamente",
+    "precio": 636.8450962743672,
+    "stock": 70
+  },
+  {
+    "id": 141,
+    "nombre": "Producto Masivo 36",
+    "descripcion": "Generado automáticamente",
+    "precio": 764.2444978543206,
+    "stock": 51
+  },
+  {
+    "id": 142,
+    "nombre": "Producto Masivo 37",
+    "descripcion": "Generado automáticamente",
+    "precio": 521.5830759363818,
+    "stock": 83
+  },
+  {
+    "id": 143,
+    "nombre": "Producto Masivo 38",
+    "descripcion": "Generado automáticamente",
+    "precio": 538.6764621588701,
+    "stock": 2
+  },
+  {
+    "id": 144,
+    "nombre": "Producto Masivo 39",
+    "descripcion": "Generado automáticamente",
+    "precio": 90.69578040853044,
+    "stock": 58
+  },
+  {
+    "id": 145,
+    "nombre": "Producto Masivo 40",
+    "descripcion": "Generado automáticamente",
+    "precio": 314.37800374377235,
+    "stock": 77
+  },
+  {
+    "id": 146,
+    "nombre": "Producto Masivo 41",
+    "descripcion": "Generado automáticamente",
+    "precio": 286.7419732128211,
+    "stock": 72
+  },
+  {
+    "id": 147,
+    "nombre": "Producto Masivo 42",
+    "descripcion": "Generado automáticamente",
+    "precio": 46.95335305377102,
+    "stock": 60
+  },
+  {
+    "id": 148,
+    "nombre": "Producto Masivo 43",
+    "descripcion": "Generado automáticamente",
+    "precio": 629.2453815104609,
+    "stock": 15
+  },
+  {
+    "id": 149,
+    "nombre": "Producto Masivo 44",
+    "descripcion": "Generado automáticamente",
+    "precio": 187.7606751162837,
+    "stock": 61
+  },
+  {
+    "id": 150,
+    "nombre": "Producto Masivo 45",
+    "descripcion": "Generado automáticamente",
+    "precio": 665.841111333324,
+    "stock": 71
+  },
+  {
+    "id": 151,
+    "nombre": "Producto Masivo 46",
+    "descripcion": "Generado automáticamente",
+    "precio": 603.791869743666,
+    "stock": 0
+  },
+  {
+    "id": 152,
+    "nombre": "Producto Masivo 47",
+    "descripcion": "Generado automáticamente",
+    "precio": 329.7380811127071,
+    "stock": 22
+  },
+  {
+    "id": 153,
+    "nombre": "Producto Masivo 48",
+    "descripcion": "Generado automáticamente",
+    "precio": 255.26286333519909,
+    "stock": 31
+  },
+  {
+    "id": 154,
+    "nombre": "Producto Masivo 49",
+    "descripcion": "Generado automáticamente",
+    "precio": 446.5696048452625,
+    "stock": 68
+  },
+  {
+    "id": 155,
+    "nombre": "Producto Masivo 50",
+    "descripcion": "Generado automáticamente",
+    "precio": 286.5845035687664,
+    "stock": 31
+  },
+  {
+    "id": 156,
+    "nombre": "Auriculares Sony",
+    "descripcion": "Auriculares inalámbricos con cancelación de ruido",
+    "precio": 299.99,
+    "stock": 25
+  },
+  {
+    "id": 157,
+    "nombre": "Producto Masivo 1",
+    "descripcion": "Generado automáticamente",
+    "precio": 435.4626035625313,
+    "stock": 7
+  },
+  {
+    "id": 158,
+    "nombre": "Producto Masivo 2",
+    "descripcion": "Generado automáticamente",
+    "precio": 566.2670836978792,
+    "stock": 30
+  },
+  {
+    "id": 159,
+    "nombre": "Producto Masivo 3",
+    "descripcion": "Generado automáticamente",
+    "precio": 457.16376864851895,
+    "stock": 54
+  },
+  {
+    "id": 160,
+    "nombre": "Producto Masivo 4",
+    "descripcion": "Generado automáticamente",
+    "precio": 997.444211818362,
+    "stock": 3
+  },
+  {
+    "id": 161,
+    "nombre": "Producto Masivo 5",
+    "descripcion": "Generado automáticamente",
+    "precio": 876.3181939676175,
+    "stock": 79
+  },
+  {
+    "id": 162,
+    "nombre": "Producto Masivo 6",
+    "descripcion": "Generado automáticamente",
+    "precio": 113.08470898009193,
+    "stock": 43
+  },
+  {
+    "id": 163,
+    "nombre": "Producto Masivo 7",
+    "descripcion": "Generado automáticamente",
+    "precio": 925.5046665889673,
+    "stock": 22
+  },
+  {
+    "id": 164,
+    "nombre": "Producto Masivo 8",
+    "descripcion": "Generado automáticamente",
+    "precio": 568.5939915555435,
+    "stock": 83
+  },
+  {
+    "id": 165,
+    "nombre": "Producto Masivo 9",
+    "descripcion": "Generado automáticamente",
+    "precio": 885.3889331873111,
+    "stock": 41
+  },
+  {
+    "id": 166,
+    "nombre": "Producto Masivo 10",
+    "descripcion": "Generado automáticamente",
+    "precio": 149.3888486292363,
+    "stock": 53
+  },
+  {
+    "id": 167,
+    "nombre": "Producto Masivo 11",
+    "descripcion": "Generado automáticamente",
+    "precio": 928.36441886544,
+    "stock": 92
+  },
+  {
+    "id": 168,
+    "nombre": "Producto Masivo 12",
+    "descripcion": "Generado automáticamente",
+    "precio": 822.1632289624372,
+    "stock": 95
+  },
+  {
+    "id": 169,
+    "nombre": "Producto Masivo 13",
+    "descripcion": "Generado automáticamente",
+    "precio": 12.307562162164775,
+    "stock": 53
+  },
+  {
+    "id": 170,
+    "nombre": "Producto Masivo 14",
+    "descripcion": "Generado automáticamente",
+    "precio": 175.94437076365932,
+    "stock": 40
+  },
+  {
+    "id": 171,
+    "nombre": "Producto Masivo 15",
+    "descripcion": "Generado automáticamente",
+    "precio": 856.5828149346256,
+    "stock": 79
+  },
+  {
+    "id": 172,
+    "nombre": "Producto Masivo 16",
+    "descripcion": "Generado automáticamente",
+    "precio": 322.67205144675404,
+    "stock": 60
+  },
+  {
+    "id": 173,
+    "nombre": "Producto Masivo 17",
+    "descripcion": "Generado automáticamente",
+    "precio": 84.1901108091404,
+    "stock": 22
+  },
+  {
+    "id": 174,
+    "nombre": "Producto Masivo 18",
+    "descripcion": "Generado automáticamente",
+    "precio": 956.9168027209944,
+    "stock": 27
+  },
+  {
+    "id": 175,
+    "nombre": "Producto Masivo 19",
+    "descripcion": "Generado automáticamente",
+    "precio": 71.95536509112277,
+    "stock": 54
+  },
+  {
+    "id": 176,
+    "nombre": "Producto Masivo 20",
+    "descripcion": "Generado automáticamente",
+    "precio": 810.4847942664588,
+    "stock": 6
+  },
+  {
+    "id": 177,
+    "nombre": "Producto Masivo 21",
+    "descripcion": "Generado automáticamente",
+    "precio": 914.922615533951,
+    "stock": 24
+  },
+  {
+    "id": 178,
+    "nombre": "Producto Masivo 22",
+    "descripcion": "Generado automáticamente",
+    "precio": 180.04097045523181,
+    "stock": 15
+  },
+  {
+    "id": 179,
+    "nombre": "Producto Masivo 23",
+    "descripcion": "Generado automáticamente",
+    "precio": 181.6139127240055,
+    "stock": 70
+  },
+  {
+    "id": 180,
+    "nombre": "Producto Masivo 24",
+    "descripcion": "Generado automáticamente",
+    "precio": 554.5141441894926,
+    "stock": 66
+  },
+  {
+    "id": 181,
+    "nombre": "Producto Masivo 25",
+    "descripcion": "Generado automáticamente",
+    "precio": 813.5810939280234,
+    "stock": 3
+  },
+  {
+    "id": 182,
+    "nombre": "Producto Masivo 26",
+    "descripcion": "Generado automáticamente",
+    "precio": 623.930747447004,
+    "stock": 71
+  },
+  {
+    "id": 183,
+    "nombre": "Producto Masivo 27",
+    "descripcion": "Generado automáticamente",
+    "precio": 605.6812906044095,
+    "stock": 36
+  },
+  {
+    "id": 184,
+    "nombre": "Producto Masivo 28",
+    "descripcion": "Generado automáticamente",
+    "precio": 112.45690058199709,
+    "stock": 82
+  },
+  {
+    "id": 185,
+    "nombre": "Producto Masivo 29",
+    "descripcion": "Generado automáticamente",
+    "precio": 192.7660383498232,
+    "stock": 87
+  },
+  {
+    "id": 186,
+    "nombre": "Producto Masivo 30",
+    "descripcion": "Generado automáticamente",
+    "precio": 945.8110938017586,
+    "stock": 59
+  },
+  {
+    "id": 187,
+    "nombre": "Producto Masivo 31",
+    "descripcion": "Generado automáticamente",
+    "precio": 363.9811059525927,
+    "stock": 79
+  },
+  {
+    "id": 188,
+    "nombre": "Producto Masivo 32",
+    "descripcion": "Generado automáticamente",
+    "precio": 236.8426854739766,
+    "stock": 65
+  },
+  {
+    "id": 189,
+    "nombre": "Producto Masivo 33",
+    "descripcion": "Generado automáticamente",
+    "precio": 827.6328726295048,
+    "stock": 23
+  },
+  {
+    "id": 190,
+    "nombre": "Producto Masivo 34",
+    "descripcion": "Generado automáticamente",
+    "precio": 452.95397226713993,
+    "stock": 29
+  },
+  {
+    "id": 191,
+    "nombre": "Producto Masivo 35",
+    "descripcion": "Generado automáticamente",
+    "precio": 257.5839215721445,
+    "stock": 25
+  },
+  {
+    "id": 192,
+    "nombre": "Producto Masivo 36",
+    "descripcion": "Generado automáticamente",
+    "precio": 915.1770719870698,
+    "stock": 94
+  },
+  {
+    "id": 193,
+    "nombre": "Producto Masivo 37",
+    "descripcion": "Generado automáticamente",
+    "precio": 566.399223814694,
+    "stock": 24
+  },
+  {
+    "id": 194,
+    "nombre": "Producto Masivo 38",
+    "descripcion": "Generado automáticamente",
+    "precio": 471.09876305070907,
+    "stock": 97
+  },
+  {
+    "id": 195,
+    "nombre": "Producto Masivo 39",
+    "descripcion": "Generado automáticamente",
+    "precio": 870.9711934712756,
+    "stock": 76
+  },
+  {
+    "id": 196,
+    "nombre": "Producto Masivo 40",
+    "descripcion": "Generado automáticamente",
+    "precio": 782.4599932867877,
+    "stock": 53
+  },
+  {
+    "id": 197,
+    "nombre": "Producto Masivo 41",
+    "descripcion": "Generado automáticamente",
+    "precio": 543.1106841643674,
+    "stock": 77
+  },
+  {
+    "id": 198,
+    "nombre": "Producto Masivo 42",
+    "descripcion": "Generado automáticamente",
+    "precio": 173.13911434660955,
+    "stock": 93
+  },
+  {
+    "id": 199,
+    "nombre": "Producto Masivo 43",
+    "descripcion": "Generado automáticamente",
+    "precio": 70.5980161920281,
+    "stock": 78
+  },
+  {
+    "id": 200,
+    "nombre": "Producto Masivo 44",
+    "descripcion": "Generado automáticamente",
+    "precio": 394.3610132026003,
+    "stock": 30
+  },
+  {
+    "id": 201,
+    "nombre": "Producto Masivo 45",
+    "descripcion": "Generado automáticamente",
+    "precio": 193.44608667198693,
+    "stock": 46
+  },
+  {
+    "id": 202,
+    "nombre": "Producto Masivo 46",
+    "descripcion": "Generado automáticamente",
+    "precio": 981.356932408695,
+    "stock": 56
+  },
+  {
+    "id": 203,
+    "nombre": "Producto Masivo 47",
+    "descripcion": "Generado automáticamente",
+    "precio": 925.6361629272069,
+    "stock": 96
+  },
+  {
+    "id": 204,
+    "nombre": "Producto Masivo 48",
+    "descripcion": "Generado automáticamente",
+    "precio": 99.33256654738642,
+    "stock": 36
+  },
+  {
+    "id": 205,
+    "nombre": "Producto Masivo 49",
+    "descripcion": "Generado automáticamente",
+    "precio": 624.3434105313106,
+    "stock": 86
+  },
+  {
+    "id": 206,
+    "nombre": "Producto Masivo 50",
+    "descripcion": "Generado automáticamente",
+    "precio": 906.4851128026007,
+    "stock": 95
+  },
+  {
+    "id": 207,
+    "nombre": "Producto Masivo 51",
+    "descripcion": "Generado automáticamente",
+    "precio": 226.67847909645278,
+    "stock": 52
+  },
+  {
+    "id": 208,
+    "nombre": "Producto Masivo 52",
+    "descripcion": "Generado automáticamente",
+    "precio": 497.9424001023429,
+    "stock": 21
+  },
+  {
+    "id": 209,
+    "nombre": "Producto Masivo 53",
+    "descripcion": "Generado automáticamente",
+    "precio": 138.2280625323552,
+    "stock": 46
+  },
+  {
+    "id": 210,
+    "nombre": "Producto Masivo 54",
+    "descripcion": "Generado automáticamente",
+    "precio": 436.88012645620586,
+    "stock": 52
+  },
+  {
+    "id": 211,
+    "nombre": "Producto Masivo 55",
+    "descripcion": "Generado automáticamente",
+    "precio": 28.18601960371081,
+    "stock": 85
+  },
+  {
+    "id": 212,
+    "nombre": "Producto Masivo 56",
+    "descripcion": "Generado automáticamente",
+    "precio": 727.706523464543,
+    "stock": 75
+  },
+  {
+    "id": 213,
+    "nombre": "Producto Masivo 57",
+    "descripcion": "Generado automáticamente",
+    "precio": 962.6241069085479,
+    "stock": 9
+  },
+  {
+    "id": 214,
+    "nombre": "Producto Masivo 58",
+    "descripcion": "Generado automáticamente",
+    "precio": 841.0855927543934,
+    "stock": 36
+  },
+  {
+    "id": 215,
+    "nombre": "Producto Masivo 59",
+    "descripcion": "Generado automáticamente",
+    "precio": 890.4589660957716,
+    "stock": 37
+  },
+  {
+    "id": 216,
+    "nombre": "Producto Masivo 60",
+    "descripcion": "Generado automáticamente",
+    "precio": 61.70395287730446,
+    "stock": 64
+  },
+  {
+    "id": 217,
+    "nombre": "Producto Masivo 61",
+    "descripcion": "Generado automáticamente",
+    "precio": 485.93033118357573,
+    "stock": 29
+  },
+  {
+    "id": 218,
+    "nombre": "Producto Masivo 62",
+    "descripcion": "Generado automáticamente",
+    "precio": 997.0683928818079,
+    "stock": 13
+  },
+  {
+    "id": 219,
+    "nombre": "Producto Masivo 63",
+    "descripcion": "Generado automáticamente",
+    "precio": 746.9128858074951,
+    "stock": 83
+  },
+  {
+    "id": 220,
+    "nombre": "Producto Masivo 64",
+    "descripcion": "Generado automáticamente",
+    "precio": 559.2543560748802,
+    "stock": 34
+  },
+  {
+    "id": 221,
+    "nombre": "Producto Masivo 65",
+    "descripcion": "Generado automáticamente",
+    "precio": 550.1419366058043,
+    "stock": 41
+  },
+  {
+    "id": 222,
+    "nombre": "Producto Masivo 66",
+    "descripcion": "Generado automáticamente",
+    "precio": 111.40829919732565,
+    "stock": 71
+  },
+  {
+    "id": 223,
+    "nombre": "Producto Masivo 67",
+    "descripcion": "Generado automáticamente",
+    "precio": 572.4413608628096,
+    "stock": 47
+  },
+  {
+    "id": 224,
+    "nombre": "Producto Masivo 68",
+    "descripcion": "Generado automáticamente",
+    "precio": 756.9399185145357,
+    "stock": 68
+  },
+  {
+    "id": 225,
+    "nombre": "Producto Masivo 69",
+    "descripcion": "Generado automáticamente",
+    "precio": 601.299375640328,
+    "stock": 54
+  },
+  {
+    "id": 226,
+    "nombre": "Producto Masivo 70",
+    "descripcion": "Generado automáticamente",
+    "precio": 941.7224577771011,
+    "stock": 0
+  },
+  {
+    "id": 227,
+    "nombre": "Producto Masivo 71",
+    "descripcion": "Generado automáticamente",
+    "precio": 278.64627394561904,
+    "stock": 85
+  },
+  {
+    "id": 228,
+    "nombre": "Producto Masivo 72",
+    "descripcion": "Generado automáticamente",
+    "precio": 638.252874303655,
+    "stock": 97
+  },
+  {
+    "id": 229,
+    "nombre": "Producto Masivo 73",
+    "descripcion": "Generado automáticamente",
+    "precio": 748.4453858768433,
+    "stock": 63
+  },
+  {
+    "id": 230,
+    "nombre": "Producto Masivo 74",
+    "descripcion": "Generado automáticamente",
+    "precio": 385.6060053837075,
+    "stock": 36
+  },
+  {
+    "id": 231,
+    "nombre": "Producto Masivo 75",
+    "descripcion": "Generado automáticamente",
+    "precio": 511.71693567190044,
+    "stock": 15
+  },
+  {
+    "id": 232,
+    "nombre": "Producto Masivo 76",
+    "descripcion": "Generado automáticamente",
+    "precio": 370.1495528083566,
+    "stock": 93
+  },
+  {
+    "id": 233,
+    "nombre": "Producto Masivo 77",
+    "descripcion": "Generado automáticamente",
+    "precio": 31.87172047166431,
+    "stock": 40
+  },
+  {
+    "id": 234,
+    "nombre": "Producto Masivo 78",
+    "descripcion": "Generado automáticamente",
+    "precio": 549.3700909430116,
+    "stock": 88
+  },
+  {
+    "id": 235,
+    "nombre": "Producto Masivo 79",
+    "descripcion": "Generado automáticamente",
+    "precio": 278.7396897544112,
+    "stock": 33
+  },
+  {
+    "id": 236,
+    "nombre": "Producto Masivo 80",
+    "descripcion": "Generado automáticamente",
+    "precio": 544.7925109111362,
+    "stock": 91
+  },
+  {
+    "id": 237,
+    "nombre": "Producto Masivo 81",
+    "descripcion": "Generado automáticamente",
+    "precio": 451.43651272336524,
+    "stock": 76
+  },
+  {
+    "id": 238,
+    "nombre": "Producto Masivo 82",
+    "descripcion": "Generado automáticamente",
+    "precio": 659.8584412252668,
+    "stock": 33
+  },
+  {
+    "id": 239,
+    "nombre": "Producto Masivo 83",
+    "descripcion": "Generado automáticamente",
+    "precio": 578.2184436838133,
+    "stock": 43
+  },
+  {
+    "id": 240,
+    "nombre": "Producto Masivo 84",
+    "descripcion": "Generado automáticamente",
+    "precio": 914.761981883627,
+    "stock": 27
+  },
+  {
+    "id": 241,
+    "nombre": "Producto Masivo 85",
+    "descripcion": "Generado automáticamente",
+    "precio": 555.7339015602373,
+    "stock": 0
+  },
+  {
+    "id": 242,
+    "nombre": "Producto Masivo 86",
+    "descripcion": "Generado automáticamente",
+    "precio": 432.6238227684538,
+    "stock": 35
+  },
+  {
+    "id": 243,
+    "nombre": "Producto Masivo 87",
+    "descripcion": "Generado automáticamente",
+    "precio": 460.58845392162664,
+    "stock": 87
+  },
+  {
+    "id": 244,
+    "nombre": "Producto Masivo 88",
+    "descripcion": "Generado automáticamente",
+    "precio": 860.0176818507696,
+    "stock": 77
+  },
+  {
+    "id": 245,
+    "nombre": "Producto Masivo 89",
+    "descripcion": "Generado automáticamente",
+    "precio": 642.896699076853,
+    "stock": 88
+  },
+  {
+    "id": 246,
+    "nombre": "Producto Masivo 90",
+    "descripcion": "Generado automáticamente",
+    "precio": 759.745666400221,
+    "stock": 51
+  },
+  {
+    "id": 247,
+    "nombre": "Producto Masivo 91",
+    "descripcion": "Generado automáticamente",
+    "precio": 194.50352275617522,
+    "stock": 58
+  },
+  {
+    "id": 248,
+    "nombre": "Producto Masivo 92",
+    "descripcion": "Generado automáticamente",
+    "precio": 74.89239107699974,
+    "stock": 46
+  },
+  {
+    "id": 249,
+    "nombre": "Producto Masivo 93",
+    "descripcion": "Generado automáticamente",
+    "precio": 873.8138237554743,
+    "stock": 36
+  },
+  {
+    "id": 250,
+    "nombre": "Producto Masivo 94",
+    "descripcion": "Generado automáticamente",
+    "precio": 830.5699009226508,
+    "stock": 4
+  },
+  {
+    "id": 251,
+    "nombre": "Producto Masivo 95",
+    "descripcion": "Generado automáticamente",
+    "precio": 464.6787644535865,
+    "stock": 27
+  },
+  {
+    "id": 252,
+    "nombre": "Producto Masivo 96",
+    "descripcion": "Generado automáticamente",
+    "precio": 213.39861182106657,
+    "stock": 41
+  },
+  {
+    "id": 253,
+    "nombre": "Producto Masivo 97",
+    "descripcion": "Generado automáticamente",
+    "precio": 848.5434518729488,
+    "stock": 78
+  },
+  {
+    "id": 254,
+    "nombre": "Producto Masivo 98",
+    "descripcion": "Generado automáticamente",
+    "precio": 48.65258269116946,
+    "stock": 53
+  },
+  {
+    "id": 255,
+    "nombre": "Producto Masivo 99",
+    "descripcion": "Generado automáticamente",
+    "precio": 777.0695225381,
+    "stock": 22
+  },
+  {
+    "id": 256,
+    "nombre": "Producto Masivo 100",
+    "descripcion": "Generado automáticamente",
+    "precio": 481.1293251093167,
+    "stock": 11
+  }
+]
+
+2️⃣  Buscar producto por ID (ID=1):
+{
+  "id": 1,
+  "nombre": "Laptop Dell XPS 15 Pro",
+  "descripcion": "Laptop profesional actualizada",
+  "precio": 1800.0,
+  "stock": 20
+}
+
+3️⃣  Crear nuevo producto:
+{
+  "id": 257,
+  "nombre": "Auriculares Sony",
+  "descripcion": "Auriculares inalámbricos con cancelación de ruido",
+  "precio": 299.99,
+  "stock": 25
+}
+
+4️⃣  Actualizar producto (ID=1):
+{
+  "id": 1,
+  "nombre": "Laptop Dell XPS 15 Pro",
+  "descripcion": "Laptop profesional actualizada",
+  "precio": 1800.0,
+  "stock": 20
+}
+
+5️⃣  Buscar productos con stock bajo (umbral < 20):
+[
+  {
+    "id": 4,
+    "nombre": "Monitor LG 27",
+    "descripcion": "Monitor gaming 144Hz",
+    "precio": 450.0,
+    "stock": 8
+  },
+  {
+    "id": 18,
+    "nombre": "Producto Masivo 14",
+    "descripcion": "Generado automáticamente",
+    "precio": 888.1821850025481,
+    "stock": 9
+  },
+  {
+    "id": 20,
+    "nombre": "Producto Masivo 16",
+    "descripcion": "Generado automáticamente",
+    "precio": 409.84164612592974,
+    "stock": 0
+  },
+  {
+    "id": 25,
+    "nombre": "Producto Masivo 21",
+    "descripcion": "Generado automáticamente",
+    "precio": 170.7885200959237,
+    "stock": 9
+  },
+  {
+    "id": 34,
+    "nombre": "Producto Masivo 30",
+    "descripcion": "Generado automáticamente",
+    "precio": 805.440593377929,
+    "stock": 1
+  },
+  {
+    "id": 45,
+    "nombre": "Producto Masivo 41",
+    "descripcion": "Generado automáticamente",
+    "precio": 175.12162934154807,
+    "stock": 6
+  },
+  {
+    "id": 47,
+    "nombre": "Producto Masivo 43",
+    "descripcion": "Generado automáticamente",
+    "precio": 45.338854108460616,
+    "stock": 7
+  },
+  {
+    "id": 48,
+    "nombre": "Producto Masivo 44",
+    "descripcion": "Generado automáticamente",
+    "precio": 894.4745028501563,
+    "stock": 15
+  },
+  {
+    "id": 53,
+    "nombre": "Producto Masivo 49",
+    "descripcion": "Generado automáticamente",
+    "precio": 424.29952332997533,
+    "stock": 17
+  },
+  {
+    "id": 61,
+    "nombre": "Producto Masivo 57",
+    "descripcion": "Generado automáticamente",
+    "precio": 289.27816392081905,
+    "stock": 9
+  },
+  {
+    "id": 62,
+    "nombre": "Producto Masivo 58",
+    "descripcion": "Generado automáticamente",
+    "precio": 584.0376414006217,
+    "stock": 2
+  },
+  {
+    "id": 64,
+    "nombre": "Producto Masivo 60",
+    "descripcion": "Generado automáticamente",
+    "precio": 236.5622332416828,
+    "stock": 6
+  },
+  {
+    "id": 65,
+    "nombre": "Producto Masivo 61",
+    "descripcion": "Generado automáticamente",
+    "precio": 725.2787964610147,
+    "stock": 4
+  },
+  {
+    "id": 66,
+    "nombre": "Producto Masivo 62",
+    "descripcion": "Generado automáticamente",
+    "precio": 34.237102087808616,
+    "stock": 1
+  },
+  {
+    "id": 70,
+    "nombre": "Producto Masivo 66",
+    "descripcion": "Generado automáticamente",
+    "precio": 241.88542498745304,
+    "stock": 1
+  },
+  {
+    "id": 75,
+    "nombre": "Producto Masivo 71",
+    "descripcion": "Generado automáticamente",
+    "precio": 453.58763717603404,
+    "stock": 6
+  },
+  {
+    "id": 77,
+    "nombre": "Producto Masivo 73",
+    "descripcion": "Generado automáticamente",
+    "precio": 638.0137856208022,
+    "stock": 15
+  },
+  {
+    "id": 84,
+    "nombre": "Producto Masivo 80",
+    "descripcion": "Generado automáticamente",
+    "precio": 155.55349616917724,
+    "stock": 8
+  },
+  {
+    "id": 92,
+    "nombre": "Producto Masivo 88",
+    "descripcion": "Generado automáticamente",
+    "precio": 17.178362113811186,
+    "stock": 5
+  },
+  {
+    "id": 94,
+    "nombre": "Producto Masivo 90",
+    "descripcion": "Generado automáticamente",
+    "precio": 633.2580929869721,
+    "stock": 0
+  },
+  {
+    "id": 95,
+    "nombre": "Producto Masivo 91",
+    "descripcion": "Generado automáticamente",
+    "precio": 834.4403473545738,
+    "stock": 11
+  },
+  {
+    "id": 96,
+    "nombre": "Producto Masivo 92",
+    "descripcion": "Generado automáticamente",
+    "precio": 92.93446955184348,
+    "stock": 5
+  },
+  {
+    "id": 97,
+    "nombre": "Producto Masivo 93",
+    "descripcion": "Generado automáticamente",
+    "precio": 382.6626175086222,
+    "stock": 7
+  },
+  {
+    "id": 99,
+    "nombre": "Producto Masivo 95",
+    "descripcion": "Generado automáticamente",
+    "precio": 395.8529190168494,
+    "stock": 10
+  },
+  {
+    "id": 102,
+    "nombre": "Producto Masivo 98",
+    "descripcion": "Generado automáticamente",
+    "precio": 153.83066909978703,
+    "stock": 13
+  },
+  {
+    "id": 105,
+    "nombre": "Monitor LG 27",
+    "descripcion": "Monitor gaming",
+    "precio": 450.0,
+    "stock": 8
+  },
+  {
+    "id": 109,
+    "nombre": "Producto Masivo 4",
+    "descripcion": "Generado automáticamente",
+    "precio": 647.0988075704503,
+    "stock": 7
+  },
+  {
+    "id": 124,
+    "nombre": "Producto Masivo 19",
+    "descripcion": "Generado automáticamente",
+    "precio": 4.359300465109017,
+    "stock": 9
+  },
+  {
+    "id": 130,
+    "nombre": "Producto Masivo 25",
+    "descripcion": "Generado automáticamente",
+    "precio": 546.0621147611349,
+    "stock": 14
+  },
+  {
+    "id": 143,
+    "nombre": "Producto Masivo 38",
+    "descripcion": "Generado automáticamente",
+    "precio": 538.6764621588701,
+    "stock": 2
+  },
+  {
+    "id": 148,
+    "nombre": "Producto Masivo 43",
+    "descripcion": "Generado automáticamente",
+    "precio": 629.2453815104609,
+    "stock": 15
+  },
+  {
+    "id": 151,
+    "nombre": "Producto Masivo 46",
+    "descripcion": "Generado automáticamente",
+    "precio": 603.791869743666,
+    "stock": 0
+  },
+  {
+    "id": 157,
+    "nombre": "Producto Masivo 1",
+    "descripcion": "Generado automáticamente",
+    "precio": 435.4626035625313,
+    "stock": 7
+  },
+  {
+    "id": 160,
+    "nombre": "Producto Masivo 4",
+    "descripcion": "Generado automáticamente",
+    "precio": 997.444211818362,
+    "stock": 3
+  },
+  {
+    "id": 176,
+    "nombre": "Producto Masivo 20",
+    "descripcion": "Generado automáticamente",
+    "precio": 810.4847942664588,
+    "stock": 6
+  },
+  {
+    "id": 178,
+    "nombre": "Producto Masivo 22",
+    "descripcion": "Generado automáticamente",
+    "precio": 180.04097045523181,
+    "stock": 15
+  },
+  {
+    "id": 181,
+    "nombre": "Producto Masivo 25",
+    "descripcion": "Generado automáticamente",
+    "precio": 813.5810939280234,
+    "stock": 3
+  },
+  {
+    "id": 213,
+    "nombre": "Producto Masivo 57",
+    "descripcion": "Generado automáticamente",
+    "precio": 962.6241069085479,
+    "stock": 9
+  },
+  {
+    "id": 218,
+    "nombre": "Producto Masivo 62",
+    "descripcion": "Generado automáticamente",
+    "precio": 997.0683928818079,
+    "stock": 13
+  },
+  {
+    "id": 226,
+    "nombre": "Producto Masivo 70",
+    "descripcion": "Generado automáticamente",
+    "precio": 941.7224577771011,
+    "stock": 0
+  },
+  {
+    "id": 231,
+    "nombre": "Producto Masivo 75",
+    "descripcion": "Generado automáticamente",
+    "precio": 511.71693567190044,
+    "stock": 15
+  },
+  {
+    "id": 241,
+    "nombre": "Producto Masivo 85",
+    "descripcion": "Generado automáticamente",
+    "precio": 555.7339015602373,
+    "stock": 0
+  },
+  {
+    "id": 250,
+    "nombre": "Producto Masivo 94",
+    "descripcion": "Generado automáticamente",
+    "precio": 830.5699009226508,
+    "stock": 4
+  },
+  {
+    "id": 256,
+    "nombre": "Producto Masivo 100",
+    "descripcion": "Generado automáticamente",
+    "precio": 481.1293251093167,
+    "stock": 11
+  }
+]
+
+6️⃣  Carga masiva (crear 100 productos):
+{
+  "mensaje": "100 productos creados exitosamente"
+}
+
+7️⃣  Eliminar producto (ID=3):
+
+HTTP Status: 404
+
+8️⃣  Verificar que el producto fue eliminado (debe dar 404):
+
+HTTP Status: 404
+
+==========================================
+✅ Pruebas completadas exitosamente!
+==========================================

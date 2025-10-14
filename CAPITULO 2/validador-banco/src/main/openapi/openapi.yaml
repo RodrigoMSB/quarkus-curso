@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info:
+  title: API Validador de Cuentas Bancarias
+  version: 1.0.0
+  description: Microservicio para validar números de cuenta bancaria
+
+paths:
+  /validar/{numeroCuenta}:
+    get:
+      summary: Validar formato de cuenta bancaria
+      parameters:
+        - name: numeroCuenta
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Validación exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidacionResponse'
+
+components:
+  schemas:
+    ValidacionResponse:
+      type: object
+      properties:
+        valido:
+          type: boolean
+        numeroCuenta:
+          type: string
+        mensaje:
+          type: string
