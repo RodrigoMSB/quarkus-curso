@@ -1,0 +1,99 @@
+package pe.banco.evaluacion.servicios;
+
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@QuarkusTest
+class ValidacionServiceTest {
+
+    @Inject
+    ValidacionService validacionService;
+
+    @Test
+    void deberiaValidarRutChilenoValido() {
+        assertTrue(validacionService.validarRutChileno("12345678-5"));
+        assertTrue(validacionService.validarRutChileno("11111111-1"));
+        assertTrue(validacionService.validarRutChileno("7654321-K"));
+    }
+
+    @Test
+    void deberiaRechazarRutInvalido() {
+        assertFalse(validacionService.validarRutChileno("12345678-9"));
+        assertFalse(validacionService.validarRutChileno("11111111-5"));
+        assertFalse(validacionService.validarRutChileno("7654321-1"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "12.345.678-5",
+        "12345678",
+        "12345678-",
+        "-5",
+        "abc12345-5",
+        "12345678-AB",
+        "",
+        "123456789-5"
+    })
+    void deberiaRechazarFormatoRutInvalido(String rutInvalido) {
+        assertFalse(validacionService.validarRutChileno(rutInvalido), 
+            "Debería rechazar formato: " + rutInvalido);
+    }
+
+    @Test
+    void deberiaRechazarRutNulo() {
+        assertFalse(validacionService.validarRutChileno(null));
+    }
+
+    @Test
+    void deberiaValidarEdadLegal() {
+        assertTrue(validacionService.validarEdadLegal(18));
+        assertTrue(validacionService.validarEdadLegal(25));
+        assertTrue(validacionService.validarEdadLegal(65));
+        assertTrue(validacionService.validarEdadLegal(120));
+    }
+
+    @Test
+    void deberiaRechazarEdadIlegal() {
+        assertFalse(validacionService.validarEdadLegal(17));
+        assertFalse(validacionService.validarEdadLegal(0));
+        assertFalse(validacionService.validarEdadLegal(-5));
+        assertFalse(validacionService.validarEdadLegal(121));
+        assertFalse(validacionService.validarEdadLegal(null));
+    }
+
+    @Test
+    void deberiaValidarEmailValido() {
+        assertTrue(validacionService.validarEmail("usuario@email.cl"));
+        assertTrue(validacionService.validarEmail("test.user@gmail.com"));
+        assertTrue(validacionService.validarEmail("admin+test@banco.cl"));
+        assertTrue(validacionService.validarEmail("user123@dominio.co.uk"));
+    }
+
+    @Test
+    void deberiaRechazarEmailInvalido() {
+        assertFalse(validacionService.validarEmail("usuarioemail.cl"));
+        assertFalse(validacionService.validarEmail("@email.cl"));
+        assertFalse(validacionService.validarEmail("usuario@"));
+        assertFalse(validacionService.validarEmail("usuario@.cl"));
+        assertFalse(validacionService.validarEmail("usuario email@test.cl"));
+        assertFalse(validacionService.validarEmail(""));
+        assertFalse(validacionService.validarEmail(null));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "16532702-K",
+        "18765432-1",
+        "9876543-2",
+        "15234567-8"
+    })
+    void deberiaValidarRutsChilenosReales(String rut) {
+        assertTrue(validacionService.validarRutChileno(rut), 
+            "RUT válido debería pasar: " + rut);
+    }
+}

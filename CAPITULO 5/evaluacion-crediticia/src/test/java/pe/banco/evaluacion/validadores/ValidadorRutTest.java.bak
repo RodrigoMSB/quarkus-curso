@@ -1,0 +1,70 @@
+package pe.banco.evaluacion.validadores;
+
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@QuarkusTest
+class ValidadorRutTest {
+
+    @Inject
+    Validator validator;
+
+    @Test
+    void deberiaValidarRutCorrectamente() {
+        TestEntity entity = new TestEntity("12345678-5");
+        Set<ConstraintViolation<TestEntity>> violations = validator.validate(entity);
+        assertTrue(violations.isEmpty(), "RUT válido no debería tener violaciones");
+    }
+
+    @Test
+    void deberiaRechazarRutInvalido() {
+        TestEntity entity = new TestEntity("12345678-9");
+        Set<ConstraintViolation<TestEntity>> violations = validator.validate(entity);
+        assertFalse(violations.isEmpty(), "RUT inválido debería tener violaciones");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"16532702-K", "18765432-1", "9876543-2", "15234567-8"})
+    void deberiaValidarRutsReales(String rut) {
+        TestEntity entity = new TestEntity(rut);
+        Set<ConstraintViolation<TestEntity>> violations = validator.validate(entity);
+        assertTrue(violations.isEmpty(), "RUT " + rut + " debería ser válido");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"12.345.678-5", "12345678", "", "abc-5", "12345678-AB"})
+    void deberiaRechazarFormatosInvalidos(String rut) {
+        TestEntity entity = new TestEntity(rut);
+        Set<ConstraintViolation<TestEntity>> violations = validator.validate(entity);
+        assertFalse(violations.isEmpty(), "Formato " + rut + " debería ser inválido");
+    }
+
+    @Test
+    void deberiaRechazarRutNulo() {
+        TestEntity entity = new TestEntity(null);
+        Set<ConstraintViolation<TestEntity>> violations = validator.validate(entity);
+        assertFalse(violations.isEmpty(), "RUT nulo debería tener violaciones");
+    }
+
+    static class TestEntity {
+        @ValidRut
+        private String rut;
+
+        public TestEntity(String rut) {
+            this.rut = rut;
+        }
+
+        public String getRut() {
+            return rut;
+        }
+    }
+}
