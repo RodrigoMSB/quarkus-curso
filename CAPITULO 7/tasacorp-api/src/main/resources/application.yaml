@@ -1,0 +1,576 @@
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                  TASACORP API - CONFIGURACIÓN YAML                       ║
+# ║                  Capítulo 7: Configuración y Perfiles                    ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 📋 PROPÓSITO DE ESTE ARCHIVO:
+# Este archivo COMPLEMENTA application.properties con configuraciones
+# más complejas que son más legibles en formato YAML jerárquico.
+#
+# 💡 ¿POR QUÉ YAML Y NO SOLO PROPERTIES?
+#
+# YAML es mejor para:
+# ✅ Estructuras jerárquicas profundas
+# ✅ Listas/arrays
+# ✅ Configuraciones anidadas
+# ✅ Legibilidad humana
+#
+# Properties es mejor para:
+# ✅ Configuraciones simples
+# ✅ Compatibilidad universal
+# ✅ Fácil de parsear con herramientas legacy
+#
+# 🔗 RELACIÓN CON PROPERTIES:
+#
+# AMBOS archivos se cargan juntos:
+# - application.properties (prioridad 250)
+# - application.yaml (prioridad 255) ← Ligeramente mayor
+#
+# Si una propiedad está en ambos, YAML gana.
+#
+# DIVISIÓN DE RESPONSABILIDADES EN ESTE EJERCICIO:
+#
+# application.properties:
+# - Configuración simple (strings, números)
+# - Perfiles de provider, límites, comisiones
+# - Configuración de servidor y Vault
+#
+# application.yaml:
+# - Tasas de cambio (estructura anidada)
+# - Metadatos (listas)
+# - Features (flags booleanos)
+#
+# 🎯 LO QUE CONTIENE ESTE ARCHIVO:
+#
+# 1. TASAS DE CAMBIO (tasacorp.exchange.rates)
+#    - USD: 3.75
+#    - EUR: 4.10
+#    - MXN: 0.22
+#
+# 2. METADATOS (tasacorp.metadata)
+#    - Información descriptiva
+#    - Ambiente de ejecución
+#    - Perfiles soportados
+#
+# 3. FEATURES (tasacorp.features)
+#    - Cache habilitado/deshabilitado
+#    - Tiempo de refresh
+#    - Auditoría habilitada/deshabilitada
+#
+# 4. CONFIGURACIÓN POR PERFIL
+#    - Sobrescritura de features por ambiente
+#    - Sobrescritura de metadatos por ambiente
+#
+# 📊 ESTRUCTURA YAML:
+#
+# YAML usa indentación (espacios) para jerarquía:
+#
+# tasacorp:              ← Nivel 1
+#   exchange:            ← Nivel 2
+#     rates:             ← Nivel 3
+#       usd: 3.75        ← Nivel 4 (propiedad final)
+#
+# Equivale en properties a:
+# tasacorp.exchange.rates.usd=3.75
+#
+# ⚠️ IMPORTANTE SOBRE INDENTACIÓN:
+# - Usar ESPACIOS, no TABS
+# - Mantener consistencia (2 espacios en este archivo)
+# - YAML es sensible a espacios (un espacio de más = error)
+
+# ========================================
+# SECCIÓN 1: TASAS DE CAMBIO
+# ========================================
+#
+# 💡 PROPÓSITO:
+# Definir las tasas de conversión desde PEN hacia otras monedas.
+#
+# 🎯 ¿POR QUÉ EN YAML?
+# La estructura anidada (exchange.rates.usd) es más clara en YAML.
+#
+# En properties sería:
+#   tasacorp.exchange.rates.usd=3.75
+#   tasacorp.exchange.rates.eur=4.10
+#   tasacorp.exchange.rates.mxn=0.22
+#
+# En YAML es:
+#   tasacorp:
+#     exchange:
+#       rates:
+#         usd: 3.75
+#         eur: 4.10
+#         mxn: 0.22
+#
+# 💰 INTERPRETACIÓN:
+#
+# usd: 3.75 significa:
+#   1 USD = 3.75 PEN
+#   Para comprar 1 dólar necesitas 3.75 soles
+#
+# eur: 4.10 significa:
+#   1 EUR = 4.10 PEN
+#   Para comprar 1 euro necesitas 4.10 soles
+#
+# mxn: 0.22 significa:
+#   1 MXN = 0.22 PEN
+#   Para comprar 1 peso mexicano necesitas 0.22 soles
+#
+# ⚠️ NOTA IMPORTANTE:
+# En un sistema REAL de producción, estas tasas NO estarían
+# hardcoded en configuración. Se obtendrían de:
+# - Una API externa en tiempo real
+# - Una base de datos actualizada periódicamente
+# - Un servicio de tasas con WebSocket
+#
+# Aquí están hardcoded solo para FINES EDUCATIVOS.
+#
+# 🔗 INYECCIÓN EN CÓDIGO:
+# config.exchange().rates().usd() → 3.75
+# config.exchange().rates().eur() → 4.10
+# config.exchange().rates().mxn() → 0.22
+#
+# 📊 USO EN EL SERVICIO:
+# private Double obtenerTasaPorMoneda(String moneda) {
+#     return switch (moneda) {
+#         case "USD" -> config.exchange().rates().usd();
+#         case "EUR" -> config.exchange().rates().eur();
+#         case "MXN" -> config.exchange().rates().mxn();
+#     };
+# }
+
+tasacorp:
+  exchange:
+    rates:
+      # Tasa PEN → USD
+      # 1 USD = 3.75 PEN
+      # Ejemplo: 1000 PEN × 3.75 = 3750 USD
+      usd: 3.75
+      
+      # Tasa PEN → EUR
+      # 1 EUR = 4.10 PEN
+      # Ejemplo: 1000 PEN × 4.10 = 4100 EUR
+      eur: 4.10
+      
+      # Tasa PEN → MXN
+      # 1 MXN = 0.22 PEN
+      # Ejemplo: 1000 PEN × 0.22 = 220 MXN
+      mxn: 0.22
+    
+  # ========================================
+  # SECCIÓN 2: METADATOS
+  # ========================================
+  #
+  # 💡 PROPÓSITO:
+  # Información descriptiva de la aplicación y su configuración.
+  #
+  # 🎯 ¿POR QUÉ EN YAML?
+  # Las LISTAS (supported-profiles) son mucho más claras en YAML.
+  #
+  # En properties sería:
+  #   tasacorp.metadata.supported-profiles=dev,test,prod
+  #
+  # En YAML es:
+  #   supported-profiles:
+  #     - dev
+  #     - test
+  #     - prod
+  #
+  # 🔗 INYECCIÓN EN CÓDIGO:
+  # config.metadata().createdBy() → "Arquitectura TasaCorp"
+  # config.metadata().environment() → "multi-profile" (o por perfil)
+  # config.metadata().supportedProfiles() → List["dev", "test", "prod"]
+  
+  metadata:
+    # Identificación del equipo/proyecto
+    # Útil para saber quién mantiene esta configuración
+    created-by: "Arquitectura TasaCorp"
+    
+    # Descripción del ambiente base
+    # Este valor se SOBREESCRIBE por perfil (ver abajo)
+    #
+    # Valores finales según perfil:
+    # - DEV:  "desarrollo"
+    # - TEST: "testing"
+    # - PROD: "producción"
+    environment: "multi-profile"
+    
+    # Lista de perfiles soportados por la aplicación
+    # 
+    # 💡 SINTAXIS DE LISTA EN YAML:
+    # Cada elemento empieza con "- "
+    #
+    # Equivale en properties a:
+    # tasacorp.metadata.supported-profiles=dev,test,prod
+    #
+    # En código se inyecta como:
+    # List<String> supportedProfiles()
+    supported-profiles:
+      - dev   # Desarrollo local
+      - test  # Testing/QA
+      - prod  # Producción
+
+  # ========================================
+  # SECCIÓN 3: CARACTERÍSTICAS (FEATURES)
+  # ========================================
+  #
+  # 💡 PROPÓSITO:
+  # Feature flags y configuraciones de comportamiento del sistema.
+  #
+  # 🎯 FEATURE FLAGS:
+  # Son switches que activan/desactivan funcionalidades.
+  # Permiten cambiar el comportamiento sin tocar código.
+  #
+  # VENTAJAS:
+  # ✅ A/B testing
+  # ✅ Rollout gradual de features
+  # ✅ Kill switch (desactivar feature rápidamente)
+  # ✅ Optimización por ambiente
+  #
+  # 🔗 INYECCIÓN EN CÓDIGO:
+  # config.features().cacheEnabled() → false (o por perfil)
+  # config.features().rateRefreshMinutes() → 60 (o por perfil)
+  # config.features().auditEnabled() → true (o por perfil)
+  #
+  # 📊 VALORES BASE VS POR PERFIL:
+  # Los valores aquí son BASE (fallback).
+  # Cada perfil puede sobrescribirlos (ver sección de perfiles abajo).
+  
+  features:
+    # ¿Está habilitado el caché de tasas?
+    #
+    # 💡 ¿QUÉ HACE EL CACHÉ?
+    # Almacena temporalmente las tasas para no consultar
+    # el proveedor externo en cada request.
+    #
+    # BENEFICIOS:
+    # - Menor latencia (respuestas más rápidas)
+    # - Menor costo (menos llamadas a API de pago)
+    # - Resiliencia (funciona si el proveedor cae)
+    #
+    # DESVENTAJAS:
+    # - Tasas pueden estar desactualizadas
+    # - Requiere memoria
+    #
+    # VALORES POR PERFIL:
+    # - DEV:  false (ver cambios inmediatos al desarrollar)
+    # - TEST: true (simular comportamiento de producción)
+    # - PROD: true (máximo rendimiento)
+    #
+    # NOTA: kebab-case (cache-enabled) en YAML
+    #       → camelCase (cacheEnabled) en Java
+    cache-enabled: false
+    
+    # Minutos para refrescar las tasas del caché
+    #
+    # 💡 SIGNIFICADO:
+    # Cada X minutos, el sistema consulta al proveedor
+    # para actualizar las tasas en caché.
+    #
+    # EJEMPLO con 60 minutos:
+    # - 10:00 AM → Consulta proveedor (3.75)
+    # - 10:30 AM → Usa caché (3.75)
+    # - 11:00 AM → Refresca desde proveedor (3.76)
+    # - 11:30 AM → Usa caché (3.76)
+    #
+    # CONSIDERACIONES:
+    # - Muy bajo (5 min) = Tasas actualizadas pero más llamadas API
+    # - Muy alto (120 min) = Menos llamadas API pero tasas desactualizadas
+    #
+    # VALORES POR PERFIL:
+    # - DEV:  60 min (default, pero cache desactivado)
+    # - TEST: 30 min (balance)
+    # - PROD: 15 min (tasas más frescas)
+    rate-refresh-minutes: 60
+    
+    # ¿Está habilitada la auditoría de operaciones?
+    #
+    # 💡 ¿QUÉ HACE LA AUDITORÍA?
+    # Registra todas las operaciones en logs/base de datos:
+    # - Quién hizo la operación
+    # - Cuándo la hizo
+    # - Qué parámetros usó
+    # - Qué resultado obtuvo
+    #
+    # PROPÓSITOS:
+    # - Compliance regulatorio (bancos deben auditar)
+    # - Trazabilidad (investigar problemas)
+    # - Detección de fraudes
+    # - Análisis de patrones de uso
+    #
+    # VALORES POR PERFIL:
+    # - DEV:  false (no contaminar logs con datos de prueba)
+    # - TEST: true (validar que funciona)
+    # - PROD: true (obligatorio para cumplimiento)
+    audit-enabled: true
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                   CONFIGURACIÓN POR PERFILES EN YAML                     ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 💡 SINTAXIS DE PERFILES EN YAML:
+#
+# En properties:
+#   %dev.tasacorp.features.cache-enabled=false
+#
+# En YAML:
+#   "%dev":
+#     tasacorp:
+#       features:
+#         cache-enabled: false
+#
+# ⚠️ IMPORTANTE:
+# El nombre del perfil DEBE ir entre comillas: "%dev"
+# Sin comillas, YAML lo interpreta como comentario o error.
+#
+# 🎯 ESTRATEGIA DE CONFIGURACIÓN:
+#
+# Valores BASE (arriba):
+#   → Configuración por defecto si no hay perfil
+#   → Fallback si falta algo en el perfil
+#
+# Valores POR PERFIL (abajo):
+#   → Sobrescriben los valores base
+#   → Optimizados para cada ambiente
+#
+# 📊 PRIORIDAD:
+# Perfil > Base
+#
+# Ejemplo:
+# - Base: cache-enabled: false
+# - Perfil PROD: cache-enabled: true
+# - Resultado en PROD: true ✅ (perfil gana)
+#
+# 🔗 COMPLEMENTO CON PROPERTIES:
+#
+# application.properties define:
+# - Provider, límites, comisiones por perfil
+#
+# application.yaml define:
+# - Features, metadatos por perfil
+#
+# Ambos se usan juntos para formar la configuración completa.
+
+# ========================================
+# PERFIL: DEV (DESARROLLO)
+# ========================================
+#
+# 🎯 FILOSOFÍA:
+# "Máxima velocidad de desarrollo"
+#
+# Optimizaciones:
+# - Cache DESACTIVADO (ver cambios inmediatos)
+# - Auditoría DESACTIVADA (logs limpios)
+# - Ambiente claro: "desarrollo"
+#
+# 💡 ¿POR QUÉ DESACTIVAR FEATURES EN DEV?
+#
+# Cache desactivado:
+#   → Si estás cambiando las tasas de cambio,
+#     quieres ver el efecto INMEDIATAMENTE,
+#     no esperar 60 minutos a que expire el caché.
+#
+# Auditoría desactivada:
+#   → Los logs de desarrollo ya son verbosos (DEBUG).
+#     No necesitas auditoría adicional que contamine logs.
+#
+# 🔗 RESULTADO FINAL EN DEV:
+# config.features().cacheEnabled() → false
+# config.features().auditEnabled() → false
+# config.features().rateRefreshMinutes() → 60 (base, no se usa)
+# config.metadata().environment() → "desarrollo"
+
+"%dev":
+  tasacorp:
+    features:
+      # Cache desactivado en desarrollo
+      # Cada request consulta las tasas frescas
+      # (en este caso, las hardcoded de arriba)
+      cache-enabled: false
+      
+      # Auditoría desactivada en desarrollo
+      # No necesitamos trazabilidad de operaciones de prueba
+      audit-enabled: false
+    
+    metadata:
+      # Ambiente de desarrollo
+      # Se usa en respuestas JSON para que el cliente
+      # sepa que está en ambiente de pruebas
+      environment: "desarrollo"
+
+# ========================================
+# PERFIL: TEST (TESTING/QA)
+# ========================================
+#
+# 🎯 FILOSOFÍA:
+# "Simular comportamiento de producción"
+#
+# Optimizaciones:
+# - Cache ACTIVADO (como en prod)
+# - Refresh moderado: 30 min (más que prod)
+# - Auditoría ACTIVADA (validar funciona)
+# - Ambiente claro: "testing"
+#
+# 💡 ¿POR QUÉ ACTIVAR FEATURES EN TEST?
+#
+# Cache activado:
+#   → Necesitas validar que el caché funciona correctamente
+#   → Los tests deben reflejar comportamiento de producción
+#
+# Refresh 30 minutos:
+#   → Balance entre actualización y estabilidad
+#   → Permite tests que validen refresh de caché
+#
+# Auditoría activada:
+#   → Validar que el sistema de auditoría funciona
+#   → Tests pueden verificar que se registran operaciones
+#
+# 🔗 RESULTADO FINAL EN TEST:
+# config.features().cacheEnabled() → true
+# config.features().rateRefreshMinutes() → 30
+# config.features().auditEnabled() → true
+# config.metadata().environment() → "testing"
+
+"%test":
+  tasacorp:
+    features:
+      # Cache activado en testing
+      # Simula comportamiento de producción
+      cache-enabled: true
+      
+      # Refresh moderado (30 minutos)
+      # Balance entre actualización y estabilidad
+      # Permite validar lógica de refresco
+      rate-refresh-minutes: 30
+      
+      # Auditoría activada en testing
+      # Valida que el sistema de auditoría funciona
+      # Tests pueden verificar registros
+      audit-enabled: true
+    
+    metadata:
+      # Ambiente de testing
+      # Indica que es ambiente de pruebas controladas
+      environment: "testing"
+
+# ========================================
+# PERFIL: PROD (PRODUCCIÓN)
+# ========================================
+#
+# 🎯 FILOSOFÍA:
+# "Máximo rendimiento y cumplimiento"
+#
+# Optimizaciones:
+# - Cache ACTIVADO (reducir latencia y costos)
+# - Refresh agresivo: 15 min (tasas actualizadas)
+# - Auditoría ACTIVADA (obligatorio)
+# - Ambiente claro: "producción"
+#
+# 💡 ¿POR QUÉ ESTAS CONFIGURACIONES EN PROD?
+#
+# Cache activado:
+#   → Respuestas más rápidas para usuarios
+#   → Menos llamadas al proveedor = menor costo API
+#   → Resiliencia si el proveedor cae temporalmente
+#
+# Refresh 15 minutos:
+#   → Tasas relativamente frescas
+#   → Balance entre actualización y carga del proveedor
+#   → En mercados volátiles, 15 min es aceptable
+#
+# Auditoría activada:
+#   → OBLIGATORIO para cumplimiento regulatorio
+#   → Trazabilidad completa de operaciones
+#   → Detección de fraudes
+#   → Evidencia para auditorías externas
+#
+# 🔗 RESULTADO FINAL EN PROD:
+# config.features().cacheEnabled() → true
+# config.features().rateRefreshMinutes() → 15
+# config.features().auditEnabled() → true
+# config.metadata().environment() → "producción"
+#
+# 🔐 SEGURIDAD:
+# En PROD también se activa la lectura de API key desde Vault
+# (configurado en application.properties, no aquí)
+
+"%prod":
+  tasacorp:
+    features:
+      # Cache activado en producción
+      # Máximo rendimiento y mínimo costo
+      cache-enabled: true
+      
+      # Refresh agresivo (15 minutos)
+      # Tasas actualizadas frecuentemente
+      # Balance entre frescura y carga del sistema
+      rate-refresh-minutes: 15
+      
+      # Auditoría activada en producción
+      # OBLIGATORIO para cumplimiento regulatorio
+      # Registra todas las operaciones
+      audit-enabled: true
+    
+    metadata:
+      # Ambiente de producción
+      # Indica que es ambiente real con usuarios reales
+      environment: "producción"
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                            RESUMEN FINAL                                 ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 🎯 ESTE ARCHIVO DEFINE:
+#
+# ✅ TASAS DE CAMBIO:
+#    USD: 3.75, EUR: 4.10, MXN: 0.22
+#
+# ✅ METADATOS:
+#    Información descriptiva del sistema
+#
+# ✅ FEATURES:
+#    Cache, refresh, auditoría (varía por perfil)
+#
+# ✅ PERFILES:
+#    Configuración específica para dev, test, prod
+#
+# 📊 TABLA COMPARATIVA DE FEATURES:
+#
+# ┌────────────────┬─────────┬─────────┬─────────┐
+# │ Feature        │   DEV   │  TEST   │  PROD   │
+# ├────────────────┼─────────┼─────────┼─────────┤
+# │ Cache          │    ❌   │    ✅   │    ✅   │
+# │ Refresh (min)  │   N/A   │   30    │   15    │
+# │ Auditoría      │    ❌   │    ✅   │    ✅   │
+# │ Ambiente       │desarrollo│ testing │producción│
+# └────────────────┴─────────┴─────────┴─────────┘
+#
+# 🔗 COMPLEMENTO CON APPLICATION.PROPERTIES:
+#
+# application.properties:
+# - Configuración simple (provider, límites, comisiones)
+# - Configuración de servidor
+# - Integración con Vault
+#
+# application.yaml (este archivo):
+# - Configuración compleja (tasas jerárquicas)
+# - Listas (perfiles soportados)
+# - Features por perfil
+#
+# AMBOS se cargan juntos para formar la configuración completa.
+#
+# 🚀 VERIFICAR CONFIGURACIÓN:
+#
+# curl http://localhost:8080/api/tasas/config | jq
+#
+# Verás valores de AMBOS archivos combinados.
+#
+# 📖 APRENDER MÁS:
+#
+# - README-PARTE1.md: Guía de externalización
+# - README-PARTE2.md: Guía de perfiles y Vault
+# - TEORIA-PARTE1.md: Properties vs YAML en detalle
+# - TEORIA-PARTE2.md: Feature flags y optimización por ambiente
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                   FIN DE CONFIGURACIÓN YAML                              ║
+# ╚══════════════════════════════════════════════════════════════════════════╝

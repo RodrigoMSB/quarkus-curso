@@ -1,0 +1,686 @@
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                   DOCKER COMPOSE - HASHICORP VAULT                       ║
+# ║              Gestión de Secretos para TasaCorp API (PROD)               ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 📋 PROPÓSITO DE ESTE ARCHIVO:
+# Define la infraestructura de HashiCorp Vault en Docker para demostrar
+# la gestión segura de secretos en el perfil de PRODUCCIÓN.
+#
+# 🎯 ¿QUÉ ES DOCKER COMPOSE?
+#
+# Docker Compose es una herramienta para definir y ejecutar aplicaciones
+# Docker multi-contenedor usando un archivo YAML.
+#
+# VENTAJAS:
+# ✅ Infraestructura como código
+# ✅ Reproducible (mismo ambiente siempre)
+# ✅ Fácil de compartir con el equipo
+# ✅ Un comando levanta todo: docker-compose up
+#
+# 🔐 ¿POR QUÉ VAULT?
+#
+# PROBLEMA:
+# Las API keys y passwords NO deben estar en:
+# - Código fuente (git lo versiona para siempre)
+# - Properties files (visibles para todo el equipo)
+# - Variables de entorno simples (difíciles de rotar)
+#
+# SOLUCIÓN - VAULT:
+# - Almacenamiento encriptado de secretos
+# - Control de acceso granular
+# - Auditoría de todos los accesos
+# - Rotación de secretos sin redeploy
+# - Secretos con tiempo de vida (TTL)
+#
+# 📊 FLUJO DEL EJERCICIO:
+#
+# 1. Levantar Vault:
+#    docker-compose up -d
+#
+# 2. Guardar secreto:
+#    docker exec tasacorp-vault vault kv put secret/tasacorp api-key=SECRET
+#
+# 3. Quarkus lo lee automáticamente:
+#    %prod.tasacorp.provider.apikey=${api-key}
+#
+# 4. El código lo usa:
+#    config.provider().apikey() → "SECRET"
+#
+# ⚠️ MODO DEV vs MODO PROD:
+#
+# Este archivo configura Vault en MODO DEV:
+# - Para fines EDUCATIVOS y pruebas locales
+# - NO es seguro para producción real
+# - Root token conocido (inseguro)
+# - Sin TLS (HTTP, no HTTPS)
+# - Datos en memoria (se pierden al reiniciar)
+#
+# En PRODUCCIÓN REAL necesitarías:
+# - TLS habilitado (HTTPS)
+# - Unsealing configurado
+# - Storage persistente (Consul, etcd, S3)
+# - Políticas de acceso estrictas
+# - Tokens rotables con TTL
+#
+# 🔗 RELACIÓN CON EL EJERCICIO:
+#
+# Solo se usa en perfil PROD:
+# - DEV: API key hardcoded en properties
+# - TEST: API key hardcoded en properties
+# - PROD: API key desde Vault (este contenedor)
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                        VERSIÓN DE DOCKER COMPOSE                         ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 💡 SIGNIFICADO:
+# Especifica la versión del formato del archivo docker-compose.
+#
+# Versión 3.8:
+# - Lanzada: Julio 2020
+# - Compatible con Docker Engine 19.03.0+
+# - Soporta todas las features modernas
+# - Última versión de la serie 3.x
+#
+# ℹ️ NOTA:
+# Docker Compose v2 (sin version key) es más nuevo,
+# pero 3.8 tiene mayor compatibilidad en diferentes ambientes.
+
+version: '3.8'
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                            SERVICIOS                                     ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 💡 SIGNIFICADO:
+# Define los contenedores que se van a ejecutar.
+# En este caso, solo un servicio: Vault.
+
+services:
+
+  # ========================================
+  # SERVICIO: VAULT
+  # ========================================
+  #
+  # 🔐 PROPÓSITO:
+  # Servidor HashiCorp Vault para gestión de secretos.
+  # Proporciona almacenamiento seguro de la API key de producción.
+  
+  vault:
+    # ========================================
+    # IMAGEN DE DOCKER
+    # ========================================
+    #
+    # 💡 SIGNIFICADO:
+    # Especifica qué imagen de Docker usar.
+    #
+    # hashicorp/vault:1.15.2:
+    # - Repositorio: hashicorp/vault (oficial)
+    # - Versión: 1.15.2 (estable)
+    # - Source: Docker Hub
+    #
+    # 🎯 ¿POR QUÉ ESTA VERSIÓN?
+    # - 1.15.2 es estable y probada (Oct 2023)
+    # - Compatible con todas las features del ejercicio
+    # - Versiones posteriores también funcionan
+    #
+    # 🔄 ACTUALIZAR:
+    # Puedes usar versiones más nuevas:
+    # - hashicorp/vault:1.16.0
+    # - hashicorp/vault:latest (no recomendado en prod)
+    image: hashicorp/vault:1.15.2
+
+    # ========================================
+    # NOMBRE DEL CONTENEDOR
+    # ========================================
+    #
+    # 💡 SIGNIFICADO:
+    # Define un nombre fijo para el contenedor.
+    #
+    # Sin esto: Docker asigna nombre aleatorio (vault_1)
+    # Con esto: Siempre se llama "tasacorp-vault"
+    #
+    # 🎯 VENTAJAS:
+    # - Fácil de referenciar en comandos
+    # - Scripts pueden usar el nombre conocido
+    # - Logs más claros
+    #
+    # 📝 USO:
+    # docker exec tasacorp-vault vault status
+    # docker logs tasacorp-vault
+    # docker stop tasacorp-vault
+    container_name: tasacorp-vault
+
+    # ========================================
+    # PUERTOS
+    # ========================================
+    #
+    # 💡 SIGNIFICADO:
+    # Mapea puertos del host al contenedor.
+    #
+    # Formato: "HOST:CONTAINER"
+    # "8200:8200" significa:
+    # - Puerto 8200 del host (tu máquina)
+    # - Se conecta al puerto 8200 del contenedor
+    #
+    # 🌐 ACCESO:
+    # Vault será accesible en:
+    # - http://localhost:8200 (desde tu máquina)
+    # - http://host.docker.internal:8200 (desde otros contenedores)
+    #
+    # 🎯 ¿POR QUÉ 8200?
+    # Es el puerto estándar de Vault.
+    # Podrías cambiarlo, pero mantener el estándar es mejor práctica.
+    #
+    # ⚠️ PUERTO OCUPADO:
+    # Si el puerto 8200 está en uso, cambia a otro:
+    # ports:
+    #   - "8201:8200"  # Host:8201, Container:8200
+    ports:
+      - "8200:8200"
+
+    # ========================================
+    # VARIABLES DE ENTORNO
+    # ========================================
+    #
+    # 💡 SIGNIFICADO:
+    # Define configuración mediante variables de entorno
+    # que el contenedor de Vault leerá al arrancar.
+    #
+    # Estas variables configuran Vault en MODO DEV:
+    # - Arranque automático sin configuración manual
+    # - Unseal automático (no necesita claves)
+    # - Root token conocido (para acceso fácil)
+    #
+    # ⚠️ MODO DEV:
+    # Estas configuraciones son INSEGURAS para producción real.
+    # Solo para desarrollo y aprendizaje.
+    environment:
+      
+      # Root token de Vault en modo dev
+      #
+      # 💡 SIGNIFICADO:
+      # Define el token de acceso root (máximos privilegios).
+      #
+      # En modo dev: Token fijo "root" para facilitar pruebas
+      # En prod real: Token generado aleatoriamente y protegido
+      #
+      # 🔑 USO:
+      # export VAULT_TOKEN=root
+      # vault kv put secret/tasacorp api-key=SECRET
+      #
+      # 🔗 QUARKUS:
+      # application.properties:
+      # %prod.quarkus.vault.authentication.client-token=root
+      #
+      # ⚠️ SEGURIDAD:
+      # En producción NUNCA usar "root" como token.
+      # Debe ser:
+      # - Generado aleatoriamente
+      # - Almacenado en secreto
+      # - Con permisos limitados
+      # - Con TTL (tiempo de vida)
+      VAULT_DEV_ROOT_TOKEN_ID: root
+
+      # Dirección de escucha de Vault
+      #
+      # 💡 SIGNIFICADO:
+      # Define en qué dirección IP y puerto escucha Vault.
+      #
+      # 0.0.0.0:8200 significa:
+      # - Escucha en TODAS las interfaces de red (0.0.0.0)
+      # - Puerto 8200
+      #
+      # 🌐 IMPLICACIONES:
+      # - Accesible desde localhost (127.0.0.1)
+      # - Accesible desde el host (host.docker.internal)
+      # - Accesible desde otros contenedores Docker
+      #
+      # 🔒 ALTERNATIVAS:
+      # - 127.0.0.1:8200 → Solo localhost (más seguro)
+      # - 0.0.0.0:8200 → Todas las IPs (más flexible)
+      #
+      # Para este ejercicio: 0.0.0.0 permite que Quarkus
+      # (corriendo fuera de Docker) se conecte a Vault.
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+
+    # ========================================
+    # CAPACIDADES (CAPABILITIES)
+    # ========================================
+    #
+    # 💡 SIGNIFICADO:
+    # Agrega capacidades del kernel Linux al contenedor.
+    #
+    # IPC_LOCK:
+    # - Permite bloquear memoria en RAM
+    # - Evita que secretos se escriban a swap (disco)
+    #
+    # 🔐 ¿POR QUÉ ES IMPORTANTE?
+    #
+    # PROBLEMA SIN IPC_LOCK:
+    # 1. Vault guarda secretos en RAM
+    # 2. Sistema operativo puede mover RAM a swap (disco)
+    # 3. Secretos quedan en disco sin encriptar
+    # 4. Vulnerabilidad de seguridad
+    #
+    # SOLUCIÓN CON IPC_LOCK:
+    # 1. Vault bloquea la memoria en RAM
+    # 2. El OS NO puede mover esa memoria a swap
+    # 3. Secretos NUNCA tocan el disco
+    # 4. Mayor seguridad
+    #
+    # 📊 ANALOGÍA:
+    # Es como decirle al OS:
+    # "Esta memoria es MUY importante, NUNCA la muevas a disco"
+    #
+    # ⚠️ NOTA:
+    # En modo dev esto es menos crítico, pero es buena práctica
+    # mantenerlo para simular configuración de producción.
+    cap_add:
+      - IPC_LOCK
+
+    # ========================================
+    # COMANDO
+    # ========================================
+    #
+    # 💡 SIGNIFICADO:
+    # Comando que se ejecuta al iniciar el contenedor.
+    # Sobrescribe el CMD de la imagen.
+    #
+    # vault server -dev:
+    # - Inicia Vault en modo desarrollo
+    #
+    # 🎯 MODO DESARROLLO (-dev):
+    #
+    # Características:
+    # ✅ Arranque automático (sin configuración manual)
+    # ✅ Unseal automático (no necesita claves)
+    # ✅ In-memory storage (rápido, pero se pierde al reiniciar)
+    # ✅ HTTP habilitado (sin TLS para facilitar pruebas)
+    # ✅ Root token conocido (definido arriba)
+    # ❌ NO ES SEGURO para producción real
+    #
+    # 🔄 MODO PRODUCCIÓN:
+    # En producción real usarías:
+    # command: server -config=/vault/config/vault.hcl
+    #
+    # Con configuración completa:
+    # - TLS habilitado (HTTPS)
+    # - Storage persistente (Consul, etcd, S3)
+    # - Unsealing manual o automático con KMS
+    # - Políticas de acceso estrictas
+    #
+    # 💡 PARA ESTE EJERCICIO:
+    # Modo dev es perfecto porque:
+    # - Fácil de arrancar (docker-compose up)
+    # - No requiere configuración compleja
+    # - Suficiente para demostrar integración con Quarkus
+    command: server -dev
+
+    # ========================================
+    # HEALTH CHECK
+    # ========================================
+    #
+    # 💡 SIGNIFICADO:
+    # Define cómo verificar si el contenedor está saludable.
+    #
+    # 🎯 PROPÓSITO:
+    # Permite a Docker (y orquestadores como Kubernetes)
+    # saber si Vault está funcionando correctamente.
+    #
+    # 🔍 COMPONENTES:
+    healthcheck:
+      
+      # Comando para verificar salud
+      #
+      # vault status:
+      # - Ejecuta el comando CLI de Vault
+      # - Verifica que el servidor responde
+      # - Exit code 0 = saludable
+      # - Exit code != 0 = no saludable
+      #
+      # 💡 SINTAXIS:
+      # ["CMD", "comando", "arg1", "arg2"]
+      # Es formato JSON de Docker
+      #
+      # 📊 ESTADOS POSIBLES:
+      # - starting: Iniciando, aún no chequeado
+      # - healthy: Pasó el health check
+      # - unhealthy: Falló N veces consecutivas
+      test: ["CMD", "vault", "status"]
+      
+      # Intervalo entre checks
+      #
+      # 💡 SIGNIFICADO:
+      # Cada 10 segundos, Docker ejecuta el health check.
+      #
+      # 🎯 CONSIDERACIONES:
+      # - Muy bajo (5s): Mayor carga, detección rápida
+      # - Muy alto (60s): Menor carga, detección lenta
+      # - 10s: Balance razonable para dev/test
+      #
+      # En producción podrías usar:
+      # - Liveness: interval: 30s (¿está vivo?)
+      # - Readiness: interval: 5s (¿está listo?)
+      interval: 10s
+      
+      # Timeout del check
+      #
+      # 💡 SIGNIFICADO:
+      # Si el comando tarda más de 5 segundos, se considera fallido.
+      #
+      # 🎯 RAZÓN:
+      # vault status normalmente responde en < 1 segundo.
+      # 5 segundos es generoso para:
+      # - Sistemas lentos
+      # - Vault bajo carga
+      # - Inicio del contenedor
+      timeout: 5s
+      
+      # Reintentos antes de marcar unhealthy
+      #
+      # 💡 SIGNIFICADO:
+      # Debe fallar 3 veces CONSECUTIVAS para marcarse unhealthy.
+      #
+      # 🎯 RAZÓN:
+      # Evita false positives:
+      # - Un timeout ocasional no marca unhealthy
+      # - Solo fallas persistentes cambian el estado
+      #
+      # 📊 EJEMPLO:
+      # Check 1: ✅ OK → healthy
+      # Check 2: ❌ Fail → still healthy (1/3)
+      # Check 3: ❌ Fail → still healthy (2/3)
+      # Check 4: ❌ Fail → unhealthy (3/3) 💀
+      # Check 5: ✅ OK → healthy again
+      retries: 3
+
+    # ========================================
+    # REDES
+    # ========================================
+    #
+    # 💡 SIGNIFICADO:
+    # Define a qué redes Docker pertenece este contenedor.
+    #
+    # 🌐 RED: tasacorp-network
+    # - Definida abajo en la sección "networks"
+    # - Permite comunicación entre contenedores
+    # - Aislamiento de red (no usa la red default)
+    #
+    # 🎯 ¿POR QUÉ UNA RED PERSONALIZADA?
+    #
+    # VENTAJAS:
+    # ✅ DNS automático (los contenedores se ven por nombre)
+    # ✅ Aislamiento (otros contenedores no pueden acceder)
+    # ✅ Escalabilidad (agregar más servicios fácilmente)
+    #
+    # EJEMPLO:
+    # Si agregas el microservicio Quarkus al compose:
+    #
+    # services:
+    #   vault:
+    #     networks:
+    #       - tasacorp-network
+    #
+    #   quarkus-app:
+    #     networks:
+    #       - tasacorp-network
+    #     environment:
+    #       - QUARKUS_VAULT_URL=http://vault:8200
+    #                                   ^^^^^
+    #                                   Nombre del servicio (DNS automático)
+    #
+    # 💡 PARA ESTE EJERCICIO:
+    # Como Quarkus corre FUERA de Docker (./mvnw quarkus:dev),
+    # la red no es estrictamente necesaria, pero es buena práctica.
+    networks:
+      - tasacorp-network
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                              REDES                                       ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 💡 SIGNIFICADO:
+# Define redes Docker personalizadas para los servicios.
+
+networks:
+  
+  # ========================================
+  # RED: TASACORP-NETWORK
+  # ========================================
+  #
+  # 🌐 PROPÓSITO:
+  # Red bridge personalizada para comunicación entre contenedores.
+  #
+  # 🎯 CARACTERÍSTICAS:
+  tasacorp-network:
+    
+    # Driver de red
+    #
+    # 💡 SIGNIFICADO:
+    # Define el tipo de red.
+    #
+    # bridge:
+    # - Red privada en el host
+    # - Contenedores se comunican entre sí
+    # - Aislados de la red externa (a menos que expongas puertos)
+    #
+    # 🔗 OTROS DRIVERS:
+    # - host: Usa la red del host directamente (sin aislamiento)
+    # - overlay: Para Docker Swarm (multi-host)
+    # - macvlan: Asigna MAC address al contenedor
+    # - none: Sin red
+    #
+    # 📊 PARA ESTE EJERCICIO:
+    # bridge es perfecto porque:
+    # - Aislamiento adecuado
+    # - DNS automático entre contenedores
+    # - Fácil de entender
+    driver: bridge
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                          COMANDOS ÚTILES                                 ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 🚀 LEVANTAR VAULT:
+# docker-compose up -d
+#
+# Flags:
+# -d: Detached (corre en background)
+# Sin -d: Muestra logs en tiempo real (Ctrl+C para parar)
+#
+# 📊 VER LOGS:
+# docker-compose logs -f vault
+#
+# Flags:
+# -f: Follow (streaming de logs en tiempo real)
+# --tail=100: Solo últimas 100 líneas
+#
+# 🔍 VERIFICAR ESTADO:
+# docker-compose ps
+#
+# Muestra:
+# - Estado (Up/Exited)
+# - Puertos expuestos
+# - Health status
+#
+# 💾 GUARDAR SECRETO EN VAULT:
+# docker exec -it tasacorp-vault sh -c \
+#   "VAULT_ADDR=http://127.0.0.1:8200 VAULT_TOKEN=root \
+#    vault kv put secret/tasacorp api-key=MI_SECRETO"
+#
+# 🔍 LEER SECRETO DE VAULT:
+# docker exec -it tasacorp-vault sh -c \
+#   "VAULT_ADDR=http://127.0.0.1:8200 VAULT_TOKEN=root \
+#    vault kv get secret/tasacorp"
+#
+# 🛑 DETENER VAULT:
+# docker-compose down
+#
+# Flags:
+# (sin flags): Detiene y elimina contenedores
+# -v: También elimina volúmenes (borra datos)
+#
+# 🔄 REINICIAR VAULT:
+# docker-compose restart vault
+#
+# ⚠️ NOTA EN MODO DEV:
+# Al reiniciar, PIERDES todos los secretos (in-memory storage).
+# Necesitas volver a guardarlos.
+#
+# 🧹 LIMPIAR TODO:
+# docker-compose down -v
+# docker system prune -a
+#
+# ⚠️ CUIDADO: Esto elimina TODO (contenedores, imágenes, volúmenes)
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                  DIFERENCIAS: DEV MODE vs PROD MODE                      ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 📊 COMPARATIVA:
+#
+# ┌────────────────────┬──────────────────┬──────────────────────┐
+# │ Característica     │   MODO DEV       │    MODO PROD         │
+# ├────────────────────┼──────────────────┼──────────────────────┤
+# │ Comando            │ server -dev      │ server -config=...   │
+# │ Storage            │ In-memory        │ Consul/etcd/S3       │
+# │ TLS                │ ❌ Desactivado   │ ✅ Obligatorio       │
+# │ Unsealing          │ Automático       │ Manual/Auto con KMS  │
+# │ Root Token         │ "root" (fijo)    │ Generado/Rotable     │
+# │ Datos persisten    │ ❌ No            │ ✅ Sí                │
+# │ Puerto             │ 8200 (HTTP)      │ 8200 (HTTPS)         │
+# │ Auditoría          │ Limitada         │ Completa             │
+# │ HA (Alta Disp.)    │ ❌ No            │ ✅ Múltiples nodos   │
+# │ Uso                │ Dev/Learning     │ Producción           │
+# └────────────────────┴──────────────────┴──────────────────────┘
+#
+# 🎯 PARA ESTE EJERCICIO:
+# Modo DEV es perfecto porque:
+# ✅ Arranque en 5 segundos
+# ✅ Sin configuración compleja
+# ✅ Suficiente para demostrar integración Quarkus + Vault
+# ✅ Fácil de destruir y recrear
+#
+# ⚠️ EN PRODUCCIÓN REAL:
+# Necesitarías un setup mucho más robusto:
+# - Cluster de 3+ nodos (Alta Disponibilidad)
+# - Storage en Consul o similar
+# - TLS con certificados válidos
+# - Backup automático de datos
+# - Monitoreo con Prometheus/Grafana
+# - Políticas de acceso granulares
+# - Integración con LDAP/AD para autenticación
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                        TROUBLESHOOTING                                   ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# ❌ ERROR: "Port 8200 is already in use"
+#
+# SOLUCIÓN 1 - Cambiar puerto:
+# ports:
+#   - "8201:8200"
+#
+# SOLUCIÓN 2 - Matar proceso:
+# lsof -i :8200  # Ver qué usa el puerto
+# kill -9 <PID>  # Matar proceso
+#
+# ─────────────────────────────────────────────────────────────────────────
+#
+# ❌ ERROR: "Cannot connect to the Docker daemon"
+#
+# SOLUCIÓN:
+# - Verificar que Docker Desktop está corriendo
+# - Windows: Abrir Docker Desktop
+# - Mac: Abrir Docker Desktop
+# - Linux: sudo systemctl start docker
+#
+# ─────────────────────────────────────────────────────────────────────────
+#
+# ❌ ERROR: Vault unhealthy después de 30 segundos
+#
+# SOLUCIÓN:
+# docker-compose logs vault  # Ver qué pasó
+#
+# Posibles causas:
+# - Puerto 8200 ocupado
+# - Falta de recursos (RAM/CPU)
+# - Problema con IPC_LOCK capability
+#
+# ─────────────────────────────────────────────────────────────────────────
+#
+# ❌ ERROR: Quarkus no puede conectarse a Vault
+#
+# VERIFICAR:
+# 1. ¿Vault está corriendo?
+#    docker ps | grep vault
+#
+# 2. ¿Vault responde?
+#    curl http://localhost:8200/v1/sys/health
+#
+# 3. ¿El secreto existe?
+#    docker exec tasacorp-vault vault kv get secret/tasacorp
+#
+# 4. ¿La configuración de Quarkus es correcta?
+#    application.properties:
+#    %prod.quarkus.vault.url=http://localhost:8200
+#
+# ─────────────────────────────────────────────────────────────────────────
+#
+# ❌ ERROR: "Lost all secrets after restart"
+#
+# EXPLICACIÓN:
+# En modo DEV, Vault usa in-memory storage.
+# Al reiniciar, se pierden todos los datos.
+#
+# SOLUCIÓN:
+# Volver a guardar los secretos después de cada restart:
+# docker exec tasacorp-vault vault kv put secret/tasacorp api-key=SECRET
+#
+# ALTERNATIVA (para no perder datos):
+# Usar volumen persistente:
+# volumes:
+#   - vault-data:/vault/file
+#
+# Y cambiar a modo server (no dev):
+# command: server -config=/vault/config/vault.hcl
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                          RESUMEN FINAL                                   ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# 🎯 ESTE ARCHIVO DEFINE:
+#
+# ✅ UN CONTENEDOR:
+#    HashiCorp Vault 1.15.2 en modo desarrollo
+#
+# ✅ PROPÓSITO:
+#    Demostrar gestión segura de secretos en el perfil PROD
+#
+# ✅ CONFIGURACIÓN:
+#    - Puerto: 8200
+#    - Token: root (solo para dev)
+#    - Storage: In-memory (no persiste)
+#    - TLS: Desactivado (solo para dev)
+#
+# ✅ INTEGRACIÓN:
+#    Quarkus lee secretos automáticamente en modo PROD
+#
+# 🔗 FLUJO COMPLETO:
+#
+# 1. docker-compose up -d
+# 2. docker exec ... vault kv put secret/tasacorp api-key=SECRET
+# 3. ./mvnw quarkus:dev -Dquarkus.profile=prod
+# 4. Quarkus lee el secreto de Vault
+# 5. config.provider().apikey() → "SECRET"
+#
+# 📖 APRENDER MÁS:
+# - README-PARTE2.md: Guía de integración Vault + Quarkus
+# - TEORIA-PARTE2.md: Teoría profunda de gestión de secretos
+# - https://www.vaultproject.io/docs - Documentación oficial
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                    FIN DE DOCKER COMPOSE                                 ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
