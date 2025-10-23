@@ -1,0 +1,24 @@
+# Archivos del instructor (no públicos)
+instructor.md
+INSTRUCTOR.md
+
+# Resultados de pruebas
+resultados-*.txt
+
+# Archivos temporales
+*.log
+*.tmp
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Maven
+target/
+.mvn/
+
+# Docker (no se suben, pero por si acaso)
+*.tar
+.DS_Store
