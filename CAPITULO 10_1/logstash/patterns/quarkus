@@ -1,0 +1,16 @@
+# Patrones personalizados para logs de Quarkus
+
+# Timestamp de Quarkus
+QUARKUS_TIMESTAMP %{YEAR}-%{MONTHNUM}-%{MONTHDAY} %{TIME}
+
+# Nivel de log
+LOG_LEVEL (TRACE|DEBUG|INFO|WARN|ERROR|FATAL)
+
+# Nombre de logger
+LOGGER_NAME [a-zA-Z0-9\._-]+
+
+# Thread ID
+THREAD_ID \[.*?\]
+
+# Patrón completo de log de Quarkus
+QUARKUS_LOG %{QUARKUS_TIMESTAMP:timestamp} %{LOG_LEVEL:level} %{THREAD_ID:thread} %{LOGGER_NAME:logger_name} %{GREEDYDATA:message}
