@@ -140,22 +140,22 @@ sdk install quarkus
 
 ```bash
 # Crear proyecto con extensión REST
-quarkus create app cl.alchemicaldata:banco \
+quarkus create app pe.banco:ejemplo \
     --extension=rest \
     --no-wrapper
 
 # Entrar al directorio
-cd banco
+cd ejemplo
 ```
 
 ### Opción 2: Con Quarkus CLI sin código (Educativo)
 
 ```bash
 # Crear proyecto limpio
-quarkus create app cl.alchemicaldata:banco --no-code
+quarkus create app pe.banco:ejemplo --no-code
 
 # Entrar al directorio
-cd banco
+cd ejemplo
 
 # Agregar extensión REST después
 ./mvnw quarkus:add-extension -Dextensions="rest"
@@ -165,20 +165,20 @@ cd banco
 
 ```bash
 mvn io.quarkus.platform:quarkus-maven-plugin:3.15.1:create \
-    -DprojectGroupId=cl.alchemicaldata \
-    -DprojectArtifactId=banco \
+    -DprojectGroupId=pe.banco \
+    -DprojectArtifactId=hola-mundo \
     -DprojectVersion=1.0.0-SNAPSHOT \
     -Dextensions=rest
     
-cd banco
+cd hola-mundo
 ```
 
 ### Opción 4: Desde Web (Más visual)
 
 1. Ir a [code.quarkus.io](https://code.quarkus.io)
 2. Configurar:
-   - **Group:** `cl.alchemicaldata`
-   - **Artifact:** `banco`
+   - **Group:** `pe.banco`
+   - **Artifact:** `hola-mundo`
    - **Build Tool:** Maven
    - **Java Version:** 21
 3. Agregar extensión: **RESTEasy Reactive**
@@ -190,25 +190,32 @@ cd banco
 ## 📁 Estructura del Proyecto
 
 ```
-banco/
+hola-mundo/
 ├── mvnw                          # Maven Wrapper (macOS/Linux)
 ├── mvnw.cmd                      # Maven Wrapper (Windows)
 ├── pom.xml                       # Configuración Maven
-├── README.md                     # Documentación
+├── README.md                     # Este archivo
+├── TEORIA.md                     # Documentación teórica
+├── .dockerignore                 # Exclusiones para Docker
+├── .gitignore                    # Exclusiones para Git
+├── .mvn/                         # Configuración Maven Wrapper
 ├── src/
 │   ├── main/
-│   │   ├── docker/               # Dockerfiles (JVM y Native)
+│   │   ├── docker/               # Dockerfiles
+│   │   │   ├── Dockerfile.jvm            # Imagen Docker modo JVM
+│   │   │   ├── Dockerfile.legacy-jar     # Imagen legacy
+│   │   │   ├── Dockerfile.native         # Imagen nativa GraalVM
+│   │   │   └── Dockerfile.native-micro   # Imagen nativa ultra-compacta
 │   │   ├── java/
-│   │   │   └── cl/alchemicaldata/banco/
-│   │   │       └── HelloResource.java
+│   │   │   └── pe/banco/ejemplo/
+│   │   │       └── HelloResource.java    # Endpoint REST principal
 │   │   └── resources/
-│   │       └── application.properties
+│   │       └── application.properties    # Configuración de la app
 │   └── test/
 │       └── java/
-│           └── cl/alchemicaldata/banco/
-│               └── HelloResourceTest.java
-├── target/                       # Archivos compilados (generado)
-└── .mvn/                         # Configuración Maven Wrapper
+│           └── pe/banco/ejemplo/
+│               └── (tests aquí)
+└── target/                       # Archivos compilados (generado)
 ```
 
 ---
@@ -219,10 +226,10 @@ banco/
 
 ```bash
 # macOS/Linux/Git Bash
-cd banco
+cd hola-mundo
 
 # Windows CMD
-cd banco
+cd hola-mundo
 ```
 
 ### 2. Dar permisos al Maven Wrapper (solo macOS/Linux/Git Bash)
@@ -256,12 +263,12 @@ mvnw.cmd quarkus:add-extension -Dextensions="rest"
 
 ---
 
-## ✍️ Crear el Endpoint HelloResource
+## ✍️ Endpoint HelloResource
 
-Crear el archivo: `src/main/java/cl/alchemicaldata/banco/HelloResource.java`
+Archivo: `src/main/java/pe/banco/ejemplo/HelloResource.java`
 
 ```java
-package cl.alchemicaldata.banco;
+package pe.banco.ejemplo;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -274,7 +281,7 @@ public class HelloResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String hello() {
-        return "Hola mundo desde Quarkus 🧉";
+        return "Hola mundo desde Quarkus 🚀";
     }
 }
 ```
@@ -302,7 +309,7 @@ __  ____  __  _____   ___  __ ____  ______
  -/ /_/ / /_/ / __ |/ , _/ ,< / /_/ /\ \   
 --\___\_\____/_/ |_/_/|_/_/|_|\____/___/   
 
-INFO  [io.quarkus] (Quarkus Main Thread) banco 1.0.0-SNAPSHOT on JVM started in 1.234s
+INFO  [io.quarkus] (Quarkus Main Thread) hola-mundo 1.0.0-SNAPSHOT on JVM started in 1.234s
 INFO  [io.quarkus] (Quarkus Main Thread) Listening on: http://localhost:8080
 
 Tests paused
@@ -395,20 +402,20 @@ mvnw.cmd test
 ### Construir imagen Docker (JVM Mode)
 
 ```bash
-docker build -f src/main/docker/Dockerfile.jvm -t banco:1.0.0-jvm .
+docker build -f src/main/docker/Dockerfile.jvm -t hola-mundo:1.0.0-jvm .
 ```
 
 ### Ejecutar contenedor
 
 ```bash
-docker run -i --rm -p 8080:8080 banco:1.0.0-jvm
+docker run -i --rm -p 8080:8080 hola-mundo:1.0.0-jvm
 ```
 
 ### Construir imagen nativa (requiere GraalVM)
 
 ```bash
 ./mvnw package -Pnative -Dquarkus.native.container-build=true
-docker build -f src/main/docker/Dockerfile.native -t banco:1.0.0-native .
+docker build -f src/main/docker/Dockerfile.native -t hola-mundo:1.0.0-native .
 ```
 
 ---

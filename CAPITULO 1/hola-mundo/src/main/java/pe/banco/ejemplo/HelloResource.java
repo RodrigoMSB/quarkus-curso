@@ -1,4 +1,4 @@
-package cl.alchemicaldata.banco;
+package pe.banco.ejemplo;
 
 // ============================================================================
 // IMPORTS - Especificación JAX-RS (Jakarta RESTful Web Services)

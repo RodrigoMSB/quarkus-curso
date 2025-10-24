@@ -1,4 +1,4 @@
-package cl.alchemicaldata;
+package pe.banco;
 
 public class ValidacionResponse {
     

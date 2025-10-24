@@ -115,7 +115,7 @@ quarkus --version
 
 **macOS/Linux/Git Bash:**
 ```bash
-quarkus create app cl.alchemicaldata:validador-banco \
+quarkus create app pe.banco:validador-banco \
   --extension=rest-jackson,smallrye-openapi
 
 cd validador-banco
@@ -123,7 +123,7 @@ cd validador-banco
 
 **Windows (CMD/PowerShell):**
 ```cmd
-quarkus create app cl.alchemicaldata:validador-banco --extension=rest-jackson,smallrye-openapi
+quarkus create app pe.banco:validador-banco --extension=rest-jackson,smallrye-openapi
 
 cd validador-banco
 ```
@@ -131,7 +131,7 @@ cd validador-banco
 **Alternativa con Maven (todas las plataformas):**
 ```bash
 mvn io.quarkus.platform:quarkus-maven-plugin:3.28.3:create \
-  -DprojectGroupId=cl.alchemicaldata \
+  -DprojectGroupId=pe.banco \
   -DprojectArtifactId=validador-banco \
   -Dextensions=rest-jackson,smallrye-openapi
   
@@ -217,7 +217,7 @@ components:
 quarkus.http.port=8080
 
 # Configuración OpenAPI Generator
-quarkus.openapi-generator.codegen.spec.openapi_yaml.base-package=cl.alchemicaldata
+quarkus.openapi-generator.codegen.spec.openapi_yaml.base-package=pe.banco
 ```
 
 ---
@@ -244,13 +244,13 @@ En: `target/generated-sources/open-api/`
 
 ### **PASO 6: Implementar el Resource**
 
-**Crear archivo:** `src/main/java/cl/alchemicaldata/ValidadorResource.java`
+**Crear archivo:** `src/main/java/pe/banco/ValidadorResource.java`
 
 ```java
-package cl.alchemicaldata;
+package pe.banco;
 
-import cl.alchemicaldata.api.DefaultApi;
-import cl.alchemicaldata.model.ValidacionResponse;
+import pe.banco.api.DefaultApi;
+import pe.banco.model.ValidacionResponse;
 
 public class ValidadorResource implements DefaultApi {
 
@@ -380,10 +380,12 @@ validador-banco/
 ├── mvnw                              # Maven Wrapper (macOS/Linux)
 ├── mvnw.cmd                          # Maven Wrapper (Windows)
 ├── pom.xml                           # Configuración Maven
+├── .gitignore                        # Exclusiones Git
+├── .dockerignore                     # Exclusiones Docker
 ├── src/
 │   ├── main/
 │   │   ├── java/
-│   │   │   └── cl/alchemicaldata/
+│   │   │   └── pe/banco/
 │   │   │       ├── GreetingResource.java (generado)
 │   │   │       └── ValidadorResource.java
 │   │   ├── openapi/
@@ -392,10 +394,11 @@ validador-banco/
 │   │       └── application.properties
 │   └── test/
 │       └── java/
+│           └── pe/banco/
 ├── target/
 │   └── generated-sources/
 │       └── open-api/                 # ⭐ CÓDIGO GENERADO
-│           └── cl/alchemicaldata/
+│           └── pe/banco/
 │               ├── api/
 │               │   └── DefaultApi.java
 │               └── model/
@@ -459,7 +462,7 @@ lsof -ti:8080 | xargs kill -9
 Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess | Stop-Process
 ```
 
-### ❌ Error: "package cl.alchemicaldata.api does not exist"
+### ❌ Error: "package pe.banco.api does not exist"
 
 **Causa:** No se generó el código desde OpenAPI
 

@@ -1,7 +1,7 @@
-package cl.alchemicaldata;
+package pe.banco;
 
-import cl.alchemicaldata.api.DefaultApi;
-import cl.alchemicaldata.model.ValidacionResponse;
+import pe.banco.api.DefaultApi;
+import pe.banco.model.ValidacionResponse;
 
 public class ValidadorResource implements DefaultApi {
 
