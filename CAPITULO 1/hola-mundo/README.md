@@ -2,12 +2,68 @@
 
 Proyecto básico de Quarkus con endpoint REST simple para aprender desarrollo de microservicios.
 
+---
+
+## 🔍 VERIFICACIÓN INICIAL (OBLIGATORIO)
+
+**⚠️ IMPORTANTE:** Antes de instalar cualquier cosa, verifica qué tienes y qué te falta.
+
+### Para macOS
+
+```bash
+# Verificar si tienes Homebrew
+brew --version
+
+# Verificar si tienes Java
+java -version
+
+# Verificar si tienes Quarkus CLI
+quarkus --version
+
+# Ver resumen completo
+echo "=== Estado de tu sistema ==="
+echo "Homebrew: $(brew --version 2>/dev/null || echo 'NO INSTALADO')"
+echo "Java: $(java -version 2>&1 | head -1 || echo 'NO INSTALADO')"
+echo "Quarkus: $(quarkus --version 2>/dev/null || echo 'NO INSTALADO')"
+```
+
+### Para Windows (con Git Bash)
+
+```bash
+# Verificar si tienes Git Bash (si estás leyendo esto aquí, ya lo tienes)
+echo "Git Bash: OK"
+
+# Verificar si tienes Java
+java -version
+
+# Verificar si tienes Quarkus CLI
+quarkus --version
+
+# Ver resumen completo
+echo "=== Estado de tu sistema ==="
+echo "Git Bash: OK"
+echo "Java: $(java -version 2>&1 | head -1 || echo 'NO INSTALADO')"
+echo "Quarkus: $(quarkus --version 2>/dev/null || echo 'NO INSTALADO')"
+```
+
+**Resultado esperado:**
+```
+Java: openjdk version "21.0.x" o superior
+Quarkus: 3.15.x o superior
+```
+
+---
+
 ## 📋 Prerequisitos
 
 - **Java 17 o superior** (recomendado Java 21 LTS)
-- **Maven 3.9+** (incluido en el proyecto como Maven Wrapper)
+- **Maven 3.9+** (incluido en el proyecto como Maven Wrapper, no requiere instalación)
 - **IDE** (VS Code, IntelliJ IDEA, Eclipse)
-- **Terminal** (Git Bash, PowerShell, Terminal de macOS)
+- **Terminal:**
+  - 🍎 **macOS:** Terminal (Zsh por defecto)
+  - 🪟 **Windows:** Git Bash (requerido)
+
+> **Nota para Windows:** Este curso utiliza **Git Bash** como terminal estándar. Si no lo tienes, instálalo desde [git-scm.com](https://git-scm.com/downloads)
 
 ---
 
@@ -18,20 +74,20 @@ Proyecto básico de Quarkus con endpoint REST simple para aprender desarrollo de
 **Opción 1: Con Homebrew (Recomendado)**
 
 ```bash
-# Instalar Homebrew si no lo tienes
+# 1. Instalar Homebrew si no lo tienes
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# Instalar Java 21
+# 2. Instalar Java 21
 brew install openjdk@21
 
-# Configurar Java (agregar al PATH)
+# 3. Configurar Java en el PATH
 echo 'export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 
-# Instalar Quarkus CLI
+# 4. Instalar Quarkus CLI
 brew install quarkusio/tap/quarkus
 
-# Verificar instalación
+# 5. Verificar instalación
 java -version
 quarkus --version
 ```
@@ -39,30 +95,32 @@ quarkus --version
 **Opción 2: Con SDKMAN (Para gestión avanzada de versiones)**
 
 ```bash
-# Instalar SDKMAN
+# 1. Instalar SDKMAN
 curl -s "https://get.sdkman.io" | bash
 source "$HOME/.sdkman/bin/sdkman-init.sh"
 
-# Instalar Java 21
+# 2. Instalar Java 21
 sdk install java 21-tem
 sdk use java 21-tem
 
-# Instalar Quarkus CLI
+# 3. Instalar Quarkus CLI
 sdk install quarkus
 
-# Verificar instalación
+# 4. Verificar instalación
 java -version
 quarkus --version
 ```
 
 ---
 
-### 🪟 Windows
+### 🪟 Windows (con Git Bash)
 
-**Opción 1: Con Chocolatey (Recomendado para Windows)**
+**Opción 1: Con Chocolatey (Recomendado)**
+
+> **Nota:** Estos comandos se ejecutan en **PowerShell como Administrador**, luego cambias a Git Bash
 
 ```powershell
-# 1. Instalar Chocolatey (ejecutar PowerShell como Administrador)
+# 1. Instalar Chocolatey (ejecutar en PowerShell como Administrador)
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
 # 2. Instalar Java 21
@@ -71,15 +129,21 @@ choco install openjdk21 -y
 # 3. Instalar Quarkus CLI
 choco install quarkus -y
 
-# 4. Reiniciar PowerShell y verificar
+# 4. Cerrar PowerShell y abrir Git Bash, luego verificar:
+```
+
+Ahora en **Git Bash**:
+```bash
 java -version
 quarkus --version
 ```
 
 **Opción 2: Con Scoop (Alternativa moderna)**
 
+En **PowerShell normal** (no requiere administrador):
+
 ```powershell
-# 1. Instalar Scoop (PowerShell normal, no requiere admin)
+# 1. Instalar Scoop
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 irm get.scoop.sh | iex
 
@@ -89,31 +153,36 @@ scoop bucket add java
 # 3. Instalar herramientas
 scoop install openjdk21
 scoop install maven
-scoop install quarkus-cli
 
-# 4. Verificar instalación
+# Nota: Quarkus CLI no está disponible en Scoop, instalar manualmente (ver Opción 3)
+```
+
+Ahora en **Git Bash**:
+```bash
 java -version
-quarkus --version
+mvn --version
 ```
 
 **Opción 3: Instalación Manual**
 
 1. **Descargar Java 21:**
    - Ir a [Adoptium](https://adoptium.net/)
-   - Descargar "Eclipse Temurin 21 (LTS)"
-   - Instalar siguiendo el wizard
+   - Descargar "Eclipse Temurin 21 (LTS)" para Windows
+   - Instalar siguiendo el wizard (marcar "Add to PATH")
 
-2. **Configurar Variables de Entorno:**
-   - Abrir "Variables de entorno del sistema"
+2. **Configurar Variables de Entorno (si no se agregó automáticamente):**
+   - Buscar "Variables de entorno" en Windows
    - Crear `JAVA_HOME` apuntando a: `C:\Program Files\Eclipse Adoptium\jdk-21.x.x`
-   - Agregar a `PATH`: `%JAVA_HOME%\bin`
+   - Agregar a `Path`: `%JAVA_HOME%\bin`
 
 3. **Descargar Quarkus CLI:**
    - Ir a [Quarkus CLI Releases](https://github.com/quarkusio/quarkus/releases)
-   - Descargar y agregar al PATH
+   - Buscar la versión más reciente del archivo `quarkus-cli-X.X.X-windows-x86_64.zip`
+   - Descomprimir en `C:\quarkus-cli`
+   - Agregar `C:\quarkus-cli\bin` al PATH de Windows
 
-4. **Verificar:**
-   ```cmd
+4. **Verificar en Git Bash:**
+   ```bash
    java -version
    quarkus --version
    ```
@@ -121,15 +190,58 @@ quarkus --version
 **Opción 4: WSL2 + SDKMAN (Para desarrolladores avanzados)**
 
 ```bash
-# 1. Instalar WSL2 (PowerShell como admin)
+# 1. Instalar WSL2 (ejecutar en PowerShell como admin)
 wsl --install
 
-# 2. Reiniciar y abrir Ubuntu/WSL
-# 3. Seguir los pasos de SDKMAN de macOS
+# 2. Reiniciar Windows
+
+# 3. Abrir Ubuntu desde el menú de inicio
+
+# 4. Seguir los pasos de instalación de macOS con SDKMAN
 curl -s "https://get.sdkman.io" | bash
 source "$HOME/.sdkman/bin/sdkman-init.sh"
 sdk install java 21-tem
 sdk install quarkus
+
+# 5. Verificar
+java -version
+quarkus --version
+```
+
+---
+
+## ✅ Script de Verificación Automatizado
+
+El proyecto incluye scripts automatizados para verificar tu entorno:
+
+- **macOS/Linux:** `verificar-mac.sh`
+- **Windows (Git Bash):** `verificar-windows.sh`
+
+**Uso:**
+
+```bash
+# Dar permisos de ejecución (solo primera vez)
+chmod +x verificar-mac.sh verificar-windows.sh
+
+# Ejecutar el script según tu sistema operativo
+./verificar-mac.sh       # macOS/Linux
+./verificar-windows.sh   # Windows con Git Bash
+```
+
+**Qué verifica:**
+- ✅ Java instalado y versión correcta (>= 17)
+- ✅ Quarkus CLI instalado
+- ✅ JAVA_HOME configurado (opcional pero recomendado)
+
+**Salida esperada:**
+```
+✅ Java: INSTALADO
+openjdk version "21.0.x"
+
+✅ Quarkus CLI: INSTALADO
+3.15.x
+
+✅ Java version compatible (>= 17)
 ```
 
 ---
@@ -140,22 +252,22 @@ sdk install quarkus
 
 ```bash
 # Crear proyecto con extensión REST
-quarkus create app pe.banco:ejemplo \
+quarkus create app pe.banco:hola-mundo \
     --extension=rest \
     --no-wrapper
 
 # Entrar al directorio
-cd ejemplo
+cd hola-mundo
 ```
 
 ### Opción 2: Con Quarkus CLI sin código (Educativo)
 
 ```bash
 # Crear proyecto limpio
-quarkus create app pe.banco:ejemplo --no-code
+quarkus create app pe.banco:hola-mundo --no-code
 
 # Entrar al directorio
-cd ejemplo
+cd hola-mundo
 
 # Agregar extensión REST después
 ./mvnw quarkus:add-extension -Dextensions="rest"
@@ -191,8 +303,8 @@ cd hola-mundo
 
 ```
 hola-mundo/
-├── mvnw                          # Maven Wrapper (macOS/Linux)
-├── mvnw.cmd                      # Maven Wrapper (Windows)
+├── mvnw                          # Maven Wrapper (macOS/Linux/Git Bash)
+├── mvnw.cmd                      # Maven Wrapper (Windows CMD/PowerShell - no usar)
 ├── pom.xml                       # Configuración Maven
 ├── README.md                     # Este archivo
 ├── TEORIA.md                     # Documentación teórica
@@ -207,14 +319,14 @@ hola-mundo/
 │   │   │   ├── Dockerfile.native         # Imagen nativa GraalVM
 │   │   │   └── Dockerfile.native-micro   # Imagen nativa ultra-compacta
 │   │   ├── java/
-│   │   │   └── pe/banco/ejemplo/
+│   │   │   └── pe/banco/hola/
 │   │   │       └── HelloResource.java    # Endpoint REST principal
 │   │   └── resources/
 │   │       └── application.properties    # Configuración de la app
 │   └── test/
 │       └── java/
-│           └── pe/banco/ejemplo/
-│               └── (tests aquí)
+│           └── pe/banco/hola/
+│               └── HelloResourceTest.java
 └── target/                       # Archivos compilados (generado)
 ```
 
@@ -225,18 +337,17 @@ hola-mundo/
 ### 1. Posicionarse en el directorio del proyecto
 
 ```bash
-# macOS/Linux/Git Bash
-cd hola-mundo
-
-# Windows CMD
 cd hola-mundo
 ```
 
-### 2. Dar permisos al Maven Wrapper (solo macOS/Linux/Git Bash)
+### 2. Dar permisos al Maven Wrapper
 
+**macOS/Linux/Git Bash:**
 ```bash
 chmod +x mvnw
 ```
+
+> **Nota para Windows:** En Git Bash este comando funciona perfectamente
 
 ### 3. Verificar que la extensión REST está instalada
 
@@ -251,24 +362,18 @@ Revisar el archivo `pom.xml`, debe contener:
 
 Si no está, agregarla:
 
-**macOS/Linux/Git Bash:**
 ```bash
 ./mvnw quarkus:add-extension -Dextensions="rest"
-```
-
-**Windows (CMD/PowerShell):**
-```cmd
-mvnw.cmd quarkus:add-extension -Dextensions="rest"
 ```
 
 ---
 
 ## ✍️ Endpoint HelloResource
 
-Archivo: `src/main/java/pe/banco/ejemplo/HelloResource.java`
+Archivo: `src/main/java/pe/banco/hola/HelloResource.java`
 
 ```java
-package pe.banco.ejemplo;
+package pe.banco.hola;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -292,17 +397,12 @@ public class HelloResource {
 
 ### Modo Desarrollo (Hot Reload Automático)
 
-**macOS/Linux/Git Bash:**
 ```bash
 ./mvnw quarkus:dev
 ```
 
-**Windows (CMD/PowerShell):**
-```cmd
-mvnw.cmd quarkus:dev
-```
-
 **Salida esperada:**
+
 ```
 __  ____  __  _____   ___  __ ____  ______ 
  --/ __ \/ / / / _ | / _ \/ //_/ / / / __/ 
@@ -324,38 +424,21 @@ Press [e] to edit command line args, [r] to resume testing, [h] for more options
 
 ### Compilar sin ejecutar
 
-**macOS/Linux/Git Bash:**
 ```bash
 ./mvnw clean compile
 ```
 
-**Windows:**
-```cmd
-mvnw.cmd clean compile
-```
-
 ### Empaquetar aplicación (JAR)
 
-**macOS/Linux/Git Bash:**
 ```bash
 ./mvnw package
 ```
 
-**Windows:**
-```cmd
-mvnw.cmd package
-```
-
 ### Ejecutar JAR empaquetado
 
-**macOS/Linux/Git Bash:**
 ```bash
+# Ambas formas funcionan en Git Bash y macOS
 java -jar target/quarkus-app/quarkus-run.jar
-```
-
-**Windows:**
-```cmd
-java -jar target\quarkus-app\quarkus-run.jar
 ```
 
 ---
@@ -369,30 +452,19 @@ java -jar target\quarkus-app\quarkus-run.jar
 http://localhost:8080/hello
 ```
 
-**Opción 2: curl (macOS/Linux/Git Bash)**
+**Opción 2: curl (macOS y Git Bash)**
 ```bash
 curl http://localhost:8080/hello
 ```
 
-**Opción 3: PowerShell (Windows)**
-```powershell
-Invoke-WebRequest -Uri http://localhost:8080/hello | Select-Object -Expand Content
-```
-
-**Opción 4: Postman/Insomnia**
+**Opción 3: Postman/Insomnia**
 - Method: GET
 - URL: http://localhost:8080/hello
 
 ### Ejecutar tests automatizados
 
-**macOS/Linux/Git Bash:**
 ```bash
 ./mvnw test
-```
-
-**Windows:**
-```cmd
-mvnw.cmd test
 ```
 
 ---
@@ -465,14 +537,10 @@ quarkus.live-reload.instrumentation=true
 
 **Solución:**
 ```bash
-# macOS/Linux/Git Bash
 ./mvnw quarkus:add-extension -Dextensions="rest"
-
-# Windows
-mvnw.cmd quarkus:add-extension -Dextensions="rest"
 ```
 
-### ❌ Error: "Permission denied: ./mvnw" (macOS/Linux)
+### ❌ Error: "Permission denied: ./mvnw"
 
 **Causa:** El wrapper no tiene permisos de ejecución
 
@@ -492,47 +560,121 @@ En `application.properties`:
 quarkus.http.port=8081
 ```
 
-**Solución 2 - Liberar puerto (macOS/Linux):**
+**Solución 2 - Liberar puerto (macOS/Linux/Git Bash):**
 ```bash
+# Identificar proceso
+lsof -ti:8080
+
+# Matar proceso
 lsof -ti:8080 | xargs kill -9
 ```
 
-**Solución 2 - Liberar puerto (Windows PowerShell como admin):**
+**Solución 3 - Liberar puerto (Windows - PowerShell como admin):**
 ```powershell
-Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess | Stop-Process
+# Identificar proceso
+Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess
+
+# Detener proceso
+Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess | Stop-Process -Force
 ```
 
-### ❌ Error: "JAVA_HOME is not set" (Windows)
+### ❌ Error: "JAVA_HOME is not set"
 
-**Solución:**
-```cmd
+**Causa:** Java está instalado pero la variable de entorno no está configurada
+
+**Solución en macOS/Linux:**
+```bash
+# Encontrar ubicación de Java
+/usr/libexec/java_home -V
+
+# Agregar a ~/.zshrc (macOS) o ~/.bashrc (Linux)
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+
+# Recargar configuración
+source ~/.zshrc  # o source ~/.bashrc
+```
+
+**Solución en Windows (Git Bash):**
+```bash
 # Verificar si Java está instalado
 java -version
 
-# Configurar JAVA_HOME (PowerShell como admin)
-[System.Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Eclipse Adoptium\jdk-21.x.x", "Machine")
-
-# Reiniciar PowerShell
-```
-
-### ❌ Maven Wrapper no funciona en Windows
-
-**Causa:** Estás usando `./mvnw` en CMD/PowerShell
-
-**Solución:** Usar `mvnw.cmd`
-```cmd
-mvnw.cmd quarkus:dev
+# Si funciona pero JAVA_HOME no está, configura en Windows:
+# 1. Buscar "Variables de entorno" en Windows
+# 2. Crear variable JAVA_HOME
+# 3. Valor: C:\Program Files\Eclipse Adoptium\jdk-21.x.x
+# 4. Reiniciar Git Bash
 ```
 
 ### ❌ Error: "Failed to execute goal... dependencies could not be resolved"
 
-**Causa:** Maven no puede descargar dependencias
+**Causa:** Maven no puede descargar dependencias (problema de red o cache corrupto)
 
 **Solución:**
 ```bash
 # Limpiar cache de Maven y reintentar
 ./mvnw dependency:purge-local-repository
 ./mvnw clean install
+```
+
+### ❌ Error: "No compiler is provided in this environment"
+
+**Causa:** Maven no encuentra el compilador de Java (JDK no instalado, solo JRE)
+
+**Solución:**
+```bash
+# Verificar que tienes JDK (no solo JRE)
+javac -version
+
+# Si no funciona, reinstala Java JDK:
+# macOS: brew reinstall openjdk@21
+# Windows: reinstalar desde Adoptium con JDK completo
+```
+
+### ❌ Error: Maven muy lento descargando dependencias
+
+**Causa:** Repositorio Maven central puede ser lento desde algunas ubicaciones
+
+**Solución:** Agregar mirror en `~/.m2/settings.xml`:
+
+```xml
+<settings>
+  <mirrors>
+    <mirror>
+      <id>central-mirror</id>
+      <mirrorOf>central</mirrorOf>
+      <url>https://repo1.maven.org/maven2</url>
+    </mirror>
+  </mirrors>
+</settings>
+```
+
+### ❌ Error en Git Bash: "mvnw: command not found"
+
+**Causa:** Estás en el directorio incorrecto
+
+**Solución:**
+```bash
+# Verificar que estás en el directorio del proyecto
+pwd
+ls -la mvnw
+
+# Si no ves mvnw, navega al directorio correcto
+cd hola-mundo  # o donde esté tu proyecto
+```
+
+### ❌ Git Bash muestra caracteres extraños o colores incorrectos
+
+**Causa:** Configuración de terminal en Windows
+
+**Solución:**
+```bash
+# Agregar a ~/.bashrc
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+# Recargar
+source ~/.bashrc
 ```
 
 ---
@@ -561,14 +703,15 @@ mvnw.cmd quarkus:dev
 ## 📝 Notas Importantes para Estudiantes
 
 ### Para Usuarios de Windows
-- Recomiendo usar **PowerShell** o **Git Bash** en lugar de CMD
-- Si usan Git Bash, los comandos son iguales a macOS/Linux (`./mvnw`)
-- Si usan CMD/PowerShell, deben usar `mvnw.cmd` en lugar de `./mvnw`
-- **Chocolatey** facilita mucho la instalación, consideren usarlo
+- **SIEMPRE usa Git Bash** como terminal en este curso
+- Git Bash simula un entorno Unix/Linux en Windows
+- Los comandos son idénticos a macOS/Linux
+- Si ves `./mvnw`, úsalo tal cual en Git Bash
+- **No uses CMD ni PowerShell** para seguir este curso (evitarás errores)
 
 ### Para Usuarios de macOS
 - **Homebrew** es la forma más simple de instalar todo
-- **SDKMAN** es útil si necesitan cambiar versiones de Java frecuentemente
+- **SDKMAN** es útil si necesitas cambiar versiones de Java frecuentemente
 - El terminal por defecto (zsh) funciona perfecto
 
 ### Mejores Prácticas
@@ -577,6 +720,38 @@ mvnw.cmd quarkus:dev
 3. **Usar modo dev** (`quarkus:dev`) durante desarrollo para hot reload
 4. **Revisar logs** cuando algo falle, Quarkus da mensajes claros
 5. **Explorar Dev UI** (`http://localhost:8080/q/dev`) tiene muchas herramientas útiles
+
+### Comandos Resumidos
+
+```bash
+# Verificar entorno
+java -version
+quarkus --version
+
+# Crear proyecto
+quarkus create app pe.banco:hola-mundo --extension=rest
+
+# Entrar al proyecto
+cd hola-mundo
+
+# Dar permisos (primera vez)
+chmod +x mvnw
+
+# Ejecutar en modo desarrollo
+./mvnw quarkus:dev
+
+# Probar
+curl http://localhost:8080/hello
+
+# Ejecutar tests
+./mvnw test
+
+# Empaquetar
+./mvnw package
+
+# Ejecutar JAR
+java -jar target/quarkus-app/quarkus-run.jar
+```
 
 ---
 

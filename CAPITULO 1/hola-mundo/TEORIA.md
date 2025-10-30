@@ -1,717 +1,937 @@
-# 📚 TEORIA.md - Fundamentos de Quarkus
+# 🚀 Proyecto Quarkus - Hola Mundo
 
-Teoría completa para entender el desarrollo de microservicios con Quarkus desde cero.
-
----
-
-## 📖 Índice
-
-1. [¿Qué es Quarkus?](#1-qué-es-quarkus)
-2. [¿Por qué Quarkus y no Spring Boot?](#2-por-qué-quarkus-y-no-spring-boot)
-3. [Arquitectura de Quarkus](#3-arquitectura-de-quarkus)
-4. [Conceptos Fundamentales](#4-conceptos-fundamentales)
-5. [JAX-RS y REST en Quarkus](#5-jax-rs-y-rest-en-quarkus)
-6. [Inyección de Dependencias (CDI)](#6-inyección-de-dependencias-cdi)
-7. [Extensiones de Quarkus](#7-extensiones-de-quarkus)
-8. [Dev Mode y Hot Reload](#8-dev-mode-y-hot-reload)
-9. [Maven y el ciclo de vida](#9-maven-y-el-ciclo-de-vida)
-10. [Compilación Nativa con GraalVM](#10-compilación-nativa-con-graalvm)
+Proyecto básico de Quarkus con endpoint REST simple para aprender desarrollo de microservicios.
 
 ---
 
-## 1. ¿Qué es Quarkus?
+## 🔍 VERIFICACIÓN INICIAL (OBLIGATORIO)
 
-### Definición
+**⚠️ IMPORTANTE:** Antes de instalar cualquier cosa, verifica qué tienes y qué te falta.
 
-**Quarkus** es un framework Java moderno diseñado específicamente para:
-- **Kubernetes y entornos Cloud Native**
-- **Microservicios de alta performance**
-- **Aplicaciones serverless**
-- **Arquitecturas reactivas**
+### Para macOS
 
-### Características principales
-
-- ⚡ **Supersonic Subatomic Java**: Arranque ultra rápido (~0.015s)
-- 🪶 **Footprint mínimo**: Consume muy poca memoria RAM
-- 🔥 **Developer Joy**: Experiencia de desarrollo excepcional
-- 🚀 **Native Compilation**: Compila a binario nativo con GraalVM
-- 🔄 **Hot Reload**: Cambios en vivo sin reiniciar
-
-### Analogía
-
-Imagina que los frameworks tradicionales (como Spring Boot) son como un **motor diésel de camión**: potente pero pesado y tarda en arrancar. 
-
-Quarkus es como un **motor de Fórmula 1**: arranca instantáneamente, consume menos combustible (memoria), y está optimizado para máximo rendimiento en condiciones específicas (cloud/containers).
-
----
-
-## 2. ¿Por qué Quarkus y no Spring Boot?
-
-### Comparación técnica
-
-| Aspecto | Spring Boot | Quarkus |
-|---------|-------------|---------|
-| **Tiempo de arranque (JVM)** | ~2-3 segundos | ~0.5-1 segundo |
-| **Tiempo de arranque (Native)** | No disponible | ~0.015 segundos |
-| **Memoria consumida (JVM)** | ~200-300 MB | ~70-120 MB |
-| **Memoria consumida (Native)** | N/A | ~15-30 MB |
-| **Optimizado para** | Aplicaciones monolíticas | Microservicios/Cloud |
-| **Hot Reload** | DevTools (limitado) | Completo y automático |
-| **Curva de aprendizaje** | Moderada | Baja (si conoces Java EE) |
-| **Ecosistema** | Muy maduro | En crecimiento rápido |
-
-### Casos de uso ideales para Quarkus
-
-✅ **Usa Quarkus cuando:**
-- Desarrollas microservicios pequeños y enfocados
-- Despliegas en Kubernetes/OpenShift
-- Necesitas serverless/FaaS (AWS Lambda, Azure Functions)
-- El tiempo de arranque y consumo de memoria son críticos
-- Trabajas con arquitecturas reactivas
-- Quieres compilación nativa
-
-❌ **Considera Spring Boot cuando:**
-- Tienes un monolito grande ya existente
-- Necesitas absolutamente todas las librerías del ecosistema Spring
-- Tu equipo ya domina Spring a fondo
-- No te importa el consumo de recursos
-
----
-
-## 3. Arquitectura de Quarkus
-
-### Stack tecnológico
-
-```
-┌─────────────────────────────────────┐
-│     Tu Aplicación (Resources)      │
-├─────────────────────────────────────┤
-│  JAX-RS / REST / JSON / Validation  │
-├─────────────────────────────────────┤
-│      CDI (Inyección Dependencias)   │
-├─────────────────────────────────────┤
-│    Eclipse MicroProfile / Jakarta   │
-├─────────────────────────────────────┤
-│         Vert.x (Reactive Core)      │
-├─────────────────────────────────────┤
-│       Netty (Network Layer)         │
-├─────────────────────────────────────┤
-│          JVM / GraalVM Native       │
-└─────────────────────────────────────┘
-```
-
-### Componentes clave
-
-1. **Vert.x**: Motor reactivo no bloqueante (event loop)
-2. **Eclipse MicroProfile**: Especificaciones para microservicios
-3. **Jakarta EE**: Estándares Java empresariales modernos
-4. **GraalVM**: Compilador ahead-of-time (AOT) para binarios nativos
-5. **Netty**: Framework de red asíncrono
-
-### Filosofía: Build-Time vs Runtime
-
-**Quarkus hace en BUILD-TIME lo que otros hacen en RUNTIME:**
-
-```
-Framework Tradicional (Spring Boot):
-┌──────────┐     ┌──────────────────────────────┐
-│  Build   │ --> │  Runtime                     │
-│  (Maven) │     │  - Escaneo classpath         │
-│          │     │  - Reflexión                 │
-│          │     │  - Proxy dinámicos           │
-│          │     │  - Configuración             │
-└──────────┘     └──────────────────────────────┘
-                          ⏱️ TIEMPO PERDIDO
-
-Quarkus:
-┌────────────────────────────────┐     ┌──────────┐
-│  Build Time                    │ --> │  Runtime │
-│  - Escaneo classpath           │     │          │
-│  - Análisis de dependencias    │     │  ⚡ SOLO │
-│  - Generación de metadata      │     │  LÓGICA  │
-│  - Bytecode enhancement        │     │  NEGOCIO │
-│  - Dead code elimination       │     │          │
-└────────────────────────────────┘     └──────────┘
-```
-
-**Resultado:** Aplicación optimizada que arranca instantáneamente.
-
----
-
-## 4. Conceptos Fundamentales
-
-### 4.1 Microservicios
-
-**Definición:** Arquitectura donde una aplicación se divide en servicios pequeños, independientes y desplegables por separado.
-
-**Características:**
-- ✅ Cada servicio hace UNA cosa bien
-- ✅ Comunicación vía APIs (REST, gRPC, mensajería)
-- ✅ Base de datos por servicio (database per service)
-- ✅ Despliegue independiente
-- ✅ Tecnologías heterogéneas
-
-**Analogía:** 
-Un monolito es como una **fábrica gigante** donde todo se produce bajo un mismo techo. Los microservicios son como **talleres especializados**: uno hace zapatos, otro hace cordones, otro las cajas. Cada uno es experto en su área y pueden trabajar independientemente.
-
-### 4.2 Cloud Native
-
-**Definición:** Aplicaciones diseñadas para aprovechar al máximo los entornos cloud.
-
-**Principios (12-Factor App):**
-1. **Codebase**: Un repo por servicio
-2. **Dependencies**: Declaradas explícitamente
-3. **Config**: En variables de entorno, no hardcoded
-4. **Backing Services**: Tratados como recursos adjuntos
-5. **Build/Release/Run**: Separación estricta
-6. **Stateless**: Sin estado en el proceso
-7. **Port Binding**: Autocontenido, expone puerto
-8. **Concurrency**: Escala horizontalmente
-9. **Disposability**: Arranque rápido, apagado graceful
-10. **Dev/Prod Parity**: Ambientes similares
-11. **Logs**: Como streams de eventos
-12. **Admin Processes**: Como procesos one-off
-
-### 4.3 Reactive Programming
-
-**Definición:** Paradigma de programación asíncrono orientado a flujos de datos y propagación de cambios.
-
-**Características:**
-- **Responsive**: Responde rápido
-- **Resilient**: Maneja fallos con gracia
-- **Elastic**: Escala bajo demanda
-- **Message Driven**: Comunicación asíncrona
-
-**En Quarkus:**
-```java
-// Imperativo (bloqueante)
-@GET
-public String getUser() {
-    String data = database.query(); // ⏸️ ESPERA
-    return data;
-}
-
-// Reactivo (no bloqueante)
-@GET
-public Uni<String> getUser() {
-    return database.queryAsync() // 🔄 NO ESPERA
-        .onItem().transform(data -> data);
-}
-```
-
----
-
-## 5. JAX-RS y REST en Quarkus
-
-### 5.1 ¿Qué es JAX-RS?
-
-**JAX-RS** (Jakarta RESTful Web Services) es la especificación estándar de Java para crear APIs REST.
-
-**Características:**
-- Usa anotaciones para definir endpoints
-- Mapea HTTP a métodos Java
-- Manejo automático de serialización JSON/XML
-- Parte de Jakarta EE
-
-### 5.2 Anatomía de un Resource
-
-```java
-package cl.alchemicaldata.banco;
-
-import jakarta.ws.rs.GET;           // HTTP GET
-import jakarta.ws.rs.POST;          // HTTP POST
-import jakarta.ws.rs.Path;          // URL path
-import jakarta.ws.rs.Produces;      // Content-Type respuesta
-import jakarta.ws.rs.Consumes;      // Content-Type entrada
-import jakarta.ws.rs.PathParam;     // Parámetro de ruta
-import jakarta.ws.rs.QueryParam;    // Parámetro query string
-import jakarta.ws.rs.core.MediaType;
-
-@Path("/hello")                      // Ruta base: /hello
-public class HelloResource {
-
-    @GET                             // HTTP GET
-    @Produces(MediaType.TEXT_PLAIN)  // Devuelve texto plano
-    public String hello() {
-        return "Hola mundo desde Quarkus 🧉";
-    }
-    
-    @GET
-    @Path("/{nombre}")               // /hello/Juan
-    @Produces(MediaType.TEXT_PLAIN)
-    public String saludar(@PathParam("nombre") String nombre) {
-        return "Hola " + nombre;
-    }
-    
-    @POST                            // HTTP POST
-    @Consumes(MediaType.APPLICATION_JSON)  // Recibe JSON
-    @Produces(MediaType.APPLICATION_JSON)  // Devuelve JSON
-    public Usuario crear(Usuario usuario) {
-        // Lógica de negocio
-        return usuario;
-    }
-}
-```
-
-### 5.3 Mapeo HTTP → Java
-
-| HTTP Method | Anotación | Uso típico |
-|-------------|-----------|------------|
-| **GET** | `@GET` | Obtener recursos |
-| **POST** | `@POST` | Crear recursos |
-| **PUT** | `@PUT` | Actualizar (completo) |
-| **PATCH** | `@PATCH` | Actualizar (parcial) |
-| **DELETE** | `@DELETE` | Eliminar recursos |
-
-### 5.4 Content Types comunes
-
-```java
-// Texto plano
-@Produces(MediaType.TEXT_PLAIN)
-public String texto() { return "Hola"; }
-
-// JSON (más común en APIs)
-@Produces(MediaType.APPLICATION_JSON)
-public Usuario json() { return new Usuario(); }
-
-// XML
-@Produces(MediaType.APPLICATION_XML)
-public Usuario xml() { return new Usuario(); }
-
-// HTML
-@Produces(MediaType.TEXT_HTML)
-public String html() { return "<h1>Hola</h1>"; }
-```
-
----
-
-## 6. Inyección de Dependencias (CDI)
-
-### 6.1 ¿Qué es CDI?
-
-**CDI** (Contexts and Dependency Injection) es el sistema de inyección de dependencias de Jakarta EE.
-
-**Propósito:** Evitar el acoplamiento fuerte entre componentes.
-
-### 6.2 Sin CDI vs Con CDI
-
-**❌ Sin CDI (Acoplamiento fuerte):**
-```java
-public class PedidoResource {
-    // Creación manual = acoplamiento
-    private PedidoService service = new PedidoService();
-    
-    @GET
-    public List<Pedido> listar() {
-        return service.listarTodos();
-    }
-}
-```
-
-**✅ Con CDI (Inyección):**
-```java
-@Path("/pedidos")
-public class PedidoResource {
-    
-    @Inject  // Quarkus inyecta automáticamente
-    PedidoService service;
-    
-    @GET
-    public List<Pedido> listar() {
-        return service.listarTodos();
-    }
-}
-```
-
-### 6.3 Scopes (Alcances)
-
-```java
-// Sin scope = @Dependent (nueva instancia cada vez)
-public class MiServicio { }
-
-// Una instancia por aplicación (Singleton)
-@ApplicationScoped
-public class ConfigService { }
-
-// Una instancia por request HTTP
-@RequestScoped
-public class UsuarioActual { }
-
-// Una instancia por sesión (si hay estado)
-@SessionScoped
-public class CarritoCompra { }
-```
-
-### 6.4 Analogía CDI
-
-Imagina un **restaurante**:
-
-- **Sin CDI**: El mesero (Resource) tiene que ir a la cocina, cocinar la comida, traer los ingredientes, lavar platos. Todo él mismo.
-
-- **Con CDI**: El mesero (Resource) solo pide al chef (Service inyectado) que cocine. Cada uno hace su trabajo. Si necesitas cambiar al chef, el mesero no se entera.
-
----
-
-## 7. Extensiones de Quarkus
-
-### 7.1 ¿Qué son las extensiones?
-
-Las **extensiones** son módulos que agregan funcionalidad a Quarkus. Son el equivalente a "starters" de Spring Boot, pero optimizadas para Quarkus.
-
-### 7.2 Extensiones principales
-
-| Extensión | Propósito | Comando |
-|-----------|-----------|---------|
-| `rest` | APIs REST (JAX-RS) | `quarkus ext add rest` |
-| `rest-jackson` | REST + JSON con Jackson | `quarkus ext add rest-jackson` |
-| `hibernate-orm-panache` | ORM simplificado | `quarkus ext add hibernate-orm-panache` |
-| `jdbc-postgresql` | Driver PostgreSQL | `quarkus ext add jdbc-postgresql` |
-| `smallrye-openapi` | Documentación OpenAPI | `quarkus ext add smallrye-openapi` |
-| `rest-client` | Cliente REST | `quarkus ext add rest-client` |
-| `security-jdbc` | Seguridad con JDBC | `quarkus ext add security-jdbc` |
-| `kafka` | Mensajería Kafka | `quarkus ext add kafka` |
-
-### 7.3 Cómo funcionan
-
-```
-Usuario agrega extensión
-         ↓
-Maven/Gradle descarga dependencia
-         ↓
-Quarkus detecta extensión en BUILD TIME
-         ↓
-Genera código optimizado
-         ↓
-Configura componentes necesarios
-         ↓
-Listo para usar en runtime
-```
-
-### 7.4 Agregar extensiones
-
-**Método 1: CLI**
 ```bash
-quarkus ext add rest-jackson
+# Verificar si tienes Homebrew
+brew --version
+
+# Verificar si tienes Java
+java -version
+
+# Verificar si tienes Quarkus CLI
+quarkus --version
+
+# Ver resumen completo
+echo "=== Estado de tu sistema ==="
+echo "Homebrew: $(brew --version 2>/dev/null || echo 'NO INSTALADO')"
+echo "Java: $(java -version 2>&1 | head -1 || echo 'NO INSTALADO')"
+echo "Quarkus: $(quarkus --version 2>/dev/null || echo 'NO INSTALADO')"
 ```
 
-**Método 2: Maven**
+### Para Windows (con Git Bash)
+
 ```bash
-./mvnw quarkus:add-extension -Dextensions="rest-jackson"
+# Verificar si tienes Git Bash (si estás leyendo esto aquí, ya lo tienes)
+echo "Git Bash: OK"
+
+# Verificar si tienes Java
+java -version
+
+# Verificar si tienes Quarkus CLI
+quarkus --version
+
+# Ver resumen completo
+echo "=== Estado de tu sistema ==="
+echo "Git Bash: OK"
+echo "Java: $(java -version 2>&1 | head -1 || echo 'NO INSTALADO')"
+echo "Quarkus: $(quarkus --version 2>/dev/null || echo 'NO INSTALADO')"
 ```
 
-**Método 3: Manual en pom.xml**
+**Resultado esperado:**
+```
+Java: openjdk version "21.0.x" o superior
+Quarkus: 3.15.x o superior
+```
+
+---
+
+## 📋 Prerequisitos
+
+- **Java 17 o superior** (recomendado Java 21 LTS)
+- **Maven 3.9+** (incluido en el proyecto como Maven Wrapper, no requiere instalación)
+- **IDE** (VS Code, IntelliJ IDEA, Eclipse)
+- **Terminal:**
+  - 🍎 **macOS:** Terminal (Zsh por defecto)
+  - 🪟 **Windows:** Git Bash (requerido)
+
+> **Nota para Windows:** Este curso utiliza **Git Bash** como terminal estándar. Si no lo tienes, instálalo desde [git-scm.com](https://git-scm.com/downloads)
+
+---
+
+## 🛠️ Instalación del Entorno
+
+### 🍎 macOS
+
+**Opción 1: Con Homebrew (Recomendado)**
+
+```bash
+# 1. Instalar Homebrew si no lo tienes
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. Instalar Java 21
+brew install openjdk@21
+
+# 3. Configurar Java en el PATH
+echo 'export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# 4. Instalar Quarkus CLI
+brew install quarkusio/tap/quarkus
+
+# 5. Verificar instalación
+java -version
+quarkus --version
+```
+
+**Opción 2: Con SDKMAN (Para gestión avanzada de versiones)**
+
+```bash
+# 1. Instalar SDKMAN
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# 2. Instalar Java 21
+sdk install java 21-tem
+sdk use java 21-tem
+
+# 3. Instalar Quarkus CLI
+sdk install quarkus
+
+# 4. Verificar instalación
+java -version
+quarkus --version
+```
+
+---
+
+### 🪟 Windows (con Git Bash)
+
+**Opción 1: Con Chocolatey (Recomendado)**
+
+> **Nota:** Estos comandos se ejecutan en **PowerShell como Administrador**, luego cambias a Git Bash
+
+```powershell
+# 1. Instalar Chocolatey (ejecutar en PowerShell como Administrador)
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# 2. Instalar Java 21
+choco install openjdk21 -y
+
+# 3. Instalar Quarkus CLI
+choco install quarkus -y
+
+# 4. Cerrar PowerShell y abrir Git Bash, luego verificar:
+```
+
+Ahora en **Git Bash**:
+```bash
+java -version
+quarkus --version
+```
+
+**Opción 2: Con Scoop (Alternativa moderna)**
+
+En **PowerShell normal** (no requiere administrador):
+
+```powershell
+# 1. Instalar Scoop
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+irm get.scoop.sh | iex
+
+# 2. Agregar bucket de Java
+scoop bucket add java
+
+# 3. Instalar herramientas
+scoop install openjdk21
+scoop install maven
+
+# Nota: Quarkus CLI no está disponible en Scoop, instalar manualmente (ver Opción 3)
+```
+
+Ahora en **Git Bash**:
+```bash
+java -version
+mvn --version
+```
+
+**Opción 3: Instalación Manual**
+
+1. **Descargar Java 21:**
+   - Ir a [Adoptium](https://adoptium.net/)
+   - Descargar "Eclipse Temurin 21 (LTS)" para Windows
+   - Instalar siguiendo el wizard (marcar "Add to PATH")
+
+2. **Configurar JAVA_HOME en Git Bash (Recomendado - MÁS SIMPLE):**
+
+   **Paso 1: Encontrar dónde está instalado Java**
+   ```bash
+   # Abrir Git Bash y ejecutar:
+   which java
+   ```
+   
+   **Resultado esperado:**
+   ```
+   /c/Program Files/Eclipse Adoptium/jdk-21.0.5+11/bin/java
+   ```
+   
+   **Paso 2: Copiar la ruta SIN el `/bin/java` al final**
+   - Del ejemplo anterior, tu JAVA_HOME es: `/c/Program Files/Eclipse Adoptium/jdk-21.0.5+11`
+   
+   **Paso 3: Configurar JAVA_HOME (reemplazar la ruta con la tuya)**
+   ```bash
+   echo 'export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.5+11"' >> ~/.bashrc
+   echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> ~/.bashrc
+   ```
+   
+   **Paso 4: Recargar la configuración**
+   ```bash
+   source ~/.bashrc
+   ```
+   
+   **Paso 5: Verificar**
+   ```bash
+   echo $JAVA_HOME
+   # Debe mostrar: /c/Program Files/Eclipse Adoptium/jdk-21.0.5+11
+   
+   java -version
+   javac -version
+   ```
+
+3. **Alternativa: Configurar JAVA_HOME en Variables de Entorno de Windows**
+
+   Si prefieres configurarlo a nivel de sistema Windows (no solo en Git Bash):
+
+   **Paso 1: Encontrar la ruta exacta**
+   - Abrir Explorador de Windows
+   - Navegar a: `C:\Program Files\Eclipse Adoptium\`
+   - Anotar el nombre completo de la carpeta (ej: `jdk-21.0.5+11`)
+
+   **Paso 2: Abrir Variables de Entorno**
+   - Presionar `Windows + R`
+   - Escribir: `sysdm.cpl` y presionar Enter
+   - Ir a la pestaña "Opciones avanzadas"
+   - Clic en "Variables de entorno..."
+
+   **Paso 3: Crear JAVA_HOME**
+   - En la sección "Variables del sistema" (abajo), clic en "Nueva..."
+   - Nombre de la variable: `JAVA_HOME`
+   - Valor de la variable: `C:\Program Files\Eclipse Adoptium\jdk-21.0.5+11`
+   - Clic en "Aceptar"
+
+   **Paso 4: Agregar al PATH**
+   - En "Variables del sistema", buscar y seleccionar la variable `Path`
+   - Clic en "Editar..."
+   - Clic en "Nuevo"
+   - Agregar: `%JAVA_HOME%\bin`
+   - Clic en "Aceptar" en todas las ventanas
+
+   **Paso 5: Reiniciar Git Bash completamente y verificar**
+   ```bash
+   echo $JAVA_HOME
+   java -version
+   ```
+
+3. **Descargar Quarkus CLI:**
+   - Ir a [Quarkus CLI Releases](https://github.com/quarkusio/quarkus/releases)
+   - Buscar la versión más reciente del archivo `quarkus-cli-X.X.X-windows-x86_64.zip`
+   - Descomprimir en `C:\quarkus-cli`
+   - Agregar `C:\quarkus-cli\bin` al PATH de Windows
+
+4. **Verificar en Git Bash:**
+   ```bash
+   java -version
+   quarkus --version
+   ```
+
+**Opción 4: WSL2 + SDKMAN (Para desarrolladores avanzados)**
+
+```bash
+# 1. Instalar WSL2 (ejecutar en PowerShell como admin)
+wsl --install
+
+# 2. Reiniciar Windows
+
+# 3. Abrir Ubuntu desde el menú de inicio
+
+# 4. Seguir los pasos de instalación de macOS con SDKMAN
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install java 21-tem
+sdk install quarkus
+
+# 5. Verificar
+java -version
+quarkus --version
+```
+
+---
+
+## ✅ Script de Verificación Automatizado
+
+El proyecto incluye scripts automatizados para verificar tu entorno:
+
+- **macOS/Linux:** `verificar-mac.sh`
+- **Windows (Git Bash):** `verificar-windows.sh`
+
+**Uso:**
+
+```bash
+# Dar permisos de ejecución (solo primera vez)
+chmod +x verificar-mac.sh verificar-windows.sh
+
+# Ejecutar el script según tu sistema operativo
+./verificar-mac.sh       # macOS/Linux
+./verificar-windows.sh   # Windows con Git Bash
+```
+
+**Qué verifica:**
+- ✅ Java instalado y versión correcta (>= 17)
+- ✅ Quarkus CLI instalado
+- ✅ JAVA_HOME configurado (opcional pero recomendado)
+
+**Salida esperada:**
+```
+✅ Java: INSTALADO
+openjdk version "21.0.x"
+
+✅ Quarkus CLI: INSTALADO
+3.15.x
+
+✅ Java version compatible (>= 17)
+```
+
+---
+
+## 🏗️ Creación del Proyecto
+
+### Opción 1: Con Quarkus CLI (Recomendado)
+
+```bash
+# Crear proyecto con extensión REST
+quarkus create app pe.banco:hola-mundo \
+    --extension=rest \
+    --no-wrapper
+
+# Entrar al directorio
+cd hola-mundo
+```
+
+### Opción 2: Con Quarkus CLI sin código (Educativo)
+
+```bash
+# Crear proyecto limpio
+quarkus create app pe.banco:hola-mundo --no-code
+
+# Entrar al directorio
+cd hola-mundo
+
+# Agregar extensión REST después
+./mvnw quarkus:add-extension -Dextensions="rest"
+```
+
+### Opción 3: Desde Maven Archetype
+
+```bash
+mvn io.quarkus.platform:quarkus-maven-plugin:3.15.1:create \
+    -DprojectGroupId=pe.banco \
+    -DprojectArtifactId=hola-mundo \
+    -DprojectVersion=1.0.0-SNAPSHOT \
+    -Dextensions=rest
+    
+cd hola-mundo
+```
+
+### Opción 4: Desde Web (Más visual)
+
+1. Ir a [code.quarkus.io](https://code.quarkus.io)
+2. Configurar:
+   - **Group:** `pe.banco`
+   - **Artifact:** `hola-mundo`
+   - **Build Tool:** Maven
+   - **Java Version:** 21
+3. Agregar extensión: **RESTEasy Reactive**
+4. Generar y descargar ZIP
+5. Descomprimir y abrir el proyecto
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+hola-mundo/
+├── mvnw                          # Maven Wrapper (macOS/Linux/Git Bash)
+├── mvnw.cmd                      # Maven Wrapper (Windows CMD/PowerShell - no usar)
+├── pom.xml                       # Configuración Maven
+├── README.md                     # Este archivo
+├── TEORIA.md                     # Documentación teórica
+├── .dockerignore                 # Exclusiones para Docker
+├── .gitignore                    # Exclusiones para Git
+├── .mvn/                         # Configuración Maven Wrapper
+├── src/
+│   ├── main/
+│   │   ├── docker/               # Dockerfiles
+│   │   │   ├── Dockerfile.jvm            # Imagen Docker modo JVM
+│   │   │   ├── Dockerfile.legacy-jar     # Imagen legacy
+│   │   │   ├── Dockerfile.native         # Imagen nativa GraalVM
+│   │   │   └── Dockerfile.native-micro   # Imagen nativa ultra-compacta
+│   │   ├── java/
+│   │   │   └── pe/banco/hola/
+│   │   │       └── HelloResource.java    # Endpoint REST principal
+│   │   └── resources/
+│   │       └── application.properties    # Configuración de la app
+│   └── test/
+│       └── java/
+│           └── pe/banco/hola/
+│               └── HelloResourceTest.java
+└── target/                       # Archivos compilados (generado)
+```
+
+---
+
+## 🔧 Configuración Inicial
+
+### 1. Posicionarse en el directorio del proyecto
+
+```bash
+cd hola-mundo
+```
+
+### 2. Dar permisos al Maven Wrapper
+
+**macOS/Linux/Git Bash:**
+```bash
+chmod +x mvnw
+```
+
+> **Nota para Windows:** En Git Bash este comando funciona perfectamente
+
+### 3. Verificar que la extensión REST está instalada
+
+Revisar el archivo `pom.xml`, debe contener:
+
 ```xml
 <dependency>
     <groupId>io.quarkus</groupId>
-    <artifactId>quarkus-rest-jackson</artifactId>
+    <artifactId>quarkus-rest</artifactId>
 </dependency>
 ```
 
----
-
-## 8. Dev Mode y Hot Reload
-
-### 8.1 ¿Qué es Dev Mode?
-
-El **modo desarrollo** de Quarkus permite:
-- ✅ Cambios en vivo sin reiniciar
-- ✅ Tests continuos en background
-- ✅ Dev UI integrada
-- ✅ Debug remoto automático
-
-### 8.2 Cómo funciona Hot Reload
-
-```
-1. Modificas código Java
-         ↓
-2. Guardas archivo (Ctrl+S)
-         ↓
-3. Quarkus detecta cambio
-         ↓
-4. Recompila solo lo necesario
-         ↓
-5. Recarga clases en caliente
-         ↓
-6. Refrescas navegador
-         ↓
-7. ¡Ves cambios inmediatamente!
-```
-
-**Tiempo total:** ~1-2 segundos
-
-### 8.3 Dev UI
-
-Accede a `http://localhost:8080/q/dev` para ver:
-
-- 📊 **Dashboard**: Estado de la aplicación
-- 🔧 **Config Editor**: Editar application.properties en vivo
-- 🗄️ **Database**: Explorador de base de datos
-- 📝 **OpenAPI**: Documentación interactiva
-- 🧪 **Continuous Testing**: Tests en tiempo real
-- 📈 **Metrics**: Métricas de la app
-
-### 8.4 Comandos interactivos
-
-Mientras está en dev mode, presiona:
-
-```
-w - Abrir Dev UI en navegador
-d - Abrir documentación
-r - Ejecutar todos los tests
-s - Ver métricas de la app
-h - Ayuda (ver todos los comandos)
-q - Salir
-```
-
----
-
-## 9. Maven y el ciclo de vida
-
-### 9.1 ¿Qué es Maven?
-
-**Maven** es una herramienta de:
-- 📦 Gestión de dependencias
-- 🏗️ Construcción de proyectos (build)
-- 📋 Estandarización de estructura
-
-### 9.2 Estructura de proyecto Maven
-
-```
-proyecto/
-├── pom.xml              ← Configuración Maven
-├── src/
-│   ├── main/
-│   │   ├── java/        ← Código fuente
-│   │   └── resources/   ← Archivos de configuración
-│   └── test/
-│       ├── java/        ← Tests
-│       └── resources/   ← Recursos para tests
-└── target/              ← Compilado (generado)
-```
-
-### 9.3 El archivo pom.xml
-
-```xml
-<project>
-    <!-- Coordenadas del proyecto -->
-    <groupId>cl.alchemicaldata</groupId>
-    <artifactId>banco</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    
-    <!-- Propiedades -->
-    <properties>
-        <quarkus.version>3.15.1</quarkus.version>
-        <java.version>21</java.version>
-    </properties>
-    
-    <!-- Dependencias -->
-    <dependencies>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest</artifactId>
-        </dependency>
-    </dependencies>
-    
-    <!-- Plugin de Quarkus -->
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>io.quarkus.platform</groupId>
-                <artifactId>quarkus-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
-</project>
-```
-
-### 9.4 Comandos Maven esenciales
+Si no está, agregarla:
 
 ```bash
-# Limpiar compilados anteriores
-./mvnw clean
+./mvnw quarkus:add-extension -Dextensions="rest"
+```
 
-# Compilar código fuente
-./mvnw compile
+---
+
+## ✍️ Endpoint HelloResource
+
+Archivo: `src/main/java/pe/banco/hola/HelloResource.java`
+
+```java
+package pe.banco.hola;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
+@Path("/hello")
+public class HelloResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return "Hola mundo desde Quarkus 🚀";
+    }
+}
+```
+
+---
+
+## ▶️ Ejecución del Proyecto
+
+### Modo Desarrollo (Hot Reload Automático)
+
+```bash
+./mvnw quarkus:dev
+```
+
+**Salida esperada:**
+
+```
+__  ____  __  _____   ___  __ ____  ______ 
+ --/ __ \/ / / / _ | / _ \/ //_/ / / / __/ 
+ -/ /_/ / /_/ / __ |/ , _/ ,< / /_/ /\ \   
+--\___\_\____/_/ |_/_/|_/_/|_|\____/___/   
+
+INFO  [io.quarkus] (Quarkus Main Thread) hola-mundo 1.0.0-SNAPSHOT on JVM started in 1.234s
+INFO  [io.quarkus] (Quarkus Main Thread) Listening on: http://localhost:8080
+
+Tests paused
+Press [e] to edit command line args, [r] to resume testing, [h] for more options>
+```
+
+**Accesos:**
+- **Endpoint:** http://localhost:8080/hello
+- **Dev UI:** http://localhost:8080/q/dev
+- **Health Check:** http://localhost:8080/q/health
+- **Metrics:** http://localhost:8080/q/metrics
+
+### Compilar sin ejecutar
+
+```bash
+./mvnw clean compile
+```
+
+### Empaquetar aplicación (JAR)
+
+```bash
+./mvnw package
+```
+
+### Ejecutar JAR empaquetado
+
+```bash
+# Ambas formas funcionan en Git Bash y macOS
+java -jar target/quarkus-app/quarkus-run.jar
+```
+
+---
+
+## 🧪 Pruebas
+
+### Probar el endpoint manualmente
+
+**Opción 1: Navegador**
+```
+http://localhost:8080/hello
+```
+
+**Opción 2: curl (macOS y Git Bash)**
+```bash
+curl http://localhost:8080/hello
+```
+
+**Opción 3: Postman/Insomnia**
+- Method: GET
+- URL: http://localhost:8080/hello
+
+### Ejecutar tests automatizados
+
+```bash
+./mvnw test
+```
+
+---
+
+## 🐳 Docker (Opcional)
+
+### Construir imagen Docker (JVM Mode)
+
+```bash
+docker build -f src/main/docker/Dockerfile.jvm -t hola-mundo:1.0.0-jvm .
+```
+
+### Ejecutar contenedor
+
+```bash
+docker run -i --rm -p 8080:8080 hola-mundo:1.0.0-jvm
+```
+
+### Construir imagen nativa (requiere GraalVM)
+
+```bash
+./mvnw package -Pnative -Dquarkus.native.container-build=true
+docker build -f src/main/docker/Dockerfile.native -t hola-mundo:1.0.0-native .
+```
+
+---
+
+## 🔍 Comandos Útiles en Modo Dev
+
+Cuando la aplicación está corriendo con `quarkus:dev`, puedes usar estas teclas:
+
+| Tecla | Acción |
+|-------|--------|
+| **`w`** | Abrir Dev UI en navegador |
+| **`d`** | Abrir documentación |
+| **`r`** | Ejecutar tests |
+| **`s`** | Ver métricas |
+| **`h`** | Ver todas las opciones |
+| **`q`** | Salir de la aplicación |
+| **`Ctrl+C`** | Forzar salida |
+
+---
+
+## ⚙️ Configuración (application.properties)
+
+Archivo: `src/main/resources/application.properties`
+
+```properties
+# Puerto del servidor (default: 8080)
+quarkus.http.port=8080
+
+# Habilitar CORS en desarrollo
+quarkus.http.cors=true
+
+# Nivel de log
+quarkus.log.level=INFO
+quarkus.log.console.level=INFO
+
+# Hot reload (activado por defecto en dev mode)
+quarkus.live-reload.instrumentation=true
+```
+
+---
+
+## 🚨 Solución de Problemas Comunes
+
+### ❌ Error: "jakarta.ws.rs not found" o imports subrayados en rojo
+
+**Causa:** Falta la extensión REST
+
+**Solución:**
+```bash
+./mvnw quarkus:add-extension -Dextensions="rest"
+```
+
+### ❌ Error: "Permission denied: ./mvnw"
+
+**Causa:** El wrapper no tiene permisos de ejecución
+
+**Solución:**
+```bash
+chmod +x mvnw
+```
+
+### ❌ Error: "Port 8080 already in use"
+
+**Causa:** Otro proceso está usando el puerto 8080
+
+**Solución 1 - Cambiar puerto:**
+
+En `application.properties`:
+```properties
+quarkus.http.port=8081
+```
+
+**Solución 2 - Liberar puerto (macOS/Linux/Git Bash):**
+```bash
+# Identificar proceso
+lsof -ti:8080
+
+# Matar proceso
+lsof -ti:8080 | xargs kill -9
+```
+
+**Solución 3 - Liberar puerto (Windows - PowerShell como admin):**
+```powershell
+# Identificar proceso
+Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess
+
+# Detener proceso
+Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess | Stop-Process -Force
+```
+
+### ❌ Error: "JAVA_HOME is not set"
+
+**Causa:** Java está instalado pero la variable de entorno no está configurada
+
+---
+
+**Solución para macOS (COMPLETA Y CORRECTA):**
+
+**Paso 1: Encontrar dónde está instalado Java**
+```bash
+which java
+```
+
+**Resultado esperado:**
+```
+/opt/homebrew/opt/openjdk@21/bin/java
+# o
+/usr/local/opt/openjdk@21/bin/java
+```
+
+**Paso 2: Copiar la ruta SIN el `/bin/java` al final**
+- Del ejemplo anterior, tu JAVA_HOME es: `/opt/homebrew/opt/openjdk@21`
+
+**Paso 3: Configurar JAVA_HOME (reemplazar la ruta con la tuya)**
+```bash
+# Si usas zsh (default en macOS moderno)
+echo 'export JAVA_HOME="/opt/homebrew/opt/openjdk@21"' >> ~/.zshrc
+echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# Si usas bash
+echo 'export JAVA_HOME="/opt/homebrew/opt/openjdk@21"' >> ~/.bash_profile
+echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> ~/.bash_profile
+source ~/.bash_profile
+```
+
+**Paso 4: Verificar**
+```bash
+echo $JAVA_HOME
+# Debe mostrar: /opt/homebrew/opt/openjdk@21
+
+java -version
+javac -version
+```
+
+---
+
+**Solución para Windows (COMPLETA Y CORRECTA):**
+
+**Opción 1: Configurar en Git Bash (MÁS SIMPLE - RECOMENDADO)**
+
+**Paso 1: Encontrar dónde está instalado Java**
+```bash
+# En Git Bash, ejecutar:
+which java
+```
+
+**Resultado esperado:**
+```
+/c/Program Files/Eclipse Adoptium/jdk-21.0.5+11/bin/java
+```
+
+**Paso 2: Copiar la ruta SIN el `/bin/java` al final**
+- Del ejemplo anterior, tu JAVA_HOME es: `/c/Program Files/Eclipse Adoptium/jdk-21.0.5+11`
+
+**Paso 3: Configurar JAVA_HOME (reemplazar la ruta con la tuya del Paso 1)**
+```bash
+echo 'export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-21.0.5+11"' >> ~/.bashrc
+echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> ~/.bashrc
+```
+
+**Paso 4: Recargar la configuración**
+```bash
+source ~/.bashrc
+```
+
+**Paso 5: Verificar**
+```bash
+echo $JAVA_HOME
+# Debe mostrar: /c/Program Files/Eclipse Adoptium/jdk-21.0.5+11
+
+java -version
+javac -version
+```
+
+---
+
+**Opción 2: Configurar en Variables de Entorno de Windows**
+
+Si prefieres configurarlo a nivel de sistema Windows (no solo Git Bash):
+
+**Paso 1: Encontrar la ruta exacta de Java**
+```bash
+# En Git Bash:
+which java
+# Resultado ejemplo: /c/Program Files/Eclipse Adoptium/jdk-21.0.5+11/bin/java
+
+# Convertir a formato Windows: C:\Program Files\Eclipse Adoptium\jdk-21.0.5+11
+```
+
+**Paso 2: Abrir Variables de Entorno**
+- Presionar `Windows + R`
+- Escribir: `sysdm.cpl` y presionar Enter
+- Ir a la pestaña **"Opciones avanzadas"**
+- Clic en **"Variables de entorno..."**
+
+**Paso 3: Crear la variable JAVA_HOME**
+- En la sección **"Variables del sistema"** (abajo)
+- Clic en **"Nueva..."**
+- Nombre de la variable: `JAVA_HOME`
+- Valor de la variable: `C:\Program Files\Eclipse Adoptium\jdk-21.0.5+11` (tu ruta del Paso 1)
+- Clic en **"Aceptar"**
+
+**Paso 4: Agregar Java al PATH**
+- En "Variables del sistema", buscar y seleccionar la variable `Path`
+- Clic en **"Editar..."**
+- Clic en **"Nuevo"**
+- Agregar: `%JAVA_HOME%\bin`
+- Mover esta entrada hacia arriba (opcional)
+- Clic en **"Aceptar"** en todas las ventanas
+
+**Paso 5: Verificar**
+- **Cerrar completamente Git Bash** (todas las ventanas)
+- Abrir Git Bash nuevamente
+- Ejecutar:
+```bash
+echo $JAVA_HOME
+# Debe mostrar: /c/Program Files/Eclipse Adoptium/jdk-21.0.5+11
+
+java -version
+javac -version
+```
+
+**Notas importantes:**
+- ⚠️ **Opción 1 (Git Bash) es MÁS RÁPIDA** - solo 3 comandos y listo
+- ⚠️ **Opción 2 (Windows)** afecta a todo el sistema, no solo Git Bash
+- ⚠️ Siempre usar `which java` para encontrar la ruta correcta
+- ⚠️ Copiar la ruta SIN el `/bin/java` al final
+- ⚠️ Cerrar y reabrir Git Bash después de cambiar configuración
+
+### ❌ Error: "Failed to execute goal... dependencies could not be resolved"
+
+**Causa:** Maven no puede descargar dependencias (problema de red o cache corrupto)
+
+**Solución:**
+```bash
+# Limpiar cache de Maven y reintentar
+./mvnw dependency:purge-local-repository
+./mvnw clean install
+```
+
+### ❌ Error: "No compiler is provided in this environment"
+
+**Causa:** Maven no encuentra el compilador de Java (JDK no instalado, solo JRE)
+
+**Solución:**
+```bash
+# Verificar que tienes JDK (no solo JRE)
+javac -version
+
+# Si no funciona, reinstala Java JDK:
+# macOS: brew reinstall openjdk@21
+# Windows: reinstalar desde Adoptium con JDK completo
+```
+
+### ❌ Error: Maven muy lento descargando dependencias
+
+**Causa:** Repositorio Maven central puede ser lento desde algunas ubicaciones
+
+**Solución:** Agregar mirror en `~/.m2/settings.xml`:
+
+```xml
+<settings>
+  <mirrors>
+    <mirror>
+      <id>central-mirror</id>
+      <mirrorOf>central</mirrorOf>
+      <url>https://repo1.maven.org/maven2</url>
+    </mirror>
+  </mirrors>
+</settings>
+```
+
+### ❌ Error en Git Bash: "mvnw: command not found"
+
+**Causa:** Estás en el directorio incorrecto
+
+**Solución:**
+```bash
+# Verificar que estás en el directorio del proyecto
+pwd
+ls -la mvnw
+
+# Si no ves mvnw, navega al directorio correcto
+cd hola-mundo  # o donde esté tu proyecto
+```
+
+### ❌ Git Bash muestra caracteres extraños o colores incorrectos
+
+**Causa:** Configuración de terminal en Windows
+
+**Solución:**
+```bash
+# Agregar a ~/.bashrc
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+# Recargar
+source ~/.bashrc
+```
+
+---
+
+## 📚 Recursos Adicionales
+
+### Documentación Oficial
+- [Guías de Quarkus](https://quarkus.io/guides/)
+- [Quarkus Cheat Sheet](https://lordofthejars.github.io/quarkus-cheat-sheet/)
+- [REST con Quarkus](https://quarkus.io/guides/rest)
+- [Quarkus Dev Services](https://quarkus.io/guides/dev-services)
+
+### Comunidad
+- [Quarkus GitHub](https://github.com/quarkusio/quarkus)
+- [Stack Overflow - Tag: quarkus](https://stackoverflow.com/questions/tagged/quarkus)
+- [Quarkus Zulip Chat](https://quarkusio.zulipchat.com/)
+
+### Extensiones Útiles para VS Code
+- **Extension Pack for Java** (Microsoft)
+- **Quarkus Tools** (Red Hat)
+- **REST Client** (Huachao Mao)
+- **Thunder Client** (RangaV Vadhineni)
+
+---
+
+## 📝 Notas Importantes para Estudiantes
+
+### Para Usuarios de Windows
+- **SIEMPRE usa Git Bash** como terminal en este curso
+- Git Bash simula un entorno Unix/Linux en Windows
+- Los comandos son idénticos a macOS/Linux
+- Si ves `./mvnw`, úsalo tal cual en Git Bash
+- **No uses CMD ni PowerShell** para seguir este curso (evitarás errores)
+
+### Para Usuarios de macOS
+- **Homebrew** es la forma más simple de instalar todo
+- **SDKMAN** es útil si necesitas cambiar versiones de Java frecuentemente
+- El terminal por defecto (zsh) funciona perfecto
+
+### Mejores Prácticas
+1. **Siempre** estar en el directorio raíz del proyecto (donde está `pom.xml`)
+2. **Verificar** que Java y Maven estén instalados antes de empezar
+3. **Usar modo dev** (`quarkus:dev`) durante desarrollo para hot reload
+4. **Revisar logs** cuando algo falle, Quarkus da mensajes claros
+5. **Explorar Dev UI** (`http://localhost:8080/q/dev`) tiene muchas herramientas útiles
+
+### Comandos Resumidos
+
+```bash
+# Verificar entorno
+java -version
+quarkus --version
+
+# Crear proyecto
+quarkus create app pe.banco:hola-mundo --extension=rest
+
+# Entrar al proyecto
+cd hola-mundo
+
+# Dar permisos (primera vez)
+chmod +x mvnw
+
+# Ejecutar en modo desarrollo
+./mvnw quarkus:dev
+
+# Probar
+curl http://localhost:8080/hello
 
 # Ejecutar tests
 ./mvnw test
 
-# Empaquetar (crear JAR)
+# Empaquetar
 ./mvnw package
 
-# Limpiar + Compilar + Empaquetar
-./mvnw clean package
-
-# Modo desarrollo Quarkus
-./mvnw quarkus:dev
-
-# Instalar en repositorio local
-./mvnw install
-```
-
-### 9.5 Maven Wrapper (mvnw)
-
-**¿Por qué mvnw y no mvn?**
-
-```
-mvn          → Usa Maven instalado globalmente (puede variar versión)
-./mvnw       → Usa Maven específico del proyecto (garantiza versión correcta)
-```
-
-**Ventajas:**
-- ✅ No requiere Maven instalado
-- ✅ Garantiza misma versión en todos los entornos
-- ✅ Portable entre desarrolladores
-
----
-
-## 10. Compilación Nativa con GraalVM
-
-### 10.1 ¿Qué es GraalVM?
-
-**GraalVM** es una JVM avanzada que puede compilar Java a **código nativo** (binario ejecutable).
-
-### 10.2 JVM vs Native
-
-```
-┌─────────────────────────────────────────────┐
-│           MODO JVM (tradicional)            │
-├─────────────────────────────────────────────┤
-│  - Requiere JVM instalada                   │
-│  - Arranque: ~1 segundo                     │
-│  - Memoria: ~120 MB                         │
-│  - Portabilidad: JAR funciona en cualquier  │
-│    SO con JVM                               │
-│  - Warm-up: JIT optimiza en runtime         │
-└─────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────┐
-│         MODO NATIVE (GraalVM)               │
-├─────────────────────────────────────────────┤
-│  - NO requiere JVM                          │
-│  - Arranque: ~0.015 segundos (⚡ 60x más)   │
-│  - Memoria: ~20 MB (📉 6x menos)            │
-│  - Binario específico del SO                │
-│  - Optimizado desde inicio (AOT)            │
-└─────────────────────────────────────────────┘
-```
-
-### 10.3 Cuándo usar Native
-
-**✅ Ideal para:**
-- Serverless (AWS Lambda, Azure Functions)
-- Microservicios que escalan de 0 a N instancias
-- Edge computing / IoT
-- CLI tools
-- Contenedores con arranque frecuente
-
-**❌ No recomendado para:**
-- Apps con mucha reflexión dinámica
-- Si usas librerías no compatibles
-- Desarrollo local (compilación lenta: ~5 minutos)
-
-### 10.4 Compilar a Native
-
-```bash
-# Opción 1: Local (requiere GraalVM instalado)
-./mvnw package -Pnative
-
-# Opción 2: En contenedor (sin GraalVM local)
-./mvnw package -Pnative -Dquarkus.native.container-build=true
-
-# Ejecutar binario nativo
-./target/banco-1.0.0-SNAPSHOT-runner
-```
-
-### 10.5 Limitaciones Native
-
-⚠️ **Restricciones:**
-- No hay reflexión dinámica en runtime
-- No hay carga dinámica de clases
-- Configuración adicional para recursos
-- Tiempo de build largo (~5-10 min)
-- Binario específico del OS (Linux ≠ Windows ≠ macOS)
-
-**Quarkus mitiga esto** haciendo análisis en build-time.
-
----
-
-## 📊 Resumen Comparativo: Conceptos Clave
-
-| Concepto | Analogía | En Quarkus |
-|----------|----------|------------|
-| **Microservicio** | Tienda especializada en una cosa | Aplicación Quarkus enfocada |
-| **REST** | Menú de restaurante | @Path, @GET, @POST |
-| **JAX-RS** | Receta estándar para cocinar | Especificación Java para REST |
-| **CDI** | Sistema de contratación de empleados | @Inject automático |
-| **Extension** | App de smartphone | Módulo que agrega funcionalidad |
-| **Dev Mode** | Cocina con degustación en vivo | Cambios sin reiniciar |
-| **Maven** | Gerente de construcción | Orquesta el build |
-| **GraalVM Native** | Comida congelada lista | Binario pre-compilado |
-
----
-
-## 🎯 Flujo de Trabajo Completo
-
-```
-1. DESARROLLO
-   │
-   ├─→ Crear proyecto (quarkus create / code.quarkus.io)
-   ├─→ Agregar extensiones necesarias
-   ├─→ Escribir código (Resources, Services, Entities)
-   ├─→ Configurar (application.properties)
-   ├─→ Ejecutar en dev mode (mvnw quarkus:dev)
-   └─→ Probar en Dev UI (http://localhost:8080/q/dev)
-   
-2. TESTING
-   │
-   ├─→ Tests unitarios (@QuarkusTest)
-   ├─→ Tests de integración
-   └─→ Tests continuos en dev mode
-   
-3. BUILD
-   │
-   ├─→ JVM: mvnw package → JAR
-   └─→ Native: mvnw package -Pnative → binario
-
-4. DEPLOYMENT
-   │
-   ├─→ Container (Docker/Podman)
-   ├─→ Kubernetes/OpenShift
-   ├─→ Serverless (Lambda, Cloud Run)
-   └─→ VM tradicional
+# Ejecutar JAR
+java -jar target/quarkus-app/quarkus-run.jar
 ```
 
 ---
 
-## 🔗 Recursos para Profundizar
+## 📄 Licencia
 
-### Documentación Oficial
-- [Quarkus Guides](https://quarkus.io/guides/)
-- [Quarkus Blog](https://quarkus.io/blog/)
-- [Jakarta EE Specs](https://jakarta.ee/specifications/)
-
-### Tutoriales
-- [Quarkus Insights (Videos)](https://www.youtube.com/c/Quarkusio)
-- [Red Hat Developers](https://developers.redhat.com/products/quarkus)
-
-### Libros Recomendados
-- "Quarkus for Spring Developers" - Red Hat
-- "Understanding Quarkus" - Antonio Goncalves
-- "Kubernetes Native Microservices with Quarkus" - Manning
-
----
-
-## ✅ Checklist de Conocimientos
-
-Después de estudiar esta teoría, deberías poder:
-
-- [ ] Explicar qué es Quarkus y cuándo usarlo
-- [ ] Entender la diferencia entre JVM mode y Native mode
-- [ ] Crear un endpoint REST con JAX-RS
-- [ ] Usar inyección de dependencias con CDI
-- [ ] Agregar y configurar extensiones
-- [ ] Aprovechar el Dev Mode y Hot Reload
-- [ ] Entender la estructura de un proyecto Maven
-- [ ] Explicar los beneficios de la compilación Ahead-of-Time
-- [ ] Conocer las mejores prácticas de microservicios
+Este proyecto es material educativo de NETEC
