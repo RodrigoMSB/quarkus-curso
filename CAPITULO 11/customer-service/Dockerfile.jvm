@@ -1,0 +1,39 @@
+####
+# Dockerfile multi-stage para Quarkus JVM mode
+# Demuestra: Contenerización con Docker (Capítulo 9)
+####
+
+## Stage 1: Build
+FROM maven:3.9.5-eclipse-temurin-17 AS build
+
+WORKDIR /app
+
+# Copiar archivos de configuración Maven
+COPY pom.xml .
+COPY src ./src
+
+# Compilar aplicación
+RUN mvn clean package -DskipTests
+
+## Stage 2: Runtime
+FROM eclipse-temurin:17-jre
+
+WORKDIR /deployments
+
+# Copiar JAR de la etapa de build
+COPY --from=build /app/target/quarkus-app/lib/ /deployments/lib/
+COPY --from=build /app/target/quarkus-app/*.jar /deployments/
+COPY --from=build /app/target/quarkus-app/app/ /deployments/app/
+COPY --from=build /app/target/quarkus-app/quarkus/ /deployments/quarkus/
+
+# Crear directorio para claves de cifrado
+RUN mkdir -p /keys
+
+# Exponer puerto
+EXPOSE 8081
+
+# Usuario no-root para seguridad
+USER 1001
+
+# Comando de inicio
+ENTRYPOINT ["java", "-jar", "/deployments/quarkus-run.jar"]

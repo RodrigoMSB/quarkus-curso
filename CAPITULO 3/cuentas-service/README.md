@@ -6,11 +6,18 @@ Desarrollo completo de un microservicio REST con CRUD, inyección de dependencia
 
 ## 📋 Prerequisitos
 
-- **Java 21** (OpenJDK recomendado)
-- **Maven 3.9+** (o Maven Wrapper incluido)
-- **Quarkus CLI** (opcional)
-- **IDE** (IntelliJ IDEA Community, VSCode, Eclipse)
-- **Postman o Swagger UI** (para probar endpoints)
+**Asegúrate de tener instalado** (del Capítulo 1):
+- ✅ Java 21 (OpenJDK recomendado)
+- ✅ Quarkus CLI
+- ✅ Git Bash (Windows) o Terminal (macOS)
+
+**Verificar:**
+```bash
+java -version
+quarkus --version
+```
+
+Si falta algo, revisa el Capítulo 1.
 
 ---
 
@@ -61,7 +68,6 @@ Map<String, Cuenta> (Datos en memoria)
 
 ### **PASO 1: Crear proyecto Quarkus**
 
-**macOS/Linux/Git Bash:**
 ```bash
 quarkus create app pe.banco:cuentas-service \
   --java=21 \
@@ -69,48 +75,30 @@ quarkus create app pe.banco:cuentas-service \
   --no-code
 
 cd cuentas-service
-```
 
-**Windows (PowerShell/CMD):**
-```cmd
-quarkus create app pe.banco:cuentas-service --java=21 --extension=rest-jackson,smallrye-openapi --no-code
-
-cd cuentas-service
+# Dar permisos al Maven Wrapper (primera vez)
+chmod +x mvnw
 ```
 
 **Alternativa con Maven:**
 ```bash
-mvn io.quarkus.platform:quarkus-maven-plugin:3.28.3:create \
+mvn io.quarkus.platform:quarkus-maven-plugin:3.15.1:create \
   -DprojectGroupId=pe.banco \
   -DprojectArtifactId=cuentas-service \
   -Dextensions=rest-jackson,smallrye-openapi
 
 cd cuentas-service
+chmod +x mvnw
 ```
 
 ---
 
 ### **PASO 2: Crear estructura de packages**
 
-**macOS/Linux:**
 ```bash
 mkdir -p src/main/java/pe/banco/cuentas/model
 mkdir -p src/main/java/pe/banco/cuentas/service
 mkdir -p src/main/java/pe/banco/cuentas/resource
-```
-
-**Windows (PowerShell):**
-```powershell
-New-Item -Path "src\main\java\pe\banco\cuentas\model" -ItemType Directory -Force
-New-Item -Path "src\main\java\pe\banco\cuentas\service" -ItemType Directory -Force
-New-Item -Path "src\main\java\pe\banco\cuentas\resource" -ItemType Directory -Force
-```
-
-**Windows (CMD):**
-```cmd
-mkdir src\main\java\pe\banco\cuentas\model
-mkdir src\main\java\pe\banco\cuentas\service
-mkdir src\main\java\pe\banco\cuentas\resource
 ```
 
 ---
@@ -316,14 +304,8 @@ public class CuentaResource {
 
 ### **PASO 6: Ejecutar el proyecto**
 
-**macOS/Linux/Git Bash:**
 ```bash
 ./mvnw quarkus:dev
-```
-
-**Windows:**
-```cmd
-mvnw.cmd quarkus:dev
 ```
 
 **Salida esperada:**
@@ -638,18 +620,18 @@ public List<Cuenta> listarTodas() {
 
 **Causa:** Otro proceso usa el puerto 8080
 
-**Solución 1 (macOS/Linux):**
+**Solución 1 - Liberar puerto (macOS/Linux/Git Bash):**
 ```bash
 lsof -ti:8080 | xargs kill -9
 ./mvnw quarkus:dev
 ```
 
-**Solución 2 (Windows PowerShell como admin):**
+**Solución 2 - Liberar puerto (Windows - PowerShell como admin - alternativa):**
 ```powershell
 Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess | Stop-Process
 ```
 
-**Solución 3 (Cambiar puerto):**
+**Solución 3 - Cambiar puerto:**
 
 En `application.properties`:
 ```properties

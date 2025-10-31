@@ -1,0 +1,43 @@
+####
+# Dockerfile para Quarkus Native mode (GraalVM)
+# Demuestra: Compilación nativa (Capítulo 9)
+####
+
+## Stage 1: Build con GraalVM
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+
+USER root
+
+WORKDIR /app
+
+# Copiar archivos del proyecto
+COPY --chown=quarkus:quarkus pom.xml .
+COPY --chown=quarkus:quarkus src ./src
+
+USER quarkus
+
+# Compilar en modo nativo
+RUN ./mvnw clean package -Pnative -DskipTests
+
+## Stage 2: Runtime mínimo
+FROM quay.io/quarkus/quarkus-micro-image:2.0
+
+WORKDIR /work/
+
+# Copiar ejecutable nativo
+COPY --from=build /app/target/*-runner /work/application
+
+# Crear directorio para claves
+RUN mkdir -p /keys && chown 1001:1001 /keys
+
+# Permisos de ejecución
+RUN chmod 775 /work/application
+
+# Exponer puerto
+EXPOSE 8081
+
+# Usuario no-root
+USER 1001
+
+# Comando de inicio
+CMD ["./application", "-Dquarkus.http.host=0.0.0.0"]

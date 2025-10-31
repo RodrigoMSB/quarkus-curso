@@ -137,9 +137,18 @@ quarkus.http.port=8080
 # ===================================
 # Datasource PostgreSQL
 quarkus.datasource.db-kind=postgresql
+
+# IMPORTANTE: Ajusta según tu instalación
+# macOS: generalmente tu usuario del sistema (sin password)
+#        ejemplo: quarkus.datasource.username=tuusuario
+# Windows/Linux: generalmente 'postgres' con password 'postgres'
 quarkus.datasource.username=postgres
 quarkus.datasource.password=postgres
-quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/prestamos_db
+
+# Base de datos: usa 'postgres' (default) o crea 'prestamos_db'
+# Si usas 'postgres': jdbc:postgresql://localhost:5432/postgres
+# Si creas BD específica: jdbc:postgresql://localhost:5432/prestamos_db
+quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/postgres
 
 # Hibernate ORM
 quarkus.hibernate-orm.database.generation=update
@@ -158,6 +167,7 @@ quarkus.log.category."pe.banco.prestamos".level=DEBUG
 - `update` → Mantiene datos entre reinicios (vs `drop-and-create`)
 - `log.sql=true` → Muestra queries SQL en consola
 - Asegúrate que PostgreSQL esté corriendo en `localhost:5432`
+- **Ajusta usuario/password según tu instalación de PostgreSQL**
 
 ---
 
@@ -515,6 +525,7 @@ import pe.banco.prestamos.model.Prestamo;
 import pe.banco.prestamos.repository.ClienteRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -621,13 +632,13 @@ public class PrestamoResource {
     private BigDecimal calcularMontoCuota(BigDecimal monto, BigDecimal tasaInteres, 
                                           Integer plazoMeses) {
         BigDecimal tasaMensual = tasaInteres.divide(
-            BigDecimal.valueOf(100 * 12), 6, BigDecimal.ROUND_HALF_UP);
+            BigDecimal.valueOf(100 * 12), 6, RoundingMode.HALF_UP);
         
         BigDecimal factor = BigDecimal.ONE.add(
             tasaMensual.multiply(BigDecimal.valueOf(plazoMeses)));
         
         return monto.multiply(factor).divide(
-            BigDecimal.valueOf(plazoMeses), 2, BigDecimal.ROUND_HALF_UP);
+            BigDecimal.valueOf(plazoMeses), 2, RoundingMode.HALF_UP);
     }
     
     public static class PrestamoRequest {
@@ -1186,6 +1197,26 @@ quarkus.h2.console.enabled=true
 
 ---
 
+## 🧪 Testing Automatizado
+
+El proyecto incluye un script de pruebas completo que valida todos los endpoints:
+
+```bash
+chmod +x test-prestamos-completo.sh
+./test-prestamos-completo.sh
+```
+
+**Cobertura de tests:**
+- ✅ 16 tests automatizados
+- ✅ 3 módulos: Clientes, Préstamos, Pagos
+- ✅ Validaciones de duplicados (DNI, email)
+- ✅ Captura automática de IDs
+- ✅ Archivo de resultados con timestamp
+
+Ver detalles completos en [README-TESTING.md](README-TESTING.md)
+
+---
+
 ## 📚 Recursos Adicionales
 
 ### Documentación
@@ -1258,7 +1289,3 @@ public class ClienteRepository implements PanacheRepository<Cliente> {
 - ❌ Datos volátiles → ✅ Persistencia permanente
 - ❌ Sin relaciones → ✅ Foreign keys y joins
 - ❌ Queries manuales → ✅ JPA/HQL automático
-
----
-
-**🎉

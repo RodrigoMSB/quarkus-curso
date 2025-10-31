@@ -3,6 +3,7 @@ package pe.banco.productos.resource;
 import io.quarkus.hibernate.reactive.panache.Panache;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -167,11 +168,28 @@ public class ProductoReactivoResource {
      *   <li><strong>Location:</strong> /api/v1/productos/reactivo/{id} (URL del recurso creado)</li>
      * </ul>
      * 
-     * @param request DTO con los datos del producto a crear
+     * @param request DTO con los datos del producto a crear (validado automáticamente)
      * @return {@link Uni} que emite un {@link Response} con status 201 y el producto creado
      */
     @POST
-    public Uni<Response> crear(ProductoRequest request) {
+    public Uni<Response> crear(@Valid ProductoRequest request) {
+        // Validación programática explícita para asegurar que se ejecuta
+        if (request.precio != null && request.precio <= 0) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\": \"El precio debe ser mayor a 0\"}")
+                    .build()
+            );
+        }
+        
+        if (request.stock != null && request.stock < 0) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\": \"El stock no puede ser negativo\"}")
+                    .build()
+            );
+        }
+        
         Producto producto = new Producto(
                 request.nombre,
                 request.descripcion,
@@ -217,12 +235,29 @@ public class ProductoReactivoResource {
      * Para actualizaciones parciales (PATCH), implementar endpoint separado.</p>
      * 
      * @param id Identificador único del producto a actualizar
-     * @param request DTO con los nuevos datos del producto
+     * @param request DTO con los nuevos datos del producto (validado automáticamente)
      * @return {@link Uni} que emite un {@link Response} con status 200 (OK) o 404 (NOT FOUND)
      */
     @PUT
     @Path("/{id}")
-    public Uni<Response> actualizar(@PathParam("id") Long id, ProductoRequest request) {
+    public Uni<Response> actualizar(@PathParam("id") Long id, @Valid ProductoRequest request) {
+        // Validación programática explícita
+        if (request.precio != null && request.precio <= 0) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\": \"El precio debe ser mayor a 0\"}")
+                    .build()
+            );
+        }
+        
+        if (request.stock != null && request.stock < 0) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\": \"El stock no puede ser negativo\"}")
+                    .build()
+            );
+        }
+        
         return Panache.withTransaction(() ->
                 repository.findById(id)
                         .onItem().ifNotNull().transformToUni(producto -> {

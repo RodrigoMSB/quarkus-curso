@@ -6,106 +6,18 @@ Proyecto Quarkus que implementa Contract-First con OpenAPI para validar números
 
 ## 📋 Prerequisitos
 
-### Software necesario:
+**Asegúrate de tener instalado** (del Capítulo 1):
+- ✅ Java 17 o superior (recomendado Java 21 LTS)
+- ✅ Quarkus CLI
+- ✅ Git Bash (Windows) o Terminal (macOS)
 
-- **Java 17 o superior** (recomendado Java 21 LTS)
-- **Maven 3.9+** (o usar Maven Wrapper incluido)
-- **Quarkus CLI** (opcional pero recomendado)
-- **IDE** (VS Code, IntelliJ IDEA, Eclipse)
-
----
-
-## 🛠️ Instalación del Entorno
-
-### 🍎 macOS
-
-**Opción 1: Con Homebrew (Recomendado)**
-
+**Verificar:**
 ```bash
-# Instalar Homebrew si no lo tienes
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Instalar Java 21
-brew install openjdk@21
-
-# Configurar Java
-echo 'export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-
-# Instalar Quarkus CLI
-brew install quarkusio/tap/quarkus
-
-# Verificar instalación
 java -version
 quarkus --version
 ```
 
-**Opción 2: Con SDKMAN**
-
-```bash
-# Instalar SDKMAN
-curl -s "https://get.sdkman.io" | bash
-source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-# Instalar Java 21
-sdk install java 21-tem
-sdk use java 21-tem
-
-# Instalar Quarkus CLI
-sdk install quarkus
-
-# Verificar
-java -version
-quarkus --version
-```
-
----
-
-### 🪟 Windows
-
-**Opción 1: Con Chocolatey (Recomendado)**
-
-```powershell
-# 1. Instalar Chocolatey (PowerShell como Administrador)
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-
-# 2. Instalar Java 21
-choco install openjdk21 -y
-
-# 3. Instalar Quarkus CLI
-choco install quarkus -y
-
-# 4. Reiniciar PowerShell y verificar
-java -version
-quarkus --version
-```
-
-**Opción 2: Con Scoop**
-
-```powershell
-# Instalar Scoop
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-irm get.scoop.sh | iex
-
-# Agregar bucket de Java
-scoop bucket add java
-
-# Instalar herramientas
-scoop install openjdk21
-scoop install maven
-scoop install quarkus-cli
-
-# Verificar
-java -version
-quarkus --version
-```
-
-**Opción 3: Instalación Manual**
-
-1. Descargar Java 21 desde [Adoptium](https://adoptium.net/)
-2. Instalar siguiendo el wizard
-3. Configurar `JAVA_HOME` y agregar al `PATH`
-4. Descargar Quarkus CLI desde [GitHub Releases](https://github.com/quarkusio/quarkus/releases)
+Si falta algo, revisa el Capítulo 1.
 
 ---
 
@@ -113,43 +25,33 @@ quarkus --version
 
 ### **PASO 1: Crear proyecto Quarkus**
 
-**macOS/Linux/Git Bash:**
 ```bash
 quarkus create app pe.banco:validador-banco \
   --extension=rest-jackson,smallrye-openapi
 
 cd validador-banco
+
+# Dar permisos al Maven Wrapper (primera vez)
+chmod +x mvnw
 ```
 
-**Windows (CMD/PowerShell):**
-```cmd
-quarkus create app pe.banco:validador-banco --extension=rest-jackson,smallrye-openapi
-
-cd validador-banco
-```
-
-**Alternativa con Maven (todas las plataformas):**
+**Alternativa con Maven:**
 ```bash
-mvn io.quarkus.platform:quarkus-maven-plugin:3.28.3:create \
+mvn io.quarkus.platform:quarkus-maven-plugin:3.15.1:create \
   -DprojectGroupId=pe.banco \
   -DprojectArtifactId=validador-banco \
   -Dextensions=rest-jackson,smallrye-openapi
   
 cd validador-banco
+chmod +x mvnw
 ```
 
 ---
 
 ### **PASO 2: Agregar extensiones necesarias**
 
-**macOS/Linux/Git Bash:**
 ```bash
 ./mvnw quarkus:add-extension -Dextensions="quarkus-openapi-generator,rest-client-jackson"
-```
-
-**Windows:**
-```cmd
-mvnw.cmd quarkus:add-extension -Dextensions="quarkus-openapi-generator,rest-client-jackson"
 ```
 
 ---
@@ -159,11 +61,6 @@ mvnw.cmd quarkus:add-extension -Dextensions="quarkus-openapi-generator,rest-clie
 **Crear directorio:**
 ```bash
 mkdir -p src/main/openapi
-```
-
-**Windows (CMD):**
-```cmd
-mkdir src\main\openapi
 ```
 
 **Crear archivo:** `src/main/openapi/openapi.yaml`
@@ -224,14 +121,8 @@ quarkus.openapi-generator.codegen.spec.openapi_yaml.base-package=pe.banco
 
 ### **PASO 5: Generar código desde el contrato**
 
-**macOS/Linux/Git Bash:**
 ```bash
 ./mvnw clean compile
-```
-
-**Windows:**
-```cmd
-mvnw.cmd clean compile
 ```
 
 Esto generará automáticamente:
@@ -281,14 +172,8 @@ public class ValidadorResource implements DefaultApi {
 
 ### **PASO 7: Ejecutar en Dev Mode**
 
-**macOS/Linux/Git Bash:**
 ```bash
 ./mvnw quarkus:dev
-```
-
-**Windows:**
-```cmd
-mvnw.cmd quarkus:dev
 ```
 
 **Salida esperada:**
@@ -324,7 +209,7 @@ http://localhost:8080/validar/1234567890
 }
 ```
 
-### **Opción 2: curl (macOS/Linux/Git Bash)**
+### **Opción 2: curl (macOS y Git Bash)**
 
 ```bash
 # Cuenta válida
@@ -334,13 +219,7 @@ curl http://localhost:8080/validar/1234567890
 curl http://localhost:8080/validar/123
 ```
 
-### **Opción 3: PowerShell (Windows)**
-
-```powershell
-Invoke-WebRequest -Uri http://localhost:8080/validar/1234567890 | Select-Object -Expand Content
-```
-
-### **Opción 4: Swagger UI**
+### **Opción 3: Swagger UI**
 
 ```
 http://localhost:8080/q/swagger-ui
@@ -377,8 +256,8 @@ response.setMensaje(esValido
 
 ```
 validador-banco/
-├── mvnw                              # Maven Wrapper (macOS/Linux)
-├── mvnw.cmd                          # Maven Wrapper (Windows)
+├── mvnw                              # Maven Wrapper (macOS/Linux/Git Bash)
+├── mvnw.cmd                          # Maven Wrapper (Windows CMD - no usar)
 ├── pom.xml                           # Configuración Maven
 ├── .gitignore                        # Exclusiones Git
 ├── .dockerignore                     # Exclusiones Docker
@@ -436,7 +315,7 @@ validador-banco/
 
 ## 🚨 Solución de Problemas
 
-### ❌ Error: "Permission denied: ./mvnw" (macOS/Linux)
+### ❌ Error: "Permission denied: ./mvnw"
 
 ```bash
 chmod +x mvnw
@@ -452,14 +331,9 @@ En `application.properties`:
 quarkus.http.port=8081
 ```
 
-**Opción 2 - Liberar puerto (macOS/Linux):**
+**Opción 2 - Liberar puerto (macOS/Linux/Git Bash):**
 ```bash
 lsof -ti:8080 | xargs kill -9
-```
-
-**Opción 2 - Liberar puerto (Windows PowerShell como admin):**
-```powershell
-Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess | Stop-Process
 ```
 
 ### ❌ Error: "package pe.banco.api does not exist"
@@ -468,11 +342,7 @@ Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess | Stop-Proc
 
 **Solución:**
 ```bash
-# macOS/Linux
 ./mvnw clean compile
-
-# Windows
-mvnw.cmd clean compile
 ```
 
 ### ❌ VSCode no reconoce el package
@@ -502,17 +372,10 @@ mvnw.cmd clean compile
 ### **Desarrollo**
 
 ```bash
-# macOS/Linux
 ./mvnw quarkus:dev          # Modo desarrollo
 ./mvnw clean compile        # Compilar
 ./mvnw test                 # Ejecutar tests
 ./mvnw package              # Empaquetar JAR
-
-# Windows
-mvnw.cmd quarkus:dev
-mvnw.cmd clean compile
-mvnw.cmd test
-mvnw.cmd package
 ```
 
 ### **En Dev Mode**

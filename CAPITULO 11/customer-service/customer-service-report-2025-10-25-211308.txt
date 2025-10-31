@@ -1,0 +1,54 @@
+================================================================================
+REPORTE DE PRUEBAS FUNCIONALES
+Customer Service - Gestión de Clientes Empresariales
+================================================================================
+
+Fecha de ejecución: 2025-10-25 21:13:08
+Servicio bajo prueba: http://localhost:8081
+
+Generado por: test-customer-service.sh
+Sistema operativo: Darwin
+
+Este reporte contiene los resultados de las pruebas funcionales del
+Customer Service, incluyendo:
+  - Health checks y endpoints base
+  - CRUD de clientes con validaciones
+  - Redis Cache (latencias y mejora de rendimiento)
+  - Búsquedas por RUC e industria
+  - Validación de datos (Bean Validation)
+  - OpenAPI y métricas
+
+Tecnologías probadas:
+  ✓ Panache Active Record (Hibernate ORM)
+  ✓ Google Tink (cifrado de RUC)
+  ✓ Redis Cache (rendimiento)
+  ✓ Bean Validation (validaciones)
+  ✓ Fault Tolerance (Circuit Breaker, Retry)
+
+================================================================================
+
+
+============================================================================
+🚀 PRUEBAS FUNCIONALES - CUSTOMER SERVICE
+============================================================================
+
+
+PRUEBAS INCLUIDAS:
+   1. Health Checks y conectividad
+   2. Listar clientes activos (datos pre-cargados)
+   3. Crear nuevo cliente con validaciones
+   4. Obtener cliente por ID
+   5. Redis Cache - Medición de rendimiento
+      - Cache MISS (primera consulta desde PostgreSQL)
+      - Cache HIT (consultas subsecuentes desde Redis)
+      - Comparación de latencias
+   6. Actualizar cliente existente
+   7. Buscar por RUC (campo cifrado)
+   8. Buscar por industria
+   9. Validaciones (Bean Validation)
+  10. OpenAPI y métricas
+
+ℹ Verificando conectividad con http://localhost:8081...
+✗ ERROR: Customer Service NO está respondiendo en http://localhost:8081
+✗ Asegúrate de que el servicio esté levantado: mvn quarkus:dev
+ERROR: Servicio no disponible en http://localhost:8081

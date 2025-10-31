@@ -67,25 +67,19 @@ quarkus --version
 **Opción 1: Chocolatey (Recomendado)**
 
 ```powershell
-# PowerShell como Administrador
+# PowerShell como Administrador (solo para instalar)
 choco install quarkus
 ```
 
-**Opción 2: Scoop**
-
-```powershell
-scoop install quarkus-cli
-```
-
-**Opción 3: Descarga Manual**
+**Opción 2: Descarga Manual**
 
 1. Ir a [Quarkus Releases](https://github.com/quarkusio/quarkus/releases)
 2. Descargar el CLI para Windows
 3. Agregar al PATH
 
-**Verificar instalación:**
+**Verificar instalación (en Git Bash):**
 
-```cmd
+```bash
 quarkus --version
 ```
 

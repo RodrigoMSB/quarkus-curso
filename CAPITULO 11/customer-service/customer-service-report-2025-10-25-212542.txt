@@ -1,0 +1,548 @@
+================================================================================
+REPORTE DE PRUEBAS FUNCIONALES
+Customer Service - Gestión de Clientes Empresariales
+================================================================================
+
+Fecha de ejecución: 2025-10-25 21:25:42
+Servicio bajo prueba: http://localhost:8081
+
+Generado por: test-customer-service.sh
+Sistema operativo: Darwin
+
+Este reporte contiene los resultados de las pruebas funcionales del
+Customer Service, incluyendo:
+  - Health checks y endpoints base
+  - CRUD de clientes con validaciones
+  - Redis Cache (latencias y mejora de rendimiento)
+  - Búsquedas por RUC e industria
+  - Validación de datos (Bean Validation)
+  - OpenAPI y métricas
+
+Tecnologías probadas:
+  ✓ Panache Active Record (Hibernate ORM)
+  ✓ Google Tink (cifrado de RUC)
+  ✓ Redis Cache (rendimiento)
+  ✓ Bean Validation (validaciones)
+  ✓ Fault Tolerance (Circuit Breaker, Retry)
+
+================================================================================
+
+
+============================================================================
+🚀 PRUEBAS FUNCIONALES - CUSTOMER SERVICE
+============================================================================
+
+
+PRUEBAS INCLUIDAS:
+   1. Health Checks y conectividad
+   2. Listar clientes activos (datos pre-cargados)
+   3. Crear nuevo cliente con validaciones
+   4. Obtener cliente por ID
+   5. Redis Cache - Medición de rendimiento
+      - Cache MISS (primera consulta desde PostgreSQL)
+      - Cache HIT (consultas subsecuentes desde Redis)
+      - Comparación de latencias
+   6. Actualizar cliente existente
+   7. Buscar por RUC (campo cifrado)
+   8. Buscar por industria
+   9. Validaciones (Bean Validation)
+  10. OpenAPI y métricas
+
+ℹ Verificando conectividad con http://localhost:8081...
+✓ Servicio disponible y respondiendo
+Servicio verificado: OK
+ℹ Obteniendo JWT token de Keycloak...
+✓ JWT token obtenido exitosamente
+ℹ Token válido por 5 minutos (300 segundos)
+JWT Token: Obtenido correctamente
+Token length: 1499 caracteres
+
+============================================================================
+🔥 PRUEBA 1: HEALTH CHECKS Y CONECTIVIDAD
+============================================================================
+
+
+>>> 1.1 - Health Check básico
+
+ℹ Verificando que el servicio esté operativo...
+Response: Customer Service is UP
+HTTP Code: 200
+✓ Servicio operativo: Customer Service is UP
+✓ TEST #1: Health check básico
+
+>>> 1.2 - Health Check detallado (Quarkus)
+
+ℹ Verificando health checks de Quarkus...
+
+Health Check completo:
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "Database connections health check",
+      "status": "UP",
+      "data": {
+        "<default>": "UP"
+      }
+    },
+    {
+      "name": "Redis connection health check",
+      "status": "UP",
+      "data": {
+        "default": "PONG"
+      }
+    }
+  ]
+}
+✓ TEST #2: Health check Quarkus
+
+
+
+============================================================================
+👤 PRUEBA 2: LISTAR CLIENTES ACTIVOS
+============================================================================
+
+
+>>> 2.1 - Obtener todos los clientes activos
+
+ℹ Consultando clientes pre-cargados en la base de datos...
+
+Clientes activos:
+[
+  {
+    "id": 1,
+    "rucMasked": "XXXXXXXXX89",
+    "legalName": "Tech Innovations S.A.C.",
+    "tradeName": "TechInnov",
+    "industry": "TECHNOLOGY",
+    "foundedDate": "2010-03-15",
+    "annualRevenue": 15000000.00,
+    "contactEmail": "contacto@techinno.pe",
+    "contactPhone": "+51987654321",
+    "address": "Av. Innovación 123",
+    "city": "Lima",
+    "status": "ACTIVE",
+    "creditScore": 850,
+    "riskCategory": "AAA",
+    "sunatValidated": true,
+    "createdAt": "2025-10-25T21:19:31.48829",
+    "updatedAt": "2025-10-25T21:19:31.48829",
+    "createdBy": "system",
+    "isHighRisk": false,
+    "isPremium": true
+  },
+  {
+    "id": 2,
+    "rucMasked": "XXXXXXXXX21",
+    "legalName": "Comercial del Sur S.A.",
+    "tradeName": "ComSur",
+    "industry": "RETAIL",
+    "foundedDate": "2015-07-20",
+ℹ Total de clientes activos: 5
+Total: 5 clientes
+✓ Datos pre-cargados disponibles
+✓ TEST #3: Listar clientes activos
+
+
+
+============================================================================
+🔐 PRUEBA 3: CREAR NUEVO CLIENTE
+============================================================================
+
+
+>>> 3.1 - Crear cliente con todos los campos válidos
+
+ℹ Enviando solicitud para crear cliente...
+ℹ RUC será cifrado con Google Tink antes de almacenar
+Request:
+{
+  "ruc": "20456789012",
+  "legalName": "Tech Innovations Peru S.A.C.",
+  "tradeName": "TechPeru",
+  "industry": "TECHNOLOGY",
+  "foundedDate": "2020-01-15",
+  "annualRevenue": 5000000.00,
+  "contactEmail": "contacto@techperu.pe",
+  "contactPhone": "+51987654999",
+  "address": "Av. Tecnología 500",
+  "city": "Lima"
+}
+
+Response:
+500
+
+500 - Internal Server Error
+------------------------
+
+Details:
+	Error id 1563e532-c76a-4c64-9a95-83338a238536-1, java.lang.IllegalArgumentException: Ya existe un cliente con RUC: 20456789012
+Decorate (Source code):
+	Exception in CustomerService.java:60
+	   58          Customer existing = Customer.findByRuc(encryptedRuc);
+	   59          if (existing != null) {
+	-> 60              throw new IllegalArgumentException("Ya existe un cliente con RUC: " + request.getRuc());
+	   61          }
+	   62  
+Stack:
+	java.lang.IllegalArgumentException: Ya existe un cliente con RUC: 20456789012
+	at pe.banco.customer.service.CustomerService.createCustomer(CustomerService.java:60)
+	at pe.banco.customer.service.CustomerService_Subclass.createCustomer$$superforward(Unknown Source)
+	at pe.banco.customer.service.CustomerService_Subclass$$function$$2.apply(Unknown Source)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:73)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:62)
+	at io.quarkus.narayana.jta.runtime.interceptor.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:136)
+	at io.quarkus.narayana.jta.runtime.interceptor.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:107)
+	at io.quarkus.narayana.jta.runtime.interceptor.TransactionalInterceptorRequired.doIntercept(TransactionalInterceptorRequired.java:38)
+	at io.quarkus.narayana.jta.runtime.interceptor.TransactionalInterceptorBase.intercept(TransactionalInterceptorBase.java:61)
+	at io.quarkus.narayana.jta.runtime.interceptor.TransactionalInterceptorRequired.intercept(TransactionalInterceptorRequired.java:32)
+	at io.quarkus.narayana.jta.runtime.interceptor.TransactionalInterceptorRequired_Bean.intercept(Unknown Source)
+	at io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:42)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:30)
+	at io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:27)
+	at pe.banco.customer.service.CustomerService_Subclass.createCustomer(Unknown Source)
+	at pe.banco.customer.service.CustomerService_ClientProxy.createCustomer(Unknown Source)
+	at pe.banco.customer.resource.CustomerResource.createCustomer(CustomerResource.java:69)
+	at pe.banco.customer.resource.CustomerResource_Subclass.createCustomer$$superforward(Unknown Source)
+	at pe.banco.customer.resource.CustomerResource_Subclass$$function$$1.apply(Unknown Source)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:73)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext$NextAroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:97)
+	at io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:71)
+	at io.quarkus.hibernate.validator.runtime.jaxrs.ResteasyReactiveEndPointValidationInterceptor.validateMethodInvocation(ResteasyReactiveEndPointValidationInterceptor.java:21)
+	at io.quarkus.hibernate.validator.runtime.jaxrs.ResteasyReactiveEndPointValidationInterceptor_Bean.intercept(Unknown Source)
+	at io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:42)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:70)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext$NextAroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:97)
+	at io.quarkus.security.runtime.interceptor.SecurityHandler.handle(SecurityHandler.java:27)
+	at io.quarkus.security.runtime.interceptor.RolesAllowedInterceptor.intercept(RolesAllowedInterceptor.java:29)
+	at io.quarkus.security.runtime.interceptor.RolesAllowedInterceptor_Bean.intercept(Unknown Source)
+	at io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:42)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:70)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:62)
+	at io.quarkus.resteasy.reactive.server.runtime.StandardSecurityCheckInterceptor.intercept(StandardSecurityCheckInterceptor.java:44)
+	at io.quarkus.resteasy.reactive.server.runtime.StandardSecurityCheckInterceptor_RolesAllowedInterceptor_Bean.intercept(Unknown Source)
+	at io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:42)
+	at io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:30)
+	at io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:27)
+	at pe.banco.customer.resource.CustomerResource_Subclass.createCustomer(Unknown Source)
+	at pe.banco.customer.resource.CustomerResource$quarkusrestinvoker$createCustomer_bc6abdb381288e3dfa738d4c9ba128a8359d839d.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:141)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:147)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$14.runWith(VertxCoreRecorder.java:635)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.doRunWith(EnhancedQueueExecutor.java:2516)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2495)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1521)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:11)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:11)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+✗ No se pudo obtener ID del cliente
+✗ TEST #4: Crear cliente nuevo (esperado: 201, obtenido: 500)
+
+
+
+============================================================================
+🔍 PRUEBA 4: OBTENER CLIENTE POR ID
+============================================================================
+
+⚠ Saltando prueba - no se pudo crear cliente en paso anterior
+ℹ Usando cliente ID: 1 (pre-cargado)
+
+============================================================================
+⚡ PRUEBA 5: REDIS CACHE - RENDIMIENTO
+============================================================================
+
+
+>>> 5.1 - Primera consulta (Cache MISS)
+
+ℹ Consultando cliente 1 por primera vez...
+ℹ Esta consulta irá a PostgreSQL (más lenta)...
+✓ Latencia primera consulta: 69ms
+Latencia: 69ms (Cache MISS - desde PostgreSQL)
+✓ TEST #5: Primera consulta (Cache MISS)
+
+>>> 5.2 - Verificar Redis (si docker disponible)
+
+ℹ Verificando Redis con docker exec...
+ℹ Clave no verificable directamente (puede estar cifrada o con prefix)
+Redis Cache: Clave no verificable con docker exec
+
+>>> 5.3 - Segunda consulta (Cache HIT esperado)
+
+ℹ Consultando cliente 1 nuevamente...
+ℹ Esta consulta debería venir desde Redis (más rápida)...
+✓ Latencia segunda consulta: 60ms
+Latencia: 60ms (Cache HIT - desde Redis)
+✓ ✨ ¡Cache funcionando! Mejora de rendimiento: 14%
+✓ La segunda consulta fue 14% más rápida
+Mejora de rendimiento: 14%
+Comparación: 69ms (BD) → 60ms (Cache)
+✓ TEST #6: Segunda consulta (Cache HIT)
+
+>>> 5.4 - Tercera consulta (validar cache persistente)
+
+ℹ Consultando una vez más para confirmar cache...
+ℹ Latencia tercera consulta: 64ms
+Latencia tercera consulta: 64ms
+ℹ 
+ℹ 📊 Comparación de las 3 consultas:
+ℹ   1ª consulta (Cache MISS):        69ms  ← Desde PostgreSQL
+ℹ   2ª consulta (Cache HIT):         60ms  ← Desde Redis
+ℹ   3ª consulta (Cache persistente): 64ms  ← Desde Redis
+
+RESUMEN CACHE:
+  1ª: 69ms (MISS - PostgreSQL)
+  2ª: 60ms (HIT - Redis)
+  3ª: 64ms (HIT - Redis)
+✓ 
+✓ ✅ CACHE CONFIRMADO: Promedio 62ms vs 69ms inicial
+✓    Mejora total: 11%
+
+CONCLUSIÓN CACHE: Funcionando correctamente (11% mejora)
+✓ TEST #7: Tercera consulta (Cache persistente)
+
+
+
+============================================================================
+👤 PRUEBA 6: ACTUALIZAR CLIENTE
+============================================================================
+
+
+>>> 6.1 - Actualizar datos del cliente 1
+
+ℹ Actualizando cliente...
+ℹ Cambios: tradeName, annualRevenue, contactEmail, contactPhone, address
+Request:
+{
+      "ruc": "20456789012",
+      "legalName": "Tech Innovations Peru S.A.C.",
+      "tradeName": "TechPeru Pro",
+      "industry": "TECHNOLOGY",
+      "foundedDate": "2020-01-15",
+      "annualRevenue": 7500000.00,
+      "contactEmail": "nuevo@techperu.pe",
+      "contactPhone": "+51987654888",
+      "address": "Av. Tecnología 600",
+      "city": "Lima"
+    }
+
+Response:
+{
+  "id": 1,
+  "rucMasked": "XXXXXXXXX89",
+  "legalName": "Tech Innovations Peru S.A.C.",
+  "tradeName": "TechPeru Pro",
+  "industry": "TECHNOLOGY",
+  "foundedDate": "2020-01-15",
+  "annualRevenue": 7500000.00,
+  "contactEmail": "nuevo@techperu.pe",
+  "contactPhone": "+51987654888",
+  "address": "Av. Tecnología 600",
+  "city": "Lima",
+  "status": "ACTIVE",
+  "creditScore": 850,
+  "riskCategory": "AAA",
+  "sunatValidated": true,
+  "createdAt": "2025-10-25T21:19:31.48829",
+  "updatedAt": "2025-10-25T21:19:31.48829",
+  "createdBy": "system",
+  "isHighRisk": false,
+  "isPremium": true
+}
+✓ Cliente actualizado correctamente
+ℹ ✓ Cache invalidado automáticamente (@CacheInvalidate)
+✓ TEST #8: Actualizar cliente
+
+============================================================================
+🔍 PRUEBA 7: BUSCAR CLIENTE POR RUC
+============================================================================
+
+
+>>> 7.1 - Buscar por RUC (campo cifrado)
+
+ℹ Buscando cliente con RUC: 20456789012
+ℹ El servicio cifrará el RUC antes de buscar en BD...
+
+Cliente encontrado:
+{
+  "id": 6,
+  "rucMasked": "XXXXXXXXX12",
+  "legalName": "Tech Innovations Peru S.A.C.",
+  "tradeName": "TechPeru Pro",
+  "industry": "TECHNOLOGY",
+  "foundedDate": "2020-01-15",
+  "annualRevenue": 7500000.00,
+  "contactEmail": "nuevo@techperu.pe",
+  "contactPhone": "+51987654888",
+  "address": "Av. Tecnología 600",
+  "city": "Lima",
+  "status": "ACTIVE",
+  "creditScore": null,
+  "riskCategory": null,
+  "sunatValidated": false,
+  "createdAt": "2025-10-25T21:21:52.956127",
+  "updatedAt": "2025-10-25T21:21:53.608441",
+  "createdBy": "admin-user",
+  "isHighRisk": false,
+✓ Cliente encontrado por RUC
+ℹ RUC enmascarado en respuesta: XXXXXXXXX12
+✓ TEST #9: Buscar cliente por RUC
+
+
+
+============================================================================
+🔍 PRUEBA 8: BUSCAR POR INDUSTRIA
+============================================================================
+
+
+>>> 8.1 - Listar clientes de industria TECHNOLOGY
+
+ℹ Filtrando clientes por sector industrial...
+
+Clientes TECHNOLOGY:
+[
+  {
+    "id": 6,
+    "rucMasked": "XXXXXXXXX12",
+    "legalName": "Tech Innovations Peru S.A.C.",
+    "tradeName": "TechPeru Pro",
+    "industry": "TECHNOLOGY",
+    "foundedDate": "2020-01-15",
+    "annualRevenue": 7500000.00,
+    "contactEmail": "nuevo@techperu.pe",
+    "contactPhone": "+51987654888",
+    "address": "Av. Tecnología 600",
+    "city": "Lima",
+    "status": "ACTIVE",
+    "creditScore": null,
+    "riskCategory": null,
+    "sunatValidated": false,
+    "createdAt": "2025-10-25T21:21:52.956127",
+    "updatedAt": "2025-10-25T21:21:53.608441",
+    "createdBy": "admin-user",
+    "isHighRisk": false,
+    "isPremium": false
+  },
+  {
+    "id": 1,
+    "rucMasked": "XXXXXXXXX89",
+    "legalName": "Tech Innovations Peru S.A.C.",
+    "tradeName": "TechPeru Pro",
+    "industry": "TECHNOLOGY",
+    "foundedDate": "2020-01-15",
+ℹ Total clientes en TECHNOLOGY: 2
+Total: 2 clientes
+✓ TEST #10: Listar por industria
+
+
+
+============================================================================
+❌ PRUEBA 9: VALIDACIONES - BEAN VALIDATION
+============================================================================
+
+
+>>> 9.1 - RUC inválido (formato incorrecto)
+
+ℹ Intentando crear cliente con RUC de solo 3 dígitos...
+
+Response (error esperado):
+{"title":"Constraint Violation","status":400,"violations":[{"field":"createCustomer.request.ruc","message":"El RUC debe tener exactamente 11 dígitos"}]}
+✓ Validación funcionó correctamente (400 Bad Request)
+ℹ El servicio rechazó RUC con formato incorrecto
+✓ TEST #11: Validar RUC formato incorrecto
+
+>>> 9.2 - Email inválido
+
+ℹ Intentando crear cliente con email sin formato correcto...
+
+Response (error esperado):
+{"title":"Constraint Violation","status":400,"violations":[{"field":"createCustomer.request.contactEmail","message":"El email no tiene formato válido"}]}
+✓ Validación de email funcionó correctamente
+✓ TEST #12: Validar email formato incorrecto
+
+
+
+============================================================================
+📊 PRUEBA 10: OPENAPI Y MÉTRICAS
+============================================================================
+
+
+>>> 10.1 - OpenAPI Specification
+
+ℹ Consultando especificación OpenAPI...
+
+OpenAPI (primeras líneas):
+---
+openapi: 3.0.3
+info:
+  title: Customer Service API
+  description: Gestión de clientes empresariales con cifrado y caché
+  version: 1.0.0
+tags:
+- name: Customers
+  description: Gestión de clientes empresariales
+paths:
+  /api/customers:
+    get:
+      tags:
+      - Customers
+      summary: Listar clientes activos
+✓ TEST #13: OpenAPI disponible
+
+>>> 10.2 - Métricas (Micrometer)
+
+ℹ Consultando métricas de la aplicación...
+
+Métricas (muestra):
+✗ TEST #14: Métricas disponibles (esperado: 200, obtenido: 404)
+ℹ 
+ℹ URLs útiles:
+ℹ   - Swagger UI: http://localhost:8081/q/swagger-ui
+ℹ   - Health:     http://localhost:8081/q/health
+ℹ   - Metrics:    http://localhost:8081/q/metrics
+
+URLs del servicio:
+  - Swagger UI: http://localhost:8081/q/swagger-ui
+  - Health:     http://localhost:8081/q/health
+  - Metrics:    http://localhost:8081/q/metrics
+
+============================================================================
+📊 RESUMEN DE PRUEBAS
+============================================================================
+
+
+╔════════════════════════════════════════════════════════════════╗
+║                    RESULTADOS FINALES                          ║
+╠════════════════════════════════════════════════════════════════╣
+║ Total de pruebas:    14                                        ║
+║ Pruebas exitosas:    12                                        ║
+║ Pruebas fallidas:    2                                         ║
+╚════════════════════════════════════════════════════════════════╝
+
+✗ Algunas pruebas fallaron. Revisa los logs arriba.
+
+CONCLUSIÓN: Sistema con fallas. Revisar pruebas fallidas.
+
+================================================================================
+FIN DEL REPORTE
+================================================================================
+
+Archivo generado: customer-service-report-2025-10-25-212542.txt
+Fecha: 2025-10-25 21:25:59
+
+Para más información, consulta:
+- README.md: Guía de usuario
+- TEORIA.md: Conceptos técnicos sobre Panache, Tink, Cache, etc.
+- instructor.md: Guía del profesor
+
+Capítulo 11: Customer Service con Quarkus
+Tecnologías implementadas:
+  - Panache Active Record (simplificación de JPA)
+  - Google Tink (cifrado de datos sensibles)
+  - Redis Cache (optimización de rendimiento)
+  - Fault Tolerance (Circuit Breaker, Retry, Timeout)
+  - Bean Validation (validaciones declarativas)
+  - RESTEasy Reactive (endpoints REST)
+
+================================================================================
+✓ Reporte guardado en: customer-service-report-2025-10-25-212542.txt

@@ -300,11 +300,6 @@ O **Cmd+F2** (macOS) / **Ctrl+F2** (Windows/Linux)
 ./mvnw quarkus:dev
 ```
 
-**Windows:**
-```cmd
-mvnw.cmd quarkus:dev
-```
-
 #### Ventajas Terminal vs Maven Panel
 
 | Característica | Maven Panel | Terminal |

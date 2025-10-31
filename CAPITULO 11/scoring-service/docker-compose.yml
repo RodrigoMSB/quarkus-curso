@@ -1,0 +1,112 @@
+version: '3.8'
+
+# ============================================================================
+# DOCKER COMPOSE - SCORING SERVICE
+# ============================================================================
+# Servicios requeridos:
+# - PostgreSQL: Base de datos para histórico de scores
+# - Redis: Cache para scores calculados
+# 
+# Uso:
+#   docker compose up -d
+#   docker compose down
+# ============================================================================
+
+services:
+  # --------------------------------------------------------------------------
+  # POSTGRESQL - Base de datos principal
+  # --------------------------------------------------------------------------
+  postgres-scoring:
+    image: postgres:16-alpine
+    container_name: creditcore-postgres-scoring
+    environment:
+      POSTGRES_DB: scoring_db
+      POSTGRES_USER: creditcore
+      POSTGRES_PASSWORD: creditcore123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-scoring-data:/var/lib/postgresql/data
+    networks:
+      - creditcore-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U creditcore -d scoring_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # REDIS - Cache de scores
+  # --------------------------------------------------------------------------
+  redis-scoring:
+    image: redis:7-alpine
+    container_name: creditcore-redis-scoring
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-scoring-data:/data
+    networks:
+      - creditcore-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+# ----------------------------------------------------------------------------
+# VOLÚMENES
+# ----------------------------------------------------------------------------
+volumes:
+  postgres-scoring-data:
+    driver: local
+  redis-scoring-data:
+    driver: local
+
+# ----------------------------------------------------------------------------
+# REDES
+# ----------------------------------------------------------------------------
+networks:
+  creditcore-network:
+    driver: bridge
+    name: creditcore-network
+
+# ============================================================================
+# NOTAS
+# ============================================================================
+# 
+# POSTGRESQL:
+# - Puerto: 5432
+# - Database: scoring_db
+# - Usuario: creditcore
+# - Password: creditcore123
+# 
+# REDIS:
+# - Puerto: 6379
+# - Sin password
+# - Persistencia: AOF (Append Only File)
+# 
+# COMANDOS ÚTILES:
+# 
+# Ver logs de PostgreSQL:
+#   docker compose logs -f postgres-scoring
+# 
+# Ver logs de Redis:
+#   docker compose logs -f redis-scoring
+# 
+# Conectar a PostgreSQL:
+#   docker exec -it creditcore-postgres-scoring psql -U creditcore -d scoring_db
+# 
+# Conectar a Redis:
+#   docker exec -it creditcore-redis-scoring redis-cli
+# 
+# Ver cache de scores:
+#   docker exec -it creditcore-redis-scoring redis-cli KEYS "*"
+# 
+# Limpiar cache:
+#   docker exec -it creditcore-redis-scoring redis-cli FLUSHALL
+# 
+# ============================================================================

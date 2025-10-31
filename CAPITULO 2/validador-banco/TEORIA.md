@@ -102,7 +102,8 @@ Todo se puede hacer con Maven, pero el CLI es más intuitivo y rápido.
 validador-banco/
 │
 ├── pom.xml                    # ⭐ Corazón del proyecto
-├── mvnw / mvnw.cmd           # Maven Wrapper
+├── mvnw                       # Maven Wrapper (macOS/Linux/Git Bash)
+├── mvnw.cmd                   # Maven Wrapper (Windows CMD - no usar)
 │
 ├── src/
 │   ├── main/
