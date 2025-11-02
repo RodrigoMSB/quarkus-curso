@@ -1,0 +1,125 @@
+╔════════════════════════════════════════════════════════════════╗
+║              🔴 PRUEBAS - PERFIL PROD                          ║
+║              Producción: Máxima seguridad con Vault            ║
+╔════════════════════════════════════════════════════════════════╗
+
+📅 Fecha: 02/11/2025 18:35:55
+🌐 API Base: http://localhost:8080
+🔐 Vault: http://localhost:8200
+📄 Resultados: test-prod-2025-11-02_18-35-55.txt
+
+╔════════════════════════════════════════════════════════════════╗
+║              🔍 VERIFICACIÓN DE VAULT                          ║
+╚════════════════════════════════════════════════════════════════╝
+
+🔐 Verificando que Vault esté corriendo...
+✅ Vault está corriendo
+
+🔐 Verificando secreto en Vault...
+✅ Secreto disponible en Vault
+
+╔════════════════════════════════════════════════════════════════╗
+║              🔍 PREPARACIÓN                                    ║
+╚════════════════════════════════════════════════════════════════╝
+
+🧹 Matando procesos previos de Quarkus y Java...
+✅ Limpieza completada
+
+Características del perfil PROD:
+  ✓ Comisión: 2.5% (completa)
+  ✓ Límite transaccional: 50,000 (alto pero controlado)
+  ✓ Cache: Activado
+  ✓ Auditoría: Activada
+  ✓ Proveedor: PremiumProvider
+  🔐 API Key: Desde Vault (seguro)
+
+📦 Compilando aplicación...
+✅ Compilación exitosa
+
+🚀 Arrancando aplicación en modo PROD...
+
+📋 PID de la aplicación: 26402
+
+⏳ Esperando a que la aplicación arranque (timeout: 60s)...
+✅ Aplicación lista en perfil PROD
+
+╔════════════════════════════════════════════════════════════════╗
+║              📋 PRUEBAS DEL PERFIL PROD                        ║
+╚════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 1: Configuración del Perfil PROD
+═══════════════════════════════════════════════════════════
+
+✓ Perfil activo: prod
+✓ Ambiente: producción
+✓ Comisión: 2.5%
+✓ Límite transaccional: $50,000
+✓ Proveedor: PremiumProvider
+🔐 API Key Source: Vault
+
+✅ EXCELENTE: API Key viene desde Vault (seguro)
+
+✅ Configuración PROD correcta
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 2: Conversión con Comisión 2.5%
+═══════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que PROD cobra comisión del 2.5%
+💰 Operación: Convertir 1,000 PEN a USD
+
+💵 Monto Original: $1,000 PEN
+💱 Monto Convertido: $3,750.00 USD
+💸 Comisión (2.5%): $93.75 USD
+✅ Total: $3,843.75 USD
+
+✅ CORRECTO: PROD cobra comisión completa del 2.5%
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 3: Monto Alto Dentro de Límite
+═══════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que PROD acepta montos altos
+💰 Operación: Convertir 40,000 PEN (dentro del límite)
+
+💵 Monto Solicitado: $40,000
+🚦 Límite Transaccional: $50,000
+📊 Dentro de Límite: True
+
+✅ CORRECTO: Monto aceptado en PROD
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 4: Exceder Límite en PROD
+═══════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar detección de límite excedido
+💰 Operación: Convertir 60,000 PEN (excede límite de 50,000)
+
+💵 Monto Solicitado: $60,000
+🚦 Límite Transaccional: $50,000
+📊 Dentro de Límite: False
+
+✅ CORRECTO: Se detectó que excede el límite
+⚠️  En producción real, esto rechazaría la transacción
+
+╔════════════════════════════════════════════════════════════════╗
+║              ✅ RESUMEN - PERFIL PROD                          ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ Perfil PROD verificado exitosamente
+
+Características confirmadas:
+  ✓ Comisión completa (2.5%)
+  ✓ Límite alto pero controlado (50,000)
+  ✓ Detecta límites excedidos
+  🔐 API Key desde Vault (máxima seguridad)
+
+📄 Log guardado en: test-prod-2025-11-02_18-35-55.txt
+
+🛑 Deteniendo la aplicación...
+🧹 Matando procesos previos de Quarkus y Java...
+✅ Limpieza completada
+
+🎉 ¡Pruebas de PROD completadas!
+

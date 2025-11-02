@@ -1,0 +1,93 @@
+╔════════════════════════════════════════════════════════════════╗
+║              🟢 PRUEBAS - PERFIL DEV                           ║
+║              Desarrollo: Sin restricciones                     ║
+╔════════════════════════════════════════════════════════════════╗
+
+📅 Fecha: 02/11/2025 18:02:55
+🌐 API Base: http://localhost:8080
+📄 Resultados: test-dev-2025-11-02_18-02-55.txt
+
+╔════════════════════════════════════════════════════════════════╗
+║              🔍 PREPARACIÓN                                    ║
+╚════════════════════════════════════════════════════════════════╝
+
+🧹 Matando procesos previos de Quarkus y Java...
+✅ Limpieza completada
+
+Características del perfil DEV:
+  ✓ Comisión: 0.0% (gratis para desarrollo)
+  ✓ Límite transaccional: 999,999 (ilimitado)
+  ✓ Cache: Desactivado
+  ✓ Auditoría: Desactivada
+  ✓ Proveedor: MockProvider
+  ✓ Vault: Desactivado
+
+🚀 Arrancando aplicación en modo DEV...
+
+📋 PID de la aplicación: 20328
+
+⏳ Esperando a que la aplicación arranque (timeout: 60s)...
+✅ Aplicación lista en perfil DEV
+
+╔════════════════════════════════════════════════════════════════╗
+║              📋 PRUEBAS DEL PERFIL DEV                         ║
+╚════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 1: Configuración del Perfil DEV
+═══════════════════════════════════════════════════════════
+
+✓ Perfil activo: dev
+✓ Ambiente: desarrollo
+✓ Comisión: 0.0%
+✓ Límite transaccional: $999,999
+✓ Proveedor: MockProvider
+
+✅ Configuración DEV correcta
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 2: Conversión sin Comisión
+═══════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que DEV no cobra comisión
+💰 Operación: Convertir 1,000 PEN a USD
+
+💵 Monto Original: $1,000 PEN
+💱 Monto Convertido: $3,750.00 USD
+💸 Comisión: $0.00 USD
+✅ Total: $3,750.00 USD
+
+✅ CORRECTO: Sin comisión en DEV
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 3: Límite Ilimitado
+═══════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que DEV acepta montos altos
+💰 Operación: Convertir 100,000 PEN
+
+💵 Monto Solicitado: $100,000
+🚦 Límite Transaccional: $999,999
+📊 Dentro de Límite: True
+
+✅ CORRECTO: DEV acepta montos muy altos
+
+╔════════════════════════════════════════════════════════════════╗
+║              ✅ RESUMEN - PERFIL DEV                           ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ Perfil DEV verificado exitosamente
+
+Características confirmadas:
+  ✓ Sin comisiones (desarrollo rápido)
+  ✓ Límite ilimitado (sin restricciones)
+  ✓ Proveedor Mock (sin API externa)
+
+📄 Log guardado en: test-dev-2025-11-02_18-02-55.txt
+
+🛑 Deteniendo la aplicación...
+🧹 Matando procesos previos de Quarkus y Java...
+✅ Limpieza completada
+
+🎉 ¡Pruebas de DEV completadas!
+

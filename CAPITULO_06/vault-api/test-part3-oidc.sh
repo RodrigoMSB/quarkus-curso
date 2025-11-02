@@ -1,0 +1,443 @@
+#!/bin/bash
+
+##############################################################################
+# Script de Pruebas - Parte 3: Autenticación con OIDC (OpenID Connect)
+# 
+# Este script prueba los endpoints de clientes externos que utilizan
+# Keycloak como proveedor de identidad federado mediante OIDC.
+#
+# Conceptos que se prueban:
+# - Autenticación federada con Identity Provider externo (Keycloak)
+# - OpenID Connect (OIDC) flow
+# - Tokens emitidos por Keycloak (no por nuestra app)
+# - Roles gestionados en Keycloak
+# - Autorización basada en roles externos
+# - Diferenciación de niveles de acceso (customer vs premium-customer)
+##############################################################################
+
+# Generar nombre de archivo con timestamp
+OUTPUT_FILE="test-part3-oidc-$(date '+%Y-%m-%d_%H-%M-%S').txt"
+
+# Limpiar archivo de salida
+> "$OUTPUT_FILE"
+
+# Colores para mejor visualización
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+NC='\033[0m' # Sin color
+
+# Función de logging (muestra con colores en pantalla, guarda sin colores en archivo)
+log() {
+    local message="$*"
+    printf "%b\n" "$message"
+    printf "%b\n" "$message" | sed 's/\x1b\[[0-9;]*m//g' >> "$OUTPUT_FILE"
+}
+
+# Función para mostrar JSON formateado
+show_json() {
+    local json="$1"
+    
+    if ! command -v jq &> /dev/null; then
+        printf "%s\n" "$json" | tee -a "$OUTPUT_FILE"
+        return
+    fi
+    
+    if [ -n "$json" ]; then
+        echo "$json" | jq '.' 2>/dev/null | tee -a "$OUTPUT_FILE" || echo "$json" | tee -a "$OUTPUT_FILE"
+    fi
+}
+
+# URL base del microservicio
+BASE_URL="http://localhost:8080"
+
+# URL de Keycloak
+KEYCLOAK_URL="http://localhost:8180"
+REALM="vaultcorp"
+CLIENT_ID="vault-api"
+
+# ⚠️ IMPORTANTE: Configura tu CLIENT_SECRET aquí
+CLIENT_SECRET="pnQqtvHgHHLWS1wAlaGsdDwBjKk3AgvO"
+
+# Verificar que se configuró el CLIENT_SECRET
+if [ "$CLIENT_SECRET" == "TU-CLIENT-SECRET-AQUI" ]; then
+    log "${RED}❌ ERROR: Debes configurar CLIENT_SECRET en el script${NC}"
+    log "${YELLOW}Edita el archivo y reemplaza 'TU-CLIENT-SECRET-AQUI' con tu client secret de Keycloak${NC}"
+    exit 1
+fi
+
+# Variables globales para tokens
+TOKEN_CUSTOMER=""
+TOKEN_PREMIUM=""
+
+log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log "${CYAN}║     🔐 PRUEBAS DE SEGURIDAD - PARTE 3: OIDC + KEYCLOAK       ║${NC}"
+log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log ""
+log "${CYAN}📅 Fecha:${NC} $(date '+%d/%m/%Y %H:%M:%S')"
+log "${CYAN}🌐 API Base:${NC} $BASE_URL"
+log "${CYAN}📄 Resultados:${NC} $OUTPUT_FILE"
+log "${CYAN}🔐 Seguridad:${NC} OIDC (OpenID Connect) + Keycloak"
+log ""
+
+##############################################################################
+# PRUEBA 0: Verificar que Keycloak está corriendo
+##############################################################################
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log "${YELLOW}📋 PRUEBA 0: Verificar Conectividad con Keycloak${NC}"
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log ""
+log "🎯 Objetivo: Confirmar que Keycloak está accesible"
+log "📍 URL: $KEYCLOAK_URL"
+log ""
+log "${CYAN}Verificando conexión...${NC}"
+log ""
+
+if curl -s -o /dev/null -w "%{http_code}" $KEYCLOAK_URL | grep -q "200"; then
+    log "${GREEN}✓ Keycloak está corriendo correctamente${NC}"
+else
+    log "${RED}❌ ERROR: No se puede conectar a Keycloak en $KEYCLOAK_URL${NC}"
+    log "${YELLOW}Asegúrate de que Docker con Keycloak esté corriendo${NC}"
+    exit 1
+fi
+
+log ""
+read -p "Presiona ENTER para continuar..."
+log ""
+
+##############################################################################
+# PRUEBA 1: Obtener Token desde Keycloak (Cliente Básico)
+##############################################################################
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log "${YELLOW}📋 PRUEBA 1: Obtener Access Token desde Keycloak (Cliente Básico)${NC}"
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log ""
+log "🎯 Objetivo: Autenticarse con Keycloak y obtener un Access Token OIDC"
+log "📍 Endpoint: POST $KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token"
+log "👤 Usuario: client001 (rol: customer)"
+log "🔑 Grant Type: password (Resource Owner Password Credentials)"
+log "✅ Resultado Esperado: Access Token válido emitido por Keycloak"
+log ""
+log "${CYAN}Ejecutando login en Keycloak...${NC}"
+log ""
+
+RESPONSE=$(curl -s -X POST $KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "client_id=$CLIENT_ID" \
+  -d "client_secret=$CLIENT_SECRET" \
+  -d "username=client001" \
+  -d "password=pass001")
+
+show_json "$RESPONSE"
+
+# Extraer el access_token
+TOKEN_CUSTOMER=$(echo "$RESPONSE" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+
+log ""
+log "${GREEN}✓ Si ves un 'access_token', ¡Keycloak emitió el token correctamente!${NC}"
+log "${CYAN}ℹ️  Este token está firmado por Keycloak, no por nuestra aplicación${NC}"
+log "${MAGENTA}📌 Token obtenido (primeros 50 caracteres): ${TOKEN_CUSTOMER:0:50}...${NC}"
+log ""
+read -p "Presiona ENTER para continuar..."
+log ""
+
+##############################################################################
+# PRUEBA 2: Acceso sin Token (Debe Fallar)
+##############################################################################
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log "${YELLOW}📋 PRUEBA 2: Intento de Acceso sin Token OIDC${NC}"
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log ""
+log "🎯 Objetivo: Verificar que los endpoints OIDC rechazan peticiones sin token"
+log "📍 Endpoint: GET /api/external/secrets/profile"
+log "🔒 Seguridad: @RolesAllowed + OIDC"
+log "❌ Resultado Esperado: HTTP 401 Unauthorized"
+log ""
+log "${CYAN}Ejecutando sin Authorization header...${NC}"
+log ""
+
+RESPONSE_NO_AUTH=$(curl -s -w "\n%{http_code}" $BASE_URL/api/external/secrets/profile 2>/dev/null)
+BODY_NO_AUTH=$(echo "$RESPONSE_NO_AUTH" | sed '$d')
+STATUS_NO_AUTH=$(echo "$RESPONSE_NO_AUTH" | tail -n 1)
+
+log "${YELLOW}Response (HTTP $STATUS_NO_AUTH):${NC}"
+if [ -n "$BODY_NO_AUTH" ]; then
+    log "$BODY_NO_AUTH"
+else
+    log "(Sin contenido - esperado para 401)"
+fi
+
+log ""
+log "${GREEN}✓ Si ves 'HTTP 401 Unauthorized', ¡el endpoint está protegido!${NC}"
+log ""
+read -p "Presiona ENTER para continuar..."
+log ""
+
+##############################################################################
+# PRUEBA 3: Ver Perfil con Token OIDC
+##############################################################################
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log "${YELLOW}📋 PRUEBA 3: Acceso al Perfil con Token OIDC de Keycloak${NC}"
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log ""
+log "🎯 Objetivo: Acceder a un endpoint usando token emitido por Keycloak"
+log "📍 Endpoint: GET /api/external/secrets/profile"
+log "👤 Usuario: client001 (autenticado vía Keycloak)"
+log "🔑 Token: Access Token OIDC"
+log "✅ Resultado Esperado: HTTP 200 OK + información del usuario desde Keycloak"
+log ""
+log "${CYAN}Ejecutando con Bearer Token de Keycloak...${NC}"
+log ""
+
+RESPONSE_PROFILE=$(curl -s -w "\n%{http_code}" $BASE_URL/api/external/secrets/profile \
+  -H "Authorization: Bearer $TOKEN_CUSTOMER" 2>/dev/null)
+BODY_PROFILE=$(echo "$RESPONSE_PROFILE" | sed '$d')
+STATUS_PROFILE=$(echo "$RESPONSE_PROFILE" | tail -n 1)
+
+log "${YELLOW}Response (HTTP $STATUS_PROFILE):${NC}"
+show_json "$BODY_PROFILE"
+
+log ""
+log "${GREEN}✓ Si ves 'HTTP 200 OK' y authMethod: 'OIDC (Keycloak)', ¡funcionó!${NC}"
+log "${CYAN}ℹ️  Quarkus validó el token contra la clave pública de Keycloak${NC}"
+log ""
+read -p "Presiona ENTER para continuar..."
+log ""
+
+##############################################################################
+# PRUEBA 4: Listar Secretos Públicos (Cliente Básico)
+##############################################################################
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log "${YELLOW}📋 PRUEBA 4: Acceso a Secretos Públicos (Cliente Básico)${NC}"
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log ""
+log "🎯 Objetivo: Verificar que clientes básicos pueden acceder a secretos PUBLIC"
+log "📍 Endpoint: GET /api/external/secrets/public"
+log "👤 Usuario: client001 (rol: customer)"
+log "🔒 Seguridad: @RolesAllowed({\"customer\", \"premium-customer\"})"
+log "✅ Resultado Esperado: HTTP 200 OK + secretos con accessLevel=PUBLIC"
+log ""
+log "${CYAN}Listando secretos públicos...${NC}"
+log ""
+
+RESPONSE_PUBLIC=$(curl -s $BASE_URL/api/external/secrets/public \
+  -H "Authorization: Bearer $TOKEN_CUSTOMER" 2>/dev/null)
+
+show_json "$RESPONSE_PUBLIC"
+
+log ""
+log "${GREEN}✓ Los clientes básicos SÍ pueden ver secretos PUBLIC${NC}"
+log "${CYAN}ℹ️  Ambos roles (customer y premium-customer) tienen acceso a PUBLIC${NC}"
+log ""
+read -p "Presiona ENTER para continuar..."
+log ""
+
+##############################################################################
+# PRUEBA 5: Cliente Básico NO puede ver Secretos Confidenciales
+##############################################################################
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log "${YELLOW}📋 PRUEBA 5: Cliente Básico NO puede ver Secretos Confidenciales${NC}"
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log ""
+log "🎯 Objetivo: Verificar que clientes básicos NO pueden ver secretos CONFIDENTIAL"
+log "📍 Endpoint: GET /api/external/secrets/confidential"
+log "👤 Usuario: client001 (rol: customer)"
+log "🔒 Seguridad: @RolesAllowed(\"premium-customer\")"
+log "❌ Resultado Esperado: HTTP 403 Forbidden"
+log ""
+log "${CYAN}Intentando acceder a secretos confidenciales con cliente básico...${NC}"
+log ""
+
+RESPONSE_FORBIDDEN=$(curl -s -w "\n%{http_code}" $BASE_URL/api/external/secrets/confidential \
+  -H "Authorization: Bearer $TOKEN_CUSTOMER" 2>/dev/null)
+BODY_FORBIDDEN=$(echo "$RESPONSE_FORBIDDEN" | sed '$d')
+STATUS_FORBIDDEN=$(echo "$RESPONSE_FORBIDDEN" | tail -n 1)
+
+log "${YELLOW}Response (HTTP $STATUS_FORBIDDEN):${NC}"
+if [ -n "$BODY_FORBIDDEN" ]; then
+    log "$BODY_FORBIDDEN"
+else
+    log "(Sin contenido - esperado para 403)"
+fi
+
+log ""
+log "${GREEN}✓ Si ves 'HTTP 403 Forbidden', ¡la autorización funciona!${NC}"
+log "${CYAN}ℹ️  Los clientes básicos NO tienen acceso a secretos CONFIDENTIAL${NC}"
+log ""
+read -p "Presiona ENTER para continuar..."
+log ""
+
+##############################################################################
+# PRUEBA 6: Obtener Token para Cliente Premium
+##############################################################################
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log "${YELLOW}📋 PRUEBA 6: Obtener Token para Cliente Premium${NC}"
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log ""
+log "🎯 Objetivo: Autenticar un cliente con rol premium-customer"
+log "👤 Usuario: client002 (rol: premium-customer)"
+log "✅ Resultado Esperado: Access Token con rol premium"
+log ""
+log "${CYAN}Ejecutando login para cliente premium...${NC}"
+log ""
+
+RESPONSE_PREMIUM=$(curl -s -X POST $KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "client_id=$CLIENT_ID" \
+  -d "client_secret=$CLIENT_SECRET" \
+  -d "username=client002" \
+  -d "password=pass002")
+
+show_json "$RESPONSE_PREMIUM"
+
+TOKEN_PREMIUM=$(echo "$RESPONSE_PREMIUM" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+
+log ""
+log "${GREEN}✓ Token premium obtenido correctamente${NC}"
+log "${MAGENTA}📌 Token premium (primeros 50 caracteres): ${TOKEN_PREMIUM:0:50}...${NC}"
+log ""
+read -p "Presiona ENTER para continuar..."
+log ""
+
+##############################################################################
+# PRUEBA 7: Acceso a Secretos Confidenciales (Cliente Premium)
+##############################################################################
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log "${YELLOW}📋 PRUEBA 7: Cliente Premium SÍ puede ver Secretos Confidenciales${NC}"
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log ""
+log "🎯 Objetivo: Verificar que clientes premium SÍ pueden ver secretos CONFIDENTIAL"
+log "📍 Endpoint: GET /api/external/secrets/confidential"
+log "👤 Usuario: client002 (rol: premium-customer)"
+log "✅ Resultado Esperado: HTTP 200 OK + secretos CONFIDENTIAL"
+log ""
+log "${CYAN}Accediendo a secretos confidenciales con cliente premium...${NC}"
+log ""
+
+RESPONSE_CONFIDENTIAL=$(curl -s $BASE_URL/api/external/secrets/confidential \
+  -H "Authorization: Bearer $TOKEN_PREMIUM" 2>/dev/null)
+
+show_json "$RESPONSE_CONFIDENTIAL"
+
+log ""
+log "${GREEN}✓ El cliente premium SÍ puede ver secretos CONFIDENTIAL${NC}"
+log "${CYAN}ℹ️  El nivel de acceso depende del rol asignado en Keycloak${NC}"
+log ""
+read -p "Presiona ENTER para continuar..."
+log ""
+
+##############################################################################
+# PRUEBA 8: Comparación de Roles (Educativa)
+##############################################################################
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log "${YELLOW}📋 PRUEBA 8: Comparación de Roles entre Cliente Básico y Premium${NC}"
+log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
+log ""
+log "🎯 Objetivo: Visualizar las diferencias de autorización según el rol"
+log ""
+log "${CYAN}───────────────────────────────────────────────────────────────${NC}"
+log "${YELLOW}Perfil de client001 (customer):${NC}"
+log "${CYAN}───────────────────────────────────────────────────────────────${NC}"
+log ""
+
+PROFILE_CUSTOMER=$(curl -s $BASE_URL/api/external/secrets/profile \
+  -H "Authorization: Bearer $TOKEN_CUSTOMER" 2>/dev/null)
+
+show_json "$PROFILE_CUSTOMER"
+
+log ""
+log "${CYAN}───────────────────────────────────────────────────────────────${NC}"
+log "${YELLOW}Perfil de client002 (premium-customer):${NC}"
+log "${CYAN}───────────────────────────────────────────────────────────────${NC}"
+log ""
+
+PROFILE_PREMIUM=$(curl -s $BASE_URL/api/external/secrets/profile \
+  -H "Authorization: Bearer $TOKEN_PREMIUM" 2>/dev/null)
+
+show_json "$PROFILE_PREMIUM"
+
+log ""
+log "${GREEN}✓ Observa la diferencia en los roles: 'customer' vs 'premium-customer'${NC}"
+log "${CYAN}ℹ️  Los roles vienen directamente de Keycloak, no de nuestra aplicación${NC}"
+log ""
+read -p "Presiona ENTER para ver el resumen final..."
+log ""
+
+##############################################################################
+# RESUMEN FINAL
+##############################################################################
+log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log "${CYAN}║                    📊 RESUMEN DE PRUEBAS                       ║${NC}"
+log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log ""
+log "${GREEN}✅ PRUEBA 0:${NC} Keycloak está accesible y corriendo"
+log "${GREEN}✅ PRUEBA 1:${NC} Keycloak emite tokens OIDC válidos"
+log "${GREEN}✅ PRUEBA 2:${NC} Peticiones sin token son rechazadas (401)"
+log "${GREEN}✅ PRUEBA 3:${NC} Token OIDC permite acceso a endpoints protegidos"
+log "${GREEN}✅ PRUEBA 4:${NC} Clientes básicos pueden ver secretos PUBLIC"
+log "${GREEN}✅ PRUEBA 5:${NC} Clientes básicos NO pueden ver secretos CONFIDENTIAL (403)"
+log "${GREEN}✅ PRUEBA 6:${NC} Clientes premium obtienen tokens con rol premium"
+log "${GREEN}✅ PRUEBA 7:${NC} Clientes premium SÍ pueden ver secretos CONFIDENTIAL"
+log "${GREEN}✅ PRUEBA 8:${NC} Autorización diferenciada según roles de Keycloak"
+log ""
+log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log "${CYAN}║              🎓 CONCEPTOS CLAVE DEMOSTRADOS                    ║${NC}"
+log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log ""
+log "${YELLOW}🔑 OIDC (OpenID Connect):${NC} Protocolo de autenticación sobre OAuth2"
+log "${YELLOW}🔑 Identity Provider:${NC}    Keycloak gestiona usuarios y roles externamente"
+log "${YELLOW}🔑 Federación:${NC}           Autenticación delegada a sistema externo"
+log "${YELLOW}🔑 Access Token:${NC}         Token emitido por Keycloak, validado por Quarkus"
+log "${YELLOW}🔑 Realm:${NC}                Espacio aislado en Keycloak (vaultcorp)"
+log "${YELLOW}🔑 Client:${NC}               Nuestra app registrada en Keycloak (vault-api)"
+log "${YELLOW}🔑 Roles externos:${NC}       Roles gestionados en Keycloak, no en nuestra app"
+log ""
+log "${MAGENTA}╔════════════════════════════════════════════════════════════════╗${NC}"
+log "${MAGENTA}║              🆚 OIDC vs JWT Propio (Parte 2)                   ║${NC}"
+log "${MAGENTA}╔════════════════════════════════════════════════════════════════╗${NC}"
+log ""
+log "${CYAN}JWT Propio (Parte 2):${NC}"
+log "  ✓ Nosotros generamos y firmamos los tokens"
+log "  ✓ Nosotros gestionamos usuarios y roles"
+log "  ✓ Control total del proceso"
+log "  ✗ Debemos mantener base de datos de usuarios"
+log ""
+log "${CYAN}OIDC con Keycloak (Parte 3):${NC}"
+log "  ✓ Keycloak genera y firma los tokens"
+log "  ✓ Keycloak gestiona usuarios y roles"
+log "  ✓ SSO (Single Sign-On) entre múltiples apps"
+log "  ✓ Federación con otros Identity Providers"
+log "  ✗ Dependencia de servicio externo (Keycloak)"
+log ""
+
+log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log "${CYAN}║                    📁 ARCHIVO DE LOG                           ║${NC}"
+log "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+log ""
+log "${YELLOW}📝 Todas las pruebas han sido guardadas en:${NC}"
+log "   ${GREEN}$OUTPUT_FILE${NC}"
+log ""
+log "${CYAN}💡 Puedes revisar el log completo en cualquier momento para:${NC}"
+log "   • Verificar las respuestas HTTP completas"
+log "   • Analizar los tokens OIDC generados por Keycloak"
+log "   • Compartir los resultados con tu instructor"
+log "   • Documentar el comportamiento del sistema de seguridad"
+log ""
+
+log "${GREEN}🎉 ¡Pruebas de la Parte 3 (OIDC) completadas exitosamente!${NC}"
+log ""
+log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log "${CYAN}║                  🎓 COMPARATIVA FINAL                          ║${NC}"
+log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log ""
+log "${YELLOW}Parte 1 (Basic Auth):${NC}     Admins/Auditores  → /api/admin/*"
+log "${YELLOW}Parte 2 (JWT Propio):${NC}     Empleados         → /api/internal/*"
+log "${YELLOW}Parte 3 (OIDC):${NC}           Clientes Externos → /api/external/*"
+log ""
+log "${GREEN}✨ Has completado las 3 partes del ejercicio de seguridad en Quarkus ✨${NC}"
+log ""
