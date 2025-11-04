@@ -7,6 +7,14 @@
 API_URL="http://localhost:8080"
 OUTPUT_FILE="resultados-tests-$(date '+%Y-%m-%d_%H-%M-%S').txt"
 
+# Configuración de PostgreSQL
+# Si no configuras nada, usa estos valores por defecto:
+PGHOST="${PGHOST:-localhost}"              # export PGHOST="localhost"
+PGPORT="${PGPORT:-5432}"                   # export PGPORT="5432"
+PGDATABASE="${PGDATABASE:-postgres}"       # export PGDATABASE="postgres"
+PGUSER="${PGUSER:-postgres}"               # export PGUSER="postgres" o "tu_usuario"
+PGPASSWORD="${PGPASSWORD:-}"               # export PGPASSWORD="" (sin password) o PGPASSWORD="tu_password"
+
 # Colores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
