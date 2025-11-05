@@ -12,16 +12,43 @@
 # - @Timeout - Límites de tiempo
 # - @Fallback - Respuestas alternativas
 # - @CircuitBreaker - Apertura de circuito
+#
+# COMPATIBLE: Mac y Windows (Git Bash)
 ##############################################################################
+
+# ============================================================================
+# DETECCIÓN DE SISTEMA OPERATIVO
+# ============================================================================
+
+detect_os() {
+    case "$(uname -s)" in
+        Darwin*)    echo "mac" ;;
+        Linux*)     echo "linux" ;;
+        MINGW*|MSYS*|CYGWIN*)    echo "windows" ;;
+        *)          echo "unknown" ;;
+    esac
+}
+
+OS_TYPE=$(detect_os)
+
+# ============================================================================
+# CONFIGURACIÓN
+# ============================================================================
 
 # Archivo de log
 LOG_FILE="resultados-pruebas-$(date +%Y%m%d-%H%M%S).txt"
 
-# Función para escribir en terminal y archivo
-log_both() {
-    echo -e "$1"
-    echo -e "$1" | sed 's/\x1B\[[0-9;]*[JKmsu]//g' >> "$LOG_FILE"
-}
+# Detectar Python (python3 en Mac/Linux, python en Windows)
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    echo "❌ Error: Python no está instalado"
+    echo "   Windows: Descarga desde https://www.python.org/downloads/"
+    echo "   Mac: brew install python3"
+    exit 1
+fi
 
 # Colores para mejor visualización
 RED='\033[0;31m'
@@ -35,11 +62,36 @@ NC='\033[0m' # Sin color
 # URL base del microservicio
 BASE_URL="http://localhost:8080"
 
+# ============================================================================
+# FUNCIONES
+# ============================================================================
+
+# Función para escribir en terminal y archivo
+log_both() {
+    echo -e "$1"
+    echo -e "$1" | sed 's/\x1B\[[0-9;]*[JKmsu]//g' >> "$LOG_FILE"
+}
+
+# Función para pausar (compatible con ambos sistemas)
+pause_script() {
+    if [ "$OS_TYPE" = "windows" ]; then
+        read -p "Presiona ENTER para continuar..."
+    else
+        read -p "Presiona ENTER para continuar..."
+    fi
+}
+
+# ============================================================================
+# HEADER
+# ============================================================================
+
 log_both "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
 log_both "${CYAN}║    💳  EVALUACIÓN CREDITICIA - PRUEBAS DE RESILIENCIA    ║${NC}"
 log_both "${CYAN}║    REST Client + Fault Tolerance Patterns                ║${NC}"
 log_both "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
 log_both ""
+log_both "${GREEN}🖥️  Sistema Operativo: ${OS_TYPE}${NC}"
+log_both "${GREEN}🐍 Python: ${PYTHON_CMD}${NC}"
 log_both "${GREEN}📄 Los resultados se guardarán en: ${LOG_FILE}${NC}"
 log_both ""
 
@@ -74,7 +126,7 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
     "mesesPlazo": 24
   }')
 
-OUTPUT=$(echo "$RESPONSE" | python3 -c "
+OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
 import sys, json
 data = json.load(sys.stdin)
 print(f\"✅ DNI: {data['dni']}\")
@@ -88,7 +140,7 @@ log_both "$OUTPUT"
 log_both ""
 log_both "${GREEN}✅ ¡Solicitud procesada exitosamente sin ningún patrón de resiliencia!${NC}"
 log_both ""
-read -p "Presiona ENTER para continuar..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -126,7 +178,7 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
     "mesesPlazo": 36
   }')
 
-OUTPUT=$(echo "$RESPONSE" | python3 -c "
+OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
 import sys, json
 data = json.load(sys.stdin)
 print(f\"✅ DNI: {data['dni']}\")
@@ -140,7 +192,7 @@ log_both ""
 log_both "${GREEN}✅ ¡@Retry permitió recuperarse del fallo temporal!${NC}"
 log_both "${YELLOW}💡 Sin @Retry, esta solicitud habría fallado inmediatamente${NC}"
 log_both ""
-read -p "Presiona ENTER para continuar..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -182,7 +234,7 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
 END=$(date +%s)
 DURATION=$((END - START))
 
-OUTPUT=$(echo "$RESPONSE" | python3 -c "
+OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
 import sys, json
 data = json.load(sys.stdin)
 print(f\"✅ DNI: {data['dni']}\")
@@ -197,7 +249,7 @@ log_both "${YELLOW}⏱️  Tiempo de respuesta: ~${DURATION} segundos${NC}"
 log_both "${GREEN}✅ ¡@Timeout evitó esperar 5 segundos!${NC}"
 log_both "${GREEN}✅ ¡@Fallback proporcionó una respuesta alternativa!${NC}"
 log_both ""
-read -p "Presiona ENTER para continuar..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -232,7 +284,7 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
     "mesesPlazo": 48
   }')
 
-OUTPUT=$(echo "$RESPONSE" | python3 -c "
+OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
 import sys, json
 data = json.load(sys.stdin)
 print(f\"✅ DNI: {data['dni']}\")
@@ -246,7 +298,7 @@ log_both ""
 log_both "${GREEN}✅ ¡La aplicación NO falló a pesar del error en Scoring!${NC}"
 log_both "${YELLOW}💡 @Fallback permitió degradar el servicio gracefully${NC}"
 log_both ""
-read -p "Presiona ENTER para continuar..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -285,7 +337,7 @@ for i in {1..5}; do
       "mesesPlazo": 24
     }')
   
-  OUTPUT=$(echo "$RESPONSE" | python3 -c "
+  OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -302,7 +354,7 @@ log_both ""
 log_both "${GREEN}✅ ¡Circuit Breaker protegió el sistema!${NC}"
 log_both "${YELLOW}💡 Sin Circuit Breaker, seguiríamos llamando a un servicio caído${NC}"
 log_both ""
-read -p "Presiona ENTER para continuar..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -333,7 +385,7 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
     "mesesPlazo": 12
   }')
 
-OUTPUT=$(echo "$RESPONSE" | python3 -c "
+OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
 import sys, json
 data = json.load(sys.stdin)
 print(f\"✅ DNI: {data['dni']}\")
@@ -347,7 +399,7 @@ log_both "$OUTPUT"
 log_both ""
 log_both "${GREEN}✅ ¡Validación preventiva evitó procesamiento innecesario!${NC}"
 log_both ""
-read -p "Presiona ENTER para ver el resumen..."
+pause_script
 log_both ""
 
 ##############################################################################

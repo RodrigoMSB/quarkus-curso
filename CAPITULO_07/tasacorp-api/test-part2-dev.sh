@@ -5,7 +5,24 @@
 # 
 # Este script prueba el perfil de DESARROLLO del microservicio TasaCorp.
 # El perfil DEV está optimizado para desarrollo rápido sin restricciones.
+#
+# COMPATIBLE: Mac y Windows (Git Bash)
 ##############################################################################
+
+# ============================================================================
+# DETECCIÓN DE SISTEMA OPERATIVO
+# ============================================================================
+
+detect_os() {
+    case "$(uname -s)" in
+        Darwin*)    echo "mac" ;;
+        Linux*)     echo "linux" ;;
+        MINGW*|MSYS*|CYGWIN*)    echo "windows" ;;
+        *)          echo "unknown" ;;
+    esac
+}
+
+OS_TYPE=$(detect_os)
 
 # ============================================================================
 # CONFIGURACIÓN
@@ -25,6 +42,18 @@ NC='\033[0m'
 
 BASE_URL="http://localhost:8080"
 STARTUP_TIMEOUT=60
+
+# Detectar Python (python3 en Mac/Linux, python en Windows)
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    echo "❌ Error: Python no está instalado"
+    echo "   Windows: Descarga desde https://www.python.org/downloads/"
+    echo "   Mac: brew install python3"
+    exit 1
+fi
 
 # ============================================================================
 # FUNCIONES DE LOGGING
@@ -66,8 +95,17 @@ log_plain() {
 
 kill_all() {
     log_info "🧹 Matando procesos previos de Quarkus y Java..."
-    pkill -9 -f "quarkus:dev" 2>/dev/null
-    pkill -9 -f "quarkus-run.jar" 2>/dev/null
+    
+    if [ "$OS_TYPE" = "windows" ]; then
+        # Windows: usar taskkill
+        taskkill //F //IM java.exe 2>/dev/null || true
+        taskkill //F //FI "WINDOWTITLE eq quarkus*" 2>/dev/null || true
+    else
+        # Mac/Linux: usar pkill
+        pkill -9 -f "quarkus:dev" 2>/dev/null || true
+        pkill -9 -f "quarkus-run.jar" 2>/dev/null || true
+    fi
+    
     sleep 3
     log_success "✅ Limpieza completada"
 }
@@ -102,9 +140,11 @@ cat << 'EOF'
 ╔════════════════════════════════════════════════════════════════╗
 ║              🟢 PRUEBAS - PERFIL DEV                           ║
 ║              Desarrollo: Sin restricciones                     ║
-╔════════════════════════════════════════════════════════════════╗
+╚════════════════════════════════════════════════════════════════╝
 EOF
 echo ""
+echo "🖥️  Sistema Operativo: $OS_TYPE"
+echo "🐍 Python: $PYTHON_CMD"
 echo "📅 Fecha: $(date '+%d/%m/%Y %H:%M:%S')"
 echo "🌐 API Base: $BASE_URL"
 echo "📄 Resultados: $OUTPUT_FILE"
@@ -136,8 +176,17 @@ log_info "🚀 Arrancando aplicación en modo DEV..."
 log_plain ""
 
 # Arrancar en background
-./mvnw quarkus:dev > /dev/null 2>&1 &
-APP_PID=$!
+if [ "$OS_TYPE" = "windows" ]; then
+    # Windows: usar start para ejecutar en ventana separada
+    start //B bash -c "./mvnw quarkus:dev > /dev/null 2>&1"
+    sleep 2
+    APP_PID="N/A (Windows background)"
+else
+    # Mac/Linux: background normal
+    ./mvnw quarkus:dev > /dev/null 2>&1 &
+    APP_PID=$!
+fi
+
 log_info "📋 PID de la aplicación: $APP_PID"
 log_plain ""
 
@@ -164,7 +213,7 @@ log_plain ""
 DEV_CONFIG=$(curl -s $BASE_URL/api/tasas/config 2>/dev/null)
 
 if [ $? -eq 0 ]; then
-    echo "$DEV_CONFIG" | python3 -c "
+    echo "$DEV_CONFIG" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -211,7 +260,7 @@ log_plain "🎯 Objetivo: Verificar que DEV no cobra comisión"
 log_plain "💰 Operación: Convertir 1,000 PEN a USD"
 log_plain ""
 
-curl -s "$BASE_URL/api/tasas/convertir/USD?monto=1000" | python3 -c "
+curl -s "$BASE_URL/api/tasas/convertir/USD?monto=1000" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -246,7 +295,7 @@ log_plain "🎯 Objetivo: Verificar que DEV acepta montos altos"
 log_plain "💰 Operación: Convertir 100,000 PEN"
 log_plain ""
 
-curl -s "$BASE_URL/api/tasas/convertir/USD?monto=100000" | python3 -c "
+curl -s "$BASE_URL/api/tasas/convertir/USD?monto=100000" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)

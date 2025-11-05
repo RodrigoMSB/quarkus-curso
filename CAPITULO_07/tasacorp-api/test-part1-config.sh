@@ -32,6 +32,18 @@ NC='\033[0m' # Sin color
 # URL base del microservicio
 BASE_URL="http://localhost:8080"
 
+# Detectar Python (python3 en Mac/Linux, python en Windows)
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    echo "❌ Error: Python no está instalado"
+    echo "   Windows: Descarga desde https://www.python.org/downloads/"
+    echo "   Mac: brew install python3"
+    exit 1
+fi
+
 # ============================================================================
 # FUNCIÓN PARA LOGGING DUAL (Pantalla + Archivo)
 # ============================================================================
@@ -124,7 +136,7 @@ log_plain ""
 CONFIG_RESPONSE=$(curl -s $BASE_URL/api/tasas/config)
 
 if [ $? -eq 0 ]; then
-    echo "$CONFIG_RESPONSE" | python3 -c "
+    echo "$CONFIG_RESPONSE" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -161,7 +173,7 @@ log_plain ""
 log_plain "📊 Configuración actual completa:"
 log_plain ""
 
-curl -s $BASE_URL/api/tasas/config | python3 -m json.tool | tee -a "$OUTPUT_FILE"
+curl -s $BASE_URL/api/tasas/config | $PYTHON_CMD -m json.tool | tee -a "$OUTPUT_FILE"
 
 log_plain ""
 log_header "ℹ️  Todos estos valores fueron inyectados automáticamente por Quarkus"
@@ -183,7 +195,7 @@ log_plain ""
 log_header "Ejecutando conversión..."
 log_plain ""
 
-curl -s "$BASE_URL/api/tasas/convertir/USD?monto=1000" | python3 -c "
+curl -s "$BASE_URL/api/tasas/convertir/USD?monto=1000" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -254,7 +266,7 @@ log_plain ""
 log_plain "Si aplicación arrancó con -Dtasacorp.commission.rate=15.0:"
 log_plain ""
 
-curl -s "$BASE_URL/api/tasas/convertir/USD?monto=1000" 2>/dev/null | python3 -c "
+curl -s "$BASE_URL/api/tasas/convertir/USD?monto=1000" 2>/dev/null | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -288,7 +300,7 @@ log_plain ""
 log_header "Valores desde YAML:"
 log_plain ""
 
-curl -s $BASE_URL/api/tasas/config | python3 -c "
+curl -s $BASE_URL/api/tasas/config | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -323,7 +335,7 @@ log_plain ""
 log_header "Consultando tasa de USD..."
 log_plain ""
 
-curl -s $BASE_URL/api/tasas/USD | python3 -m json.tool | tee -a "$OUTPUT_FILE"
+curl -s $BASE_URL/api/tasas/USD | $PYTHON_CMD -m json.tool | tee -a "$OUTPUT_FILE"
 
 log_plain ""
 log_success "✅ Las tasas vienen del application.yaml"

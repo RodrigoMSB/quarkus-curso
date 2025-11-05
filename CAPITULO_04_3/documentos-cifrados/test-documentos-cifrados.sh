@@ -34,11 +34,12 @@ NC='\033[0m' # Sin color
 BASE_URL="http://localhost:8080"
 
 # Configuración de PostgreSQL
-PGHOST="localhost"
-PGPORT="5432"
-PGDATABASE="postgres"
-PGUSER="rodrigosilva"
-PGPASSWORD=""
+# Si no configuras nada, usa estos valores por defecto:
+PGHOST="${PGHOST:-localhost}"              # export PGHOST="localhost"
+PGPORT="${PGPORT:-5432}"                   # export PGPORT="5432"
+PGDATABASE="${PGDATABASE:-postgres}"       # export PGDATABASE="postgres"
+PGUSER="${PGUSER:-postgres}"               # export PGUSER="postgres" o "tu_usuario"
+PGPASSWORD="${PGPASSWORD:-}"               # export PGPASSWORD="" (sin password) o PGPASSWORD="tu_password"
 
 # ============================================================================
 # FUNCIÓN PARA LOGGING DUAL (Pantalla + Archivo)
@@ -119,12 +120,19 @@ if ! command -v curl &> /dev/null; then
 fi
 log_success "✓ curl instalado"
 
-# Verificar que python3 está instalado
-if ! command -v python3 &> /dev/null; then
-    log_error "❌ Error: python3 no está instalado"
+# Verificar que Python está instalado (python3 o python)
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+    log_success "✓ python3 instalado"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+    log_success "✓ python instalado"
+else
+    log_error "❌ Error: Python no está instalado"
+    log_plain "   Windows: Descarga desde https://www.python.org/downloads/"
+    log_plain "   Mac: brew install python3"
     exit 1
 fi
-log_success "✓ python3 instalado"
 
 # Verificar que psql está instalado
 if ! command -v psql &> /dev/null; then
@@ -188,7 +196,7 @@ DOC1_RESPONSE=$(curl -s -X POST $BASE_URL/api/v1/documentos \
   }')
 
 if [ $? -eq 0 ]; then
-    DOC1_ID=$(echo "$DOC1_RESPONSE" | python3 -c "
+    DOC1_ID=$(echo "$DOC1_RESPONSE" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -261,7 +269,7 @@ log_plain ""
 log_header "Ejecutando consulta..."
 log_plain ""
 
-curl -s "$BASE_URL/api/v1/documentos/$DOC1_ID" | python3 -c "
+curl -s "$BASE_URL/api/v1/documentos/$DOC1_ID" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -341,7 +349,7 @@ log_plain ""
 log_header "Ejecutando listado..."
 log_plain ""
 
-curl -s "$BASE_URL/api/v1/documentos" | python3 -c "
+curl -s "$BASE_URL/api/v1/documentos" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -391,7 +399,7 @@ if [ "$PSQL_AVAILABLE" = true ]; then
     log_header "📄 Contenido desde API (DESCIFRADO):"
     log_plain ""
     
-    curl -s "$BASE_URL/api/v1/documentos" | python3 -c "
+    curl -s "$BASE_URL/api/v1/documentos" | $PYTHON_CMD -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
