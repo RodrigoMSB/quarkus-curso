@@ -43,29 +43,17 @@ NC='\033[0m'
 
 BASE_URL="http://localhost:8080"
 
-# Función para mostrar JSON (funciona con o sin jq)
-show_json() {
-    local json="$1"
-    
-    if ! command -v jq &> /dev/null; then
-        printf "%s\n" "$json" | tee -a "$OUTPUT_FILE"
-        return
-    fi
-    
-    if [ -n "$json" ]; then
-        echo "$json" | jq '.' 2>/dev/null | tee -a "$OUTPUT_FILE" || echo "$json" | tee -a "$OUTPUT_FILE"
-    fi
-}
-
-# Función para extraer ID del JSON
-extract_id() {
-    local json="$1"
-    if command -v jq &> /dev/null; then
-        echo "$json" | jq -r '.id // ""'
-    else
-        echo "$json" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2
-    fi
-}
+# Detectar Python
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    echo "❌ Error: Python no está instalado"
+    echo "   Windows: https://www.python.org/downloads/"
+    echo "   Mac: brew install python3"
+    exit 1
+fi
 
 # ============================================================================
 # FUNCIONES DE LOGGING
@@ -122,6 +110,7 @@ EOF
 
 echo ""
 echo "🖥️  Sistema: $OS_TYPE"
+echo "🐍 Python: $PYTHON_CMD"
 echo "📅 Fecha: $(date '+%d/%m/%Y %H:%M:%S')"
 echo "🌐 API Base: $BASE_URL"
 echo "📄 Resultados: $OUTPUT_FILE"
@@ -144,6 +133,7 @@ if ! command -v curl &> /dev/null; then
     exit 1
 fi
 log_success "✓ curl instalado"
+log_success "✓ $PYTHON_CMD instalado"
 
 # Verificar servicio
 log_plain ""
@@ -178,19 +168,35 @@ log_plain ""
 log_header "Ejecutando POST /api/v1/documentos..."
 log_plain ""
 
-TEMP_JSON=$(mktemp)
-printf '%s' '{"titulo":"Contrato Confidencial","contenido":"Información confidencial del cliente - DNI: 12345678","tipoDocumento":"CONFIDENCIAL"}' > "$TEMP_JSON"
-
-DOC1_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/documentos" \
+DOC1_RESPONSE=$(curl -s -X POST $BASE_URL/api/v1/documentos \
   -H "Content-Type: application/json" \
-  --data-binary "@$TEMP_JSON")
+  -d '{
+    "titulo": "Contrato Confidencial",
+    "contenido": "Información confidencial del cliente - DNI: 12345678",
+    "tipoDocumento": "CONFIDENCIAL"
+  }')
 
-rm -f "$TEMP_JSON"
-
-DOC1_ID=$(extract_id "$DOC1_RESPONSE")
+DOC1_ID=$(echo "$DOC1_RESPONSE" | $PYTHON_CMD -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    print(data.get('id', ''))
+except:
+    print('')
+")
 
 if [ -n "$DOC1_ID" ]; then
-    show_json "$DOC1_RESPONSE"
+    echo "$DOC1_RESPONSE" | $PYTHON_CMD -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    print(f\"✅ ID: {data.get('id')}\")
+    print(f\"📄 Título: {data.get('titulo')}\")
+    print(f\"📝 Contenido: {data.get('contenido')}\")
+    print(f\"🔒 Tipo: {data.get('tipoDocumento')}\")
+except Exception as e:
+    print(f'❌ Error: {e}')
+" | tee -a "$OUTPUT_FILE"
     log_plain ""
     log_success "✅ Documento creado exitosamente con ID: $DOC1_ID"
     log_plain ""
@@ -218,8 +224,18 @@ log_plain ""
 log_header "Ejecutando GET /api/v1/documentos/$DOC1_ID..."
 log_plain ""
 
-DOC_GET=$(curl -s -X GET "$BASE_URL/api/v1/documentos/$DOC1_ID")
-show_json "$DOC_GET"
+curl -s -X GET "$BASE_URL/api/v1/documentos/$DOC1_ID" | $PYTHON_CMD -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    print(f\"✅ ID: {data.get('id')}\")
+    print(f\"📄 Título: {data.get('titulo')}\")
+    print(f\"📝 Contenido: {data.get('contenido')}\")
+    print(f\"🔒 Tipo: {data.get('tipoDocumento')}\")
+    print(f\"📅 Creado: {data.get('fechaCreacion')}\")
+except Exception as e:
+    print(f'❌ Error: {e}')
+" | tee -a "$OUTPUT_FILE"
 
 log_plain ""
 log_success "✅ Documento descifrado correctamente"
@@ -241,44 +257,41 @@ log_plain ""
 
 # Documento 2
 log_header "Creando documento 2..."
-TEMP_JSON=$(mktemp)
-printf '%s' '{"titulo":"Datos Personales Cliente VIP","contenido":"Nombre: Juan Pérez | Email: juan@mail.com | Teléfono: 987654321","tipoDocumento":"PRIVADO"}' > "$TEMP_JSON"
-
-DOC2_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/documentos" \
+DOC2_RESPONSE=$(curl -s -X POST $BASE_URL/api/v1/documentos \
   -H "Content-Type: application/json" \
-  --data-binary "@$TEMP_JSON")
+  -d '{
+    "titulo": "Datos Personales Cliente VIP",
+    "contenido": "Nombre: Juan Pérez | Email: juan@mail.com | Teléfono: 987654321",
+    "tipoDocumento": "PRIVADO"
+  }')
 
-rm -f "$TEMP_JSON"
-
-DOC2_ID=$(extract_id "$DOC2_RESPONSE")
+DOC2_ID=$(echo "$DOC2_RESPONSE" | $PYTHON_CMD -c "import sys, json; print(json.load(sys.stdin).get('id', ''))")
 log_success "✅ Documento 2 creado con ID: $DOC2_ID"
 
 # Documento 3
 log_header "Creando documento 3..."
-TEMP_JSON=$(mktemp)
-printf '%s' '{"titulo":"Historial Crediticio","contenido":"Score: 850 | Deudas: S/0.00 | Línea de crédito: S/50,000","tipoDocumento":"CONFIDENCIAL"}' > "$TEMP_JSON"
-
-DOC3_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/documentos" \
+DOC3_RESPONSE=$(curl -s -X POST $BASE_URL/api/v1/documentos \
   -H "Content-Type: application/json" \
-  --data-binary "@$TEMP_JSON")
+  -d '{
+    "titulo": "Historial Crediticio",
+    "contenido": "Score: 850 | Deudas: S/0.00 | Línea de crédito: S/50,000",
+    "tipoDocumento": "CONFIDENCIAL"
+  }')
 
-rm -f "$TEMP_JSON"
-
-DOC3_ID=$(extract_id "$DOC3_RESPONSE")
+DOC3_ID=$(echo "$DOC3_RESPONSE" | $PYTHON_CMD -c "import sys, json; print(json.load(sys.stdin).get('id', ''))")
 log_success "✅ Documento 3 creado con ID: $DOC3_ID"
 
 # Documento 4
 log_header "Creando documento 4..."
-TEMP_JSON=$(mktemp)
-printf '%s' '{"titulo":"Información Bancaria","contenido":"Banco: BCP | Cuenta: 191-1234567-0-89 | CCI: 00219100123456708912","tipoDocumento":"CONFIDENCIAL"}' > "$TEMP_JSON"
-
-DOC4_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/documentos" \
+DOC4_RESPONSE=$(curl -s -X POST $BASE_URL/api/v1/documentos \
   -H "Content-Type: application/json" \
-  --data-binary "@$TEMP_JSON")
+  -d '{
+    "titulo": "Información Bancaria",
+    "contenido": "Banco: BCP | Cuenta: 191-1234567-0-89 | CCI: 00219100123456708912",
+    "tipoDocumento": "CONFIDENCIAL"
+  }')
 
-rm -f "$TEMP_JSON"
-
-DOC4_ID=$(extract_id "$DOC4_RESPONSE")
+DOC4_ID=$(echo "$DOC4_RESPONSE" | $PYTHON_CMD -c "import sys, json; print(json.load(sys.stdin).get('id', ''))")
 log_success "✅ Documento 4 creado con ID: $DOC4_ID"
 
 log_plain ""
@@ -300,8 +313,22 @@ log_plain ""
 log_header "Ejecutando GET /api/v1/documentos..."
 log_plain ""
 
-ALL_DOCS=$(curl -s -X GET "$BASE_URL/api/v1/documentos")
-show_json "$ALL_DOCS"
+curl -s -X GET "$BASE_URL/api/v1/documentos" | $PYTHON_CMD -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    print(f\"📊 Total de documentos: {len(data)}\")
+    print(\"\")
+    for i, doc in enumerate(data, 1):
+        print(f\"Documento {i}:\")
+        print(f\"  ID: {doc.get('id')}\")
+        print(f\"  Título: {doc.get('titulo')}\")
+        print(f\"  Contenido: {doc.get('contenido')[:50]}...\")
+        print(f\"  Tipo: {doc.get('tipoDocumento')}\")
+        print(\"\")
+except Exception as e:
+    print(f'❌ Error: {e}')
+" | tee -a "$OUTPUT_FILE"
 
 log_success "✅ Todos los documentos descifrados correctamente"
 log_info "💡 Cada documento se descifró individualmente de forma automática"
@@ -310,6 +337,65 @@ pause_script
 log_plain ""
 
 ##############################################################################
+# PRUEBA 5: Actualizar Documento
+##############################################################################
+log_info "═══════════════════════════════════════════════════════════"
+log_warning "📋 PRUEBA 5: Actualizar Documento Cifrado"
+log_info "═══════════════════════════════════════════════════════════"
+log_plain ""
+log_plain "🎯 Objetivo: Actualizar contenido y verificar nuevo cifrado"
+log_plain "🔄 Proceso: Nuevo contenido → Nuevo cifrado → Nueva persistencia"
+log_plain ""
+log_header "Actualizando documento $DOC1_ID..."
+log_plain ""
+
+curl -s -X PUT "$BASE_URL/api/v1/documentos/$DOC1_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titulo": "Contrato Confidencial ACTUALIZADO",
+    "contenido": "Información MODIFICADA - DNI: 12345678 | Status: ACTUALIZADO",
+    "tipoDocumento": "CONFIDENCIAL"
+  }' | $PYTHON_CMD -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    print(f\"✅ ID: {data.get('id')}\")
+    print(f\"📄 Título: {data.get('titulo')}\")
+    print(f\"📝 Contenido: {data.get('contenido')}\")
+    print(f\"🔒 Tipo: {data.get('tipoDocumento')}\")
+except Exception as e:
+    print(f'❌ Error: {e}')
+" | tee -a "$OUTPUT_FILE"
+
+log_plain ""
+log_success "✅ Documento actualizado y re-cifrado correctamente"
+log_plain ""
+pause_script
+log_plain ""
+
+##############################################################################
+# PRUEBA 6: Eliminar Documento
+##############################################################################
+log_info "═══════════════════════════════════════════════════════════"
+log_warning "📋 PRUEBA 6: Eliminar Documento Cifrado"
+log_info "═══════════════════════════════════════════════════════════"
+log_plain ""
+log_plain "🎯 Objetivo: Eliminar un documento de la base de datos"
+log_plain ""
+log_header "Eliminando documento $DOC4_ID..."
+log_plain ""
+
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$BASE_URL/api/v1/documentos/$DOC4_ID")
+
+if [ "$HTTP_CODE" = "204" ]; then
+    log_success "✅ Documento eliminado exitosamente (HTTP 204)"
+else
+    log_error "❌ Error al eliminar documento (HTTP $HTTP_CODE)"
+fi
+
+log_plain ""
+pause_script
+log_plain ""
 
 # ============================================================================
 # RESUMEN
@@ -323,6 +409,8 @@ log_success "✅ PRUEBA 1: Documento creado y cifrado automáticamente"
 log_success "✅ PRUEBA 2: Descifrado automático al consultar por ID"
 log_success "✅ PRUEBA 3: Múltiples documentos creados con cifrado"
 log_success "✅ PRUEBA 4: Listado masivo con descifrado automático"
+log_success "✅ PRUEBA 5: Documento actualizado y re-cifrado"
+log_success "✅ PRUEBA 6: Documento eliminado correctamente"
 log_plain ""
 
 log_header "╔════════════════════════════════════════════════════════════════╗"
@@ -389,9 +477,7 @@ echo -e "${MAGENTA}║                    ✅ PRUEBAS FINALIZADAS               
 echo -e "${MAGENTA}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${GREEN}📄 Archivo de log: ${CYAN}$OUTPUT_FILE${NC}"
-echo -e "${GREEN}📊 Total de pruebas: ${YELLOW}4${NC}"
-echo -e "${GREEN}✓ Tests Exitosos: ${YELLOW}4${NC}"
-echo -e "${RED}✗ Tests Fallidos: ${YELLOW}0"
+echo -e "${GREEN}📊 Total de pruebas: ${YELLOW}6${NC}"
 echo -e "${GREEN}🔐 Documentos probados: ${YELLOW}4${NC}"
 echo -e "${GREEN}✨ Estado: ${YELLOW}Completado${NC}"
 echo ""

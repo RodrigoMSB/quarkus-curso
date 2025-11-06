@@ -86,7 +86,7 @@ fi
 log ""
 pause
 
-# Función para ejecutar test
+# Función para ejecutar test con archivo temporal
 run_test() {
     local test_num="$1"
     local test_name="$2"
@@ -117,11 +117,20 @@ run_test() {
     log "${MAGENTA}═══════════════════════════════════════════════════════════════════════════${RESET}"
     log ""
     
-    # Ejecutar request
+    # Ejecutar request usando archivo temporal para POST
     if [ -z "$data" ]; then
-        response=$(curl -s -w "\n%{http_code}" -X "$method" "$endpoint" -H "Content-Type: application/json" 2>/dev/null)
+        response=$(curl -s -w "\n%{http_code}" -X "$method" "$endpoint" \
+            -H "Content-Type: application/json" 2>/dev/null)
     else
-        response=$(curl -s -w "\n%{http_code}" -X "$method" "$endpoint" -H "Content-Type: application/json" -d "$data" 2>/dev/null)
+        # SOLUCIÓN WINDOWS: Escribir JSON en archivo temporal con printf para evitar problemas de encoding
+        local temp_file=$(mktemp)
+        printf '%s' "$data" > "$temp_file"
+        
+        response=$(curl -s -w "\n%{http_code}" -X "$method" "$endpoint" \
+            -H "Content-Type: application/json" \
+            --data-binary "@$temp_file" 2>/dev/null)
+        
+        rm -f "$temp_file"
     fi
     
     # Separar body y status
@@ -184,16 +193,7 @@ run_test 1 \
     "Solicitud con perfil EXCELENTE (Score >= 800)" \
     "POST" \
     "$API_URL/api/v1/creditos/evaluar" \
-    '{
-        "dni": "12345678",
-        "nombreCompleto": "Juan Pérez García",
-        "email": "juan.perez@banco.pe",
-        "edad": 35,
-        "ingresosMensuales": 2500000,
-        "deudasActuales": 300000,
-        "montoSolicitado": 5000000,
-        "mesesEnEmpleoActual": 48
-    }' \
+    '{"dni":"12345678","nombreCompleto":"Juan Pérez García","email":"juan.perez@banco.pe","edad":35,"ingresosMensuales":2500000,"deudasActuales":300000,"montoSolicitado":5000000,"mesesEnEmpleoActual":48}' \
     "201" \
     "✅ APROBADA - Score >= 800 - Excelente capacidad de pago, DTI bajo (12%), alta estabilidad laboral"
 
@@ -202,16 +202,7 @@ run_test 2 \
     "Solicitud con perfil BUENO (Score 650-799)" \
     "POST" \
     "$API_URL/api/v1/creditos/evaluar" \
-    '{
-        "dni": "23456789",
-        "nombreCompleto": "María Silva Torres",
-        "email": "maria.silva@banco.pe",
-        "edad": 28,
-        "ingresosMensuales": 1800000,
-        "deudasActuales": 400000,
-        "montoSolicitado": 3000000,
-        "mesesEnEmpleoActual": 24
-    }' \
+    '{"dni":"23456789","nombreCompleto":"María Silva Torres","email":"maria.silva@banco.pe","edad":28,"ingresosMensuales":1800000,"deudasActuales":400000,"montoSolicitado":3000000,"mesesEnEmpleoActual":24}' \
     "201" \
     "✅ APROBADA - Score entre 650-799 - Buen perfil, DTI aceptable (22%), estabilidad laboral adecuada"
 
@@ -237,16 +228,7 @@ run_test 3 \
     "Rechazo por DTI alto (>50%)" \
     "POST" \
     "$API_URL/api/v1/creditos/evaluar" \
-    '{
-        "dni": "34567890",
-        "nombreCompleto": "Carlos Rojas Vega",
-        "email": "carlos.rojas@banco.pe",
-        "edad": 42,
-        "ingresosMensuales": 1500000,
-        "deudasActuales": 900000,
-        "montoSolicitado": 4000000,
-        "mesesEnEmpleoActual": 12
-    }' \
+    '{"dni":"34567890","nombreCompleto":"Carlos Rojas Vega","email":"carlos.rojas@banco.pe","edad":42,"ingresosMensuales":1500000,"deudasActuales":900000,"montoSolicitado":4000000,"mesesEnEmpleoActual":12}' \
     "201" \
     "❌ RECHAZADA - DTI = 60% (límite: 50%) - Sobre-endeudamiento detectado, alto riesgo de impago"
 
@@ -255,16 +237,7 @@ run_test 4 \
     "Rechazo por inestabilidad laboral (<3 meses)" \
     "POST" \
     "$API_URL/api/v1/creditos/evaluar" \
-    '{
-        "dni": "45678901",
-        "nombreCompleto": "Ana López Muñoz",
-        "email": "ana.lopez@banco.pe",
-        "edad": 23,
-        "ingresosMensuales": 1200000,
-        "deudasActuales": 150000,
-        "montoSolicitado": 2000000,
-        "mesesEnEmpleoActual": 2
-    }' \
+    '{"dni":"45678901","nombreCompleto":"Ana López Muñoz","email":"ana.lopez@banco.pe","edad":23,"ingresosMensuales":1200000,"deudasActuales":150000,"montoSolicitado":2000000,"mesesEnEmpleoActual":2}' \
     "201" \
     "❌ RECHAZADA - Empleo actual: 2 meses (mínimo: 3) - Riesgo de pérdida de ingresos"
 
@@ -290,16 +263,7 @@ run_test 5 \
     "Validación de DNI inválido (5 dígitos)" \
     "POST" \
     "$API_URL/api/v1/creditos/evaluar" \
-    '{
-        "dni": "12345",
-        "nombreCompleto": "Pedro Inválido",
-        "email": "pedro@banco.pe",
-        "edad": 30,
-        "ingresosMensuales": 2000000,
-        "deudasActuales": 200000,
-        "montoSolicitado": 3000000,
-        "mesesEnEmpleoActual": 12
-    }' \
+    '{"dni":"12345","nombreCompleto":"Pedro Inválido","email":"pedro@banco.pe","edad":30,"ingresosMensuales":2000000,"deudasActuales":200000,"montoSolicitado":3000000,"mesesEnEmpleoActual":12}' \
     "400" \
     "❌ Error 400 Bad Request - DNI debe tener exactamente 8 dígitos. Validador @DniValido funcionando"
 
@@ -308,16 +272,7 @@ run_test 6 \
     "Validación de DNI inválido (10 dígitos)" \
     "POST" \
     "$API_URL/api/v1/creditos/evaluar" \
-    '{
-        "dni": "1234567890",
-        "nombreCompleto": "Luis Inválido",
-        "email": "luis@banco.pe",
-        "edad": 40,
-        "ingresosMensuales": 3000000,
-        "deudasActuales": 500000,
-        "montoSolicitado": 6000000,
-        "mesesEnEmpleoActual": 24
-    }' \
+    '{"dni":"1234567890","nombreCompleto":"Luis Inválido","email":"luis@banco.pe","edad":40,"ingresosMensuales":3000000,"deudasActuales":500000,"montoSolicitado":6000000,"mesesEnEmpleoActual":24}' \
     "400" \
     "❌ Error 400 Bad Request - DNI no puede exceder 8 dígitos"
 
@@ -326,16 +281,7 @@ run_test 7 \
     "Validación de email inválido" \
     "POST" \
     "$API_URL/api/v1/creditos/evaluar" \
-    '{
-        "dni": "87654321",
-        "nombreCompleto": "Rosa Flores",
-        "email": "email-invalido",
-        "edad": 32,
-        "ingresosMensuales": 2200000,
-        "deudasActuales": 400000,
-        "montoSolicitado": 4000000,
-        "mesesEnEmpleoActual": 18
-    }' \
+    '{"dni":"87654321","nombreCompleto":"Rosa Flores","email":"email-invalido","edad":32,"ingresosMensuales":2200000,"deudasActuales":400000,"montoSolicitado":4000000,"mesesEnEmpleoActual":18}' \
     "400" \
     "❌ Error 400 Bad Request - Email debe tener formato válido. Validador @Email funcionando"
 
@@ -344,16 +290,7 @@ run_test 8 \
     "Validación de edad mínima (<18)" \
     "POST" \
     "$API_URL/api/v1/creditos/evaluar" \
-    '{
-        "dni": "11223344",
-        "nombreCompleto": "Menor Edad",
-        "email": "menor@banco.pe",
-        "edad": 17,
-        "ingresosMensuales": 1000000,
-        "deudasActuales": 0,
-        "montoSolicitado": 1000000,
-        "mesesEnEmpleoActual": 6
-    }' \
+    '{"dni":"11223344","nombreCompleto":"Menor Edad","email":"menor@banco.pe","edad":17,"ingresosMensuales":1000000,"deudasActuales":0,"montoSolicitado":1000000,"mesesEnEmpleoActual":6}' \
     "400" \
     "❌ Error 400 Bad Request - Edad mínima 18 años. Validador @Min funcionando"
 

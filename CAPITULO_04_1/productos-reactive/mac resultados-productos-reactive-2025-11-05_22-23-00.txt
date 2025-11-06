@@ -1,0 +1,722 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║  ⚡ PRUEBAS INTERACTIVAS - API REACTIVA DE PRODUCTOS (QUARKUS)       ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📅 Fecha: 05/11/2025 22:23:00
+🌐 Servidor: http://localhost:8080
+📄 Resultados: resultados-productos-reactive-2025-11-05_22-23-00.txt
+
+🔍 Verificando servidor... ✓ Online
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Presiona ENTER para continuar entre tests
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+  📦 MÓDULO 1: OPERACIONES CRUD BÁSICAS (REACTIVO)
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #1: Listar todos los productos (GET all)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/api/v1/productos/reactivo
+
+Response (HTTP 200):
+[
+  {
+    "id": 1,
+    "nombre": "Laptop Dell XPS",
+    "descripcion": "Laptop de alto rendimiento",
+    "precio": 1500.0,
+    "stock": 10
+  },
+  {
+    "id": 2,
+    "nombre": "Mouse Logitech",
+    "descripcion": "Mouse inalámbrico",
+    "precio": 25.5,
+    "stock": 50
+  },
+  {
+    "id": 3,
+    "nombre": "Teclado Mecánico",
+    "descripcion": "Teclado RGB",
+    "precio": 89.99,
+    "stock": 30
+  }
+]
+
+✓ PASS (Expected 200, got 200)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #2: Buscar producto por ID (1)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/api/v1/productos/reactivo/1
+
+Response (HTTP 200):
+{
+  "id": 1,
+  "nombre": "Laptop Dell XPS",
+  "descripcion": "Laptop de alto rendimiento",
+  "precio": 1500.0,
+  "stock": 10
+}
+
+✓ PASS (Expected 200, got 200)
+→ ID capturado: 1
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #3: Crear nuevo producto - Auriculares Sony
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/api/v1/productos/reactivo
+Data:
+{
+  "nombre": "Auriculares Sony WH-1000XM5",
+  "descripcion": "Auriculares inalámbricos con cancelación de ruido",
+  "precio": 299.99,
+  "stock": 25
+}
+
+Response (HTTP 201):
+{
+  "id": 4,
+  "nombre": "Auriculares Sony WH-1000XM5",
+  "descripcion": "Auriculares inalámbricos con cancelación de ruido",
+  "precio": 299.99,
+  "stock": 25
+}
+
+✓ PASS (Expected 201, got 201)
+→ ID capturado: 4
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #4: Actualizar producto existente (ID=1)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   PUT
+Endpoint: http://localhost:8080/api/v1/productos/reactivo/1
+Data:
+{
+  "nombre": "Laptop Dell XPS 15 Pro Actualizada",
+  "descripcion": "Laptop profesional de última generación",
+  "precio": 1800.00,
+  "stock": 20
+}
+
+Response (HTTP 200):
+{
+  "id": 1,
+  "nombre": "Laptop Dell XPS 15 Pro Actualizada",
+  "descripcion": "Laptop profesional de última generación",
+  "precio": 1800.0,
+  "stock": 20
+}
+
+✓ PASS (Expected 200, got 200)
+→ ID capturado: 1
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #5: Buscar producto inexistente (404)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/api/v1/productos/reactivo/99999
+
+Response (HTTP 404):
+
+✓ PASS (Expected 404, got 404)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #6: Eliminar producto (ID=3)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   DELETE
+Endpoint: http://localhost:8080/api/v1/productos/reactivo/3
+
+Response (HTTP 204):
+
+✓ PASS (Expected 204, got 204)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #7: Verificar eliminación (debe retornar 404)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/api/v1/productos/reactivo/3
+
+Response (HTTP 404):
+
+✓ PASS (Expected 404, got 404)
+
+Presiona ENTER para continuar...
+
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+  ⚡ MÓDULO 2: OPERACIONES AVANZADAS (REACTIVO)
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #8: Buscar productos con stock bajo (umbral < 30)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/api/v1/productos/reactivo/stock-bajo/30
+
+Response (HTTP 200):
+[
+  {
+    "id": 4,
+    "nombre": "Auriculares Sony WH-1000XM5",
+    "descripcion": "Auriculares inalámbricos con cancelación de ruido",
+    "precio": 299.99,
+    "stock": 25
+  },
+  {
+    "id": 1,
+    "nombre": "Laptop Dell XPS 15 Pro Actualizada",
+    "descripcion": "Laptop profesional de última generación",
+    "precio": 1800.0,
+    "stock": 20
+  }
+]
+
+✓ PASS (Expected 200, got 200)
+
+Presiona ENTER para continuar...
+
+⚠️  NOTA: El siguiente test creará 50 productos de forma reactiva
+    Demuestra las ventajas de programación reactiva en operaciones masivas
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #9: Carga masiva - Crear 50 productos (concurrencia reactiva)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/api/v1/productos/reactivo/carga-masiva/50
+
+Response (HTTP 200):
+{
+  "mensaje": "50 productos creados exitosamente"
+}
+
+✓ PASS (Expected 200, got 200)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #10: Verificar carga masiva - Listar todos los productos
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/api/v1/productos/reactivo
+
+Response (HTTP 200):
+[
+  {
+    "id": 2,
+    "nombre": "Mouse Logitech",
+    "descripcion": "Mouse inalámbrico",
+    "precio": 25.5,
+    "stock": 50
+  },
+  {
+    "id": 4,
+    "nombre": "Auriculares Sony WH-1000XM5",
+    "descripcion": "Auriculares inalámbricos con cancelación de ruido",
+    "precio": 299.99,
+    "stock": 25
+  },
+  {
+    "id": 1,
+    "nombre": "Laptop Dell XPS 15 Pro Actualizada",
+    "descripcion": "Laptop profesional de última generación",
+    "precio": 1800.0,
+    "stock": 20
+  },
+  {
+    "id": 5,
+    "nombre": "Producto Masivo 1",
+    "descripcion": "Generado automáticamente",
+    "precio": 447.623119685901,
+    "stock": 56
+  },
+  {
+    "id": 6,
+    "nombre": "Producto Masivo 2",
+    "descripcion": "Generado automáticamente",
+    "precio": 401.60203733823107,
+    "stock": 16
+  },
+  {
+    "id": 7,
+    "nombre": "Producto Masivo 3",
+    "descripcion": "Generado automáticamente",
+    "precio": 927.0231564687165,
+    "stock": 90
+  },
+  {
+    "id": 8,
+    "nombre": "Producto Masivo 4",
+    "descripcion": "Generado automáticamente",
+    "precio": 946.0092406878189,
+    "stock": 48
+  },
+  {
+    "id": 9,
+    "nombre": "Producto Masivo 5",
+    "descripcion": "Generado automáticamente",
+    "precio": 367.881838767382,
+    "stock": 32
+  },
+  {
+    "id": 10,
+    "nombre": "Producto Masivo 6",
+    "descripcion": "Generado automáticamente",
+    "precio": 193.03472167030932,
+    "stock": 48
+  },
+  {
+    "id": 11,
+    "nombre": "Producto Masivo 7",
+    "descripcion": "Generado automáticamente",
+    "precio": 970.0189414570195,
+    "stock": 74
+  },
+  {
+    "id": 12,
+    "nombre": "Producto Masivo 8",
+    "descripcion": "Generado automáticamente",
+    "precio": 768.499657550619,
+    "stock": 4
+  },
+  {
+    "id": 13,
+    "nombre": "Producto Masivo 9",
+    "descripcion": "Generado automáticamente",
+    "precio": 759.1690979038295,
+    "stock": 34
+  },
+  {
+    "id": 14,
+    "nombre": "Producto Masivo 10",
+    "descripcion": "Generado automáticamente",
+    "precio": 566.9150168835191,
+    "stock": 76
+  },
+  {
+    "id": 15,
+    "nombre": "Producto Masivo 11",
+    "descripcion": "Generado automáticamente",
+    "precio": 56.05547449004378,
+    "stock": 7
+  },
+  {
+    "id": 16,
+    "nombre": "Producto Masivo 12",
+    "descripcion": "Generado automáticamente",
+    "precio": 464.8926453119038,
+    "stock": 64
+  },
+  {
+    "id": 17,
+    "nombre": "Producto Masivo 13",
+    "descripcion": "Generado automáticamente",
+    "precio": 507.9682931390105,
+    "stock": 23
+  },
+  {
+    "id": 18,
+    "nombre": "Producto Masivo 14",
+    "descripcion": "Generado automáticamente",
+    "precio": 463.10454374193677,
+    "stock": 79
+  },
+  {
+    "id": 19,
+    "nombre": "Producto Masivo 15",
+    "descripcion": "Generado automáticamente",
+    "precio": 439.5923868487108,
+    "stock": 88
+  },
+  {
+    "id": 20,
+    "nombre": "Producto Masivo 16",
+    "descripcion": "Generado automáticamente",
+    "precio": 144.8817341153511,
+    "stock": 12
+  },
+  {
+    "id": 21,
+    "nombre": "Producto Masivo 17",
+    "descripcion": "Generado automáticamente",
+    "precio": 19.086144548584926,
+    "stock": 87
+  },
+  {
+    "id": 22,
+    "nombre": "Producto Masivo 18",
+    "descripcion": "Generado automáticamente",
+    "precio": 656.9280693001185,
+    "stock": 32
+  },
+  {
+    "id": 23,
+    "nombre": "Producto Masivo 19",
+    "descripcion": "Generado automáticamente",
+    "precio": 880.9218555514225,
+    "stock": 16
+  },
+  {
+    "id": 24,
+    "nombre": "Producto Masivo 20",
+    "descripcion": "Generado automáticamente",
+    "precio": 641.2564241157194,
+    "stock": 89
+  },
+  {
+    "id": 25,
+    "nombre": "Producto Masivo 21",
+    "descripcion": "Generado automáticamente",
+    "precio": 398.7551667233984,
+    "stock": 42
+  },
+  {
+    "id": 26,
+    "nombre": "Producto Masivo 22",
+    "descripcion": "Generado automáticamente",
+    "precio": 677.3377503200953,
+    "stock": 97
+  },
+  {
+    "id": 27,
+    "nombre": "Producto Masivo 23",
+    "descripcion": "Generado automáticamente",
+    "precio": 759.5994897701148,
+    "stock": 21
+  },
+  {
+    "id": 28,
+    "nombre": "Producto Masivo 24",
+    "descripcion": "Generado automáticamente",
+    "precio": 829.5862676168582,
+    "stock": 78
+  },
+  {
+    "id": 29,
+    "nombre": "Producto Masivo 25",
+    "descripcion": "Generado automáticamente",
+    "precio": 354.83846023489383,
+    "stock": 36
+  },
+  {
+    "id": 30,
+    "nombre": "Producto Masivo 26",
+    "descripcion": "Generado automáticamente",
+    "precio": 837.6871765387308,
+    "stock": 29
+  },
+  {
+    "id": 31,
+    "nombre": "Producto Masivo 27",
+    "descripcion": "Generado automáticamente",
+    "precio": 774.1180996947729,
+    "stock": 26
+  },
+  {
+    "id": 32,
+    "nombre": "Producto Masivo 28",
+    "descripcion": "Generado automáticamente",
+    "precio": 335.9052720138856,
+    "stock": 11
+  },
+  {
+    "id": 33,
+    "nombre": "Producto Masivo 29",
+    "descripcion": "Generado automáticamente",
+    "precio": 864.9175605164538,
+    "stock": 93
+  },
+  {
+    "id": 34,
+    "nombre": "Producto Masivo 30",
+    "descripcion": "Generado automáticamente",
+    "precio": 242.3967185603698,
+    "stock": 47
+  },
+  {
+    "id": 35,
+    "nombre": "Producto Masivo 31",
+    "descripcion": "Generado automáticamente",
+    "precio": 903.6052053521469,
+    "stock": 42
+  },
+  {
+    "id": 36,
+    "nombre": "Producto Masivo 32",
+    "descripcion": "Generado automáticamente",
+    "precio": 120.6782195840782,
+    "stock": 93
+  },
+  {
+    "id": 37,
+    "nombre": "Producto Masivo 33",
+    "descripcion": "Generado automáticamente",
+    "precio": 913.0450230929254,
+    "stock": 59
+  },
+  {
+    "id": 38,
+    "nombre": "Producto Masivo 34",
+    "descripcion": "Generado automáticamente",
+    "precio": 882.7910332239117,
+    "stock": 79
+  },
+  {
+    "id": 39,
+    "nombre": "Producto Masivo 35",
+    "descripcion": "Generado automáticamente",
+    "precio": 557.3257277549883,
+    "stock": 6
+  },
+  {
+    "id": 40,
+    "nombre": "Producto Masivo 36",
+    "descripcion": "Generado automáticamente",
+    "precio": 677.3299674545021,
+    "stock": 8
+  },
+  {
+    "id": 41,
+    "nombre": "Producto Masivo 37",
+    "descripcion": "Generado automáticamente",
+    "precio": 845.9427125601327,
+    "stock": 27
+  },
+  {
+    "id": 42,
+    "nombre": "Producto Masivo 38",
+    "descripcion": "Generado automáticamente",
+    "precio": 185.39031317562217,
+    "stock": 76
+  },
+  {
+    "id": 43,
+    "nombre": "Producto Masivo 39",
+    "descripcion": "Generado automáticamente",
+    "precio": 87.77132338458105,
+    "stock": 24
+  },
+  {
+    "id": 44,
+    "nombre": "Producto Masivo 40",
+    "descripcion": "Generado automáticamente",
+    "precio": 833.6187649973873,
+    "stock": 88
+  },
+  {
+    "id": 45,
+    "nombre": "Producto Masivo 41",
+    "descripcion": "Generado automáticamente",
+    "precio": 149.42713897050564,
+    "stock": 57
+  },
+  {
+    "id": 46,
+    "nombre": "Producto Masivo 42",
+    "descripcion": "Generado automáticamente",
+    "precio": 625.936334662494,
+    "stock": 58
+  },
+  {
+    "id": 47,
+    "nombre": "Producto Masivo 43",
+    "descripcion": "Generado automáticamente",
+    "precio": 93.11711147888602,
+    "stock": 73
+  },
+  {
+    "id": 48,
+    "nombre": "Producto Masivo 44",
+    "descripcion": "Generado automáticamente",
+    "precio": 394.13540448991466,
+    "stock": 37
+  },
+  {
+    "id": 49,
+    "nombre": "Producto Masivo 45",
+    "descripcion": "Generado automáticamente",
+    "precio": 695.843159203918,
+    "stock": 16
+  },
+  {
+    "id": 50,
+    "nombre": "Producto Masivo 46",
+    "descripcion": "Generado automáticamente",
+    "precio": 272.4346295071491,
+    "stock": 26
+  },
+  {
+    "id": 51,
+    "nombre": "Producto Masivo 47",
+    "descripcion": "Generado automáticamente",
+    "precio": 184.82750099823352,
+    "stock": 66
+  },
+  {
+    "id": 52,
+    "nombre": "Producto Masivo 48",
+    "descripcion": "Generado automáticamente",
+    "precio": 112.20883250748493,
+    "stock": 44
+  },
+  {
+    "id": 53,
+    "nombre": "Producto Masivo 49",
+    "descripcion": "Generado automáticamente",
+    "precio": 763.2871411107012,
+    "stock": 98
+  },
+  {
+    "id": 54,
+    "nombre": "Producto Masivo 50",
+    "descripcion": "Generado automáticamente",
+    "precio": 370.49406624709155,
+    "stock": 61
+  }
+]
+
+✓ PASS (Expected 200, got 200)
+
+Presiona ENTER para continuar...
+
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+  🔍 MÓDULO 3: VALIDACIONES Y CASOS EDGE
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #11: Validar rechazo de precio negativo (400)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/api/v1/productos/reactivo
+Data:
+{
+  "nombre": "Producto Inválido",
+  "descripcion": "Precio negativo",
+  "precio": -100.00,
+  "stock": 10
+}
+
+Response (HTTP 400):
+{
+  "error": "El precio debe ser mayor a 0"
+}
+
+✓ PASS (Expected 400, got 400)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #12: Validar rechazo de stock negativo (400)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/api/v1/productos/reactivo
+Data:
+{
+  "nombre": "Producto Inválido 2",
+  "descripcion": "Stock negativo",
+  "precio": 100.00,
+  "stock": -5
+}
+
+Response (HTTP 400):
+{
+  "error": "El stock no puede ser negativo"
+}
+
+✓ PASS (Expected 400, got 400)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #13: Actualizar producto inexistente (404)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   PUT
+Endpoint: http://localhost:8080/api/v1/productos/reactivo/99999
+Data:
+{
+  "nombre": "Producto que no existe",
+  "descripcion": "Test",
+  "precio": 100.00,
+  "stock": 10
+}
+
+Response (HTTP 404):
+
+✓ PASS (Expected 404, got 404)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #14: Eliminar producto ya eliminado (404)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   DELETE
+Endpoint: http://localhost:8080/api/v1/productos/reactivo/3
+
+Response (HTTP 404):
+
+✓ PASS (Expected 404, got 404)
+
+Presiona ENTER para continuar...
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  📊 RESUMEN DE EJECUCIÓN                                                ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+  🎉 ✓ TODOS LOS TESTS PASARON
+
+  ✓ Tests Exitosos:  14 / 14
+  ✗ Tests Fallidos:  0 / 14
+
+  📄 Resultados guardados en: resultados-productos-reactive-2025-11-05_22-23-00.txt
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  IDs Capturados (para pruebas manuales)                                ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+  Producto 1:       1
+  Producto 2:       2
+  Producto Nuevo:   4
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  ⚡ Conceptos Reactivos Demostrados                                     ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+  ✓ Operaciones no bloqueantes (Uni<T>)
+  ✓ Composición reactiva con Mutiny
+  ✓ Transacciones reactivas (Panache.withTransaction)
+  ✓ Alta concurrencia (carga masiva de 50 productos)
+  ✓ Driver PostgreSQL reactivo (reactive-pg-client)
+

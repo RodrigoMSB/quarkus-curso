@@ -1,0 +1,1134 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║  🏦  PRUEBAS INTERACTIVAS - SISTEMA DE PRÉSTAMOS BANCARIOS              ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📅 Fecha: 05/11/2025 22:07:36
+🌐 Servidor: http://localhost:8080
+📄 Resultados: resultados-tests-2025-11-05_22-07-36.txt
+
+🔍 Verificando servidor... ✓ Online
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Presiona ENTER para continuar entre tests
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+  📋 MÓDULO 1: GESTIÓN DE CLIENTES (CRUD)
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #1: Crear cliente María González
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/clientes
+Data:
+{
+  "nombre": "María Elena González Quispe",
+  "dni": "47836291",
+  "email": "maria.gonzalez@banco.pe",
+  "telefono": "987654321"
+}
+
+Response (HTTP 201):
+{
+  "id": 601,
+  "nombre": "María Elena González Quispe",
+  "dni": "47836291",
+  "email": "maria.gonzalez@banco.pe",
+  "telefono": "987654321"
+}
+
+✓ PASS (Expected 201, got 201)
+→ ID capturado: 601
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #2: Crear cliente Carlos Huamán
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/clientes
+Data:
+{
+  "nombre": "Carlos Alberto Huamán Rojas",
+  "dni": "72149803",
+  "email": "carlos.huaman@banco.pe",
+  "telefono": "956782341"
+}
+
+Response (HTTP 201):
+{
+  "id": 602,
+  "nombre": "Carlos Alberto Huamán Rojas",
+  "dni": "72149803",
+  "email": "carlos.huaman@banco.pe",
+  "telefono": "956782341"
+}
+
+✓ PASS (Expected 201, got 201)
+→ ID capturado: 602
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #3: Crear cliente Rosa Mendoza
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/clientes
+Data:
+{
+  "nombre": "Rosa María Mendoza Vargas",
+  "dni": "68234519",
+  "email": "rosa.mendoza@banco.pe",
+  "telefono": "923456789"
+}
+
+Response (HTTP 201):
+{
+  "id": 603,
+  "nombre": "Rosa María Mendoza Vargas",
+  "dni": "68234519",
+  "email": "rosa.mendoza@banco.pe",
+  "telefono": "923456789"
+}
+
+✓ PASS (Expected 201, got 201)
+→ ID capturado: 603
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #4: Validar rechazo de DNI duplicado
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/clientes
+Data:
+{
+  "nombre": "Duplicado Test",
+  "dni": "47836291",
+  "email": "duplicado@test.com",
+  "telefono": "999999999"
+}
+
+Response (HTTP 409):
+
+✓ PASS (Expected 409, got 409)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #5: Validar rechazo de email duplicado
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/clientes
+Data:
+{
+  "nombre": "Duplicado Test 2",
+  "dni": "99999999",
+  "email": "maria.gonzalez@banco.pe",
+  "telefono": "999999999"
+}
+
+Response (HTTP 409):
+
+✓ PASS (Expected 409, got 409)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #6: Listar todos los clientes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/clientes
+
+Response (HTTP 200):
+[
+  {
+    "id": 601,
+    "nombre": "María Elena González Quispe",
+    "dni": "47836291",
+    "email": "maria.gonzalez@banco.pe",
+    "telefono": "987654321"
+  },
+  {
+    "id": 602,
+    "nombre": "Carlos Alberto Huamán Rojas",
+    "dni": "72149803",
+    "email": "carlos.huaman@banco.pe",
+    "telefono": "956782341"
+  },
+  {
+    "id": 603,
+    "nombre": "Rosa María Mendoza Vargas",
+    "dni": "68234519",
+    "email": "rosa.mendoza@banco.pe",
+    "telefono": "923456789"
+  }
+]
+
+✓ PASS (Expected 200, got 200)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #7: Obtener cliente por ID (601)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/clientes/601
+
+Response (HTTP 200):
+{
+  "id": 601,
+  "nombre": "María Elena González Quispe",
+  "dni": "47836291",
+  "email": "maria.gonzalez@banco.pe",
+  "telefono": "987654321"
+}
+
+✓ PASS (Expected 200, got 200)
+→ ID capturado: 601
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #8: Actualizar teléfono de cliente
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   PUT
+Endpoint: http://localhost:8080/clientes/602
+Data:
+{
+  "nombre": "Carlos Alberto Huamán Rojas",
+  "dni": "72149803",
+  "email": "carlos.huaman@banco.pe",
+  "telefono": "999111222"
+}
+
+Response (HTTP 200):
+{
+  "id": 602,
+  "nombre": "Carlos Alberto Huamán Rojas",
+  "dni": "72149803",
+  "email": "carlos.huaman@banco.pe",
+  "telefono": "999111222"
+}
+
+✓ PASS (Expected 200, got 200)
+→ ID capturado: 602
+
+Presiona ENTER para continuar...
+
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+  💰 MÓDULO 2: GESTIÓN DE PRÉSTAMOS
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #9: Crear préstamo vehicular S/ 15,000 (24 meses)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/prestamos
+Data:
+{
+  "clienteId": 601,
+  "monto": 15000.00,
+  "plazoMeses": 24,
+  "tasaInteres": 18.50
+}
+
+Response (HTTP 201):
+{
+  "id": 451,
+  "cliente": {
+    "id": 601,
+    "nombre": "María Elena González Quispe",
+    "dni": "47836291",
+    "email": "maria.gonzalez@banco.pe",
+    "telefono": "987654321"
+  },
+  "monto": 15000.00,
+  "plazoMeses": 24,
+  "tasaInteres": 18.50,
+  "fechaDesembolso": "2025-11-05",
+  "estado": "ACTIVO",
+  "cuotas": [
+    {
+      "id": 451,
+      "numeroCuota": 1,
+      "monto": 856.26,
+      "fechaVencimiento": "2025-12-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 452,
+      "numeroCuota": 2,
+      "monto": 856.26,
+      "fechaVencimiento": "2026-01-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 453,
+      "numeroCuota": 3,
+      "monto": 856.26,
+      "fechaVencimiento": "2026-02-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "_resumen": "... (24 cuotas en total) ..."
+    },
+    {
+      "id": 472,
+      "numeroCuota": 22,
+      "monto": 856.26,
+      "fechaVencimiento": "2027-09-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 473,
+      "numeroCuota": 23,
+      "monto": 856.26,
+      "fechaVencimiento": "2027-10-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 474,
+      "numeroCuota": 24,
+      "monto": 856.26,
+      "fechaVencimiento": "2027-11-05",
+      "fechaPago": null,
+      "pagada": false
+    }
+  ]
+}
+
+✓ PASS (Expected 201, got 201)
+→ ID capturado: 451
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #10: Crear préstamo personal S/ 8,000 (12 meses)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   POST
+Endpoint: http://localhost:8080/prestamos
+Data:
+{
+  "clienteId": 602,
+  "monto": 8000.00,
+  "plazoMeses": 12,
+  "tasaInteres": 22.00
+}
+
+Response (HTTP 201):
+{
+  "id": 452,
+  "cliente": {
+    "id": 602,
+    "nombre": "Carlos Alberto Huamán Rojas",
+    "dni": "72149803",
+    "email": "carlos.huaman@banco.pe",
+    "telefono": "999111222"
+  },
+  "monto": 8000.00,
+  "plazoMeses": 12,
+  "tasaInteres": 22.00,
+  "fechaDesembolso": "2025-11-05",
+  "estado": "ACTIVO",
+  "cuotas": [
+    {
+      "id": 475,
+      "numeroCuota": 1,
+      "monto": 813.33,
+      "fechaVencimiento": "2025-12-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 476,
+      "numeroCuota": 2,
+      "monto": 813.33,
+      "fechaVencimiento": "2026-01-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 477,
+      "numeroCuota": 3,
+      "monto": 813.33,
+      "fechaVencimiento": "2026-02-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "_resumen": "... (12 cuotas en total) ..."
+    },
+    {
+      "id": 484,
+      "numeroCuota": 10,
+      "monto": 813.33,
+      "fechaVencimiento": "2026-09-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 485,
+      "numeroCuota": 11,
+      "monto": 813.33,
+      "fechaVencimiento": "2026-10-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 486,
+      "numeroCuota": 12,
+      "monto": 813.33,
+      "fechaVencimiento": "2026-11-05",
+      "fechaPago": null,
+      "pagada": false
+    }
+  ]
+}
+
+✓ PASS (Expected 201, got 201)
+→ ID capturado: 452
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #11: Listar todos los préstamos
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/prestamos
+
+Response (HTTP 200):
+[
+  {
+    "id": 451,
+    "cliente": {
+      "id": 601,
+      "nombre": "María Elena González Quispe",
+      "dni": "47836291",
+      "email": "maria.gonzalez@banco.pe",
+      "telefono": "987654321"
+    },
+    "monto": 15000.00,
+    "plazoMeses": 24,
+    "tasaInteres": 18.50,
+    "fechaDesembolso": "2025-11-05",
+    "estado": "ACTIVO",
+    "cuotas": [
+      {
+        "id": 451,
+        "numeroCuota": 1,
+        "monto": 856.26,
+        "fechaVencimiento": "2025-12-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 452,
+        "numeroCuota": 2,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-01-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 453,
+        "numeroCuota": 3,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-02-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 454,
+        "numeroCuota": 4,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-03-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 455,
+        "numeroCuota": 5,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-04-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 456,
+        "numeroCuota": 6,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-05-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 457,
+        "numeroCuota": 7,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-06-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 458,
+        "numeroCuota": 8,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-07-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 459,
+        "numeroCuota": 9,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-08-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 460,
+        "numeroCuota": 10,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-09-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 461,
+        "numeroCuota": 11,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-10-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 462,
+        "numeroCuota": 12,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-11-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 463,
+        "numeroCuota": 13,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-12-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 464,
+        "numeroCuota": 14,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-01-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 465,
+        "numeroCuota": 15,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-02-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 466,
+        "numeroCuota": 16,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-03-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 467,
+        "numeroCuota": 17,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-04-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 468,
+        "numeroCuota": 18,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-05-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 469,
+        "numeroCuota": 19,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-06-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 470,
+        "numeroCuota": 20,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-07-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 471,
+        "numeroCuota": 21,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-08-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 472,
+        "numeroCuota": 22,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-09-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 473,
+        "numeroCuota": 23,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-10-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 474,
+        "numeroCuota": 24,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-11-05",
+        "fechaPago": null,
+        "pagada": false
+      }
+    ]
+  },
+  {
+    "id": 452,
+    "cliente": {
+      "id": 602,
+      "nombre": "Carlos Alberto Huamán Rojas",
+      "dni": "72149803",
+      "email": "carlos.huaman@banco.pe",
+      "telefono": "999111222"
+    },
+    "monto": 8000.00,
+    "plazoMeses": 12,
+    "tasaInteres": 22.00,
+    "fechaDesembolso": "2025-11-05",
+    "estado": "ACTIVO",
+    "cuotas": [
+      {
+        "id": 475,
+        "numeroCuota": 1,
+        "monto": 813.33,
+        "fechaVencimiento": "2025-12-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 476,
+        "numeroCuota": 2,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-01-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 477,
+        "numeroCuota": 3,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-02-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 478,
+        "numeroCuota": 4,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-03-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 479,
+        "numeroCuota": 5,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-04-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 480,
+        "numeroCuota": 6,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-05-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 481,
+        "numeroCuota": 7,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-06-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 482,
+        "numeroCuota": 8,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-07-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 483,
+        "numeroCuota": 9,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-08-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 484,
+        "numeroCuota": 10,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-09-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 485,
+        "numeroCuota": 11,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-10-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 486,
+        "numeroCuota": 12,
+        "monto": 813.33,
+        "fechaVencimiento": "2026-11-05",
+        "fechaPago": null,
+        "pagada": false
+      }
+    ]
+  }
+]
+
+✓ PASS (Expected 200, got 200)
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #12: Obtener préstamo por ID (451)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/prestamos/451
+
+Response (HTTP 200):
+{
+  "id": 451,
+  "cliente": {
+    "id": 601,
+    "nombre": "María Elena González Quispe",
+    "dni": "47836291",
+    "email": "maria.gonzalez@banco.pe",
+    "telefono": "987654321"
+  },
+  "monto": 15000.00,
+  "plazoMeses": 24,
+  "tasaInteres": 18.50,
+  "fechaDesembolso": "2025-11-05",
+  "estado": "ACTIVO",
+  "cuotas": [
+    {
+      "id": 451,
+      "numeroCuota": 1,
+      "monto": 856.26,
+      "fechaVencimiento": "2025-12-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 452,
+      "numeroCuota": 2,
+      "monto": 856.26,
+      "fechaVencimiento": "2026-01-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 453,
+      "numeroCuota": 3,
+      "monto": 856.26,
+      "fechaVencimiento": "2026-02-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "_resumen": "... (24 cuotas en total) ..."
+    },
+    {
+      "id": 472,
+      "numeroCuota": 22,
+      "monto": 856.26,
+      "fechaVencimiento": "2027-09-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 473,
+      "numeroCuota": 23,
+      "monto": 856.26,
+      "fechaVencimiento": "2027-10-05",
+      "fechaPago": null,
+      "pagada": false
+    },
+    {
+      "id": 474,
+      "numeroCuota": 24,
+      "monto": 856.26,
+      "fechaVencimiento": "2027-11-05",
+      "fechaPago": null,
+      "pagada": false
+    }
+  ]
+}
+
+✓ PASS (Expected 200, got 200)
+→ ID capturado: 451
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #13: Listar préstamos de María González
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   GET
+Endpoint: http://localhost:8080/prestamos/cliente/601
+
+Response (HTTP 200):
+[
+  {
+    "id": 451,
+    "cliente": {
+      "id": 601,
+      "nombre": "María Elena González Quispe",
+      "dni": "47836291",
+      "email": "maria.gonzalez@banco.pe",
+      "telefono": "987654321"
+    },
+    "monto": 15000.00,
+    "plazoMeses": 24,
+    "tasaInteres": 18.50,
+    "fechaDesembolso": "2025-11-05",
+    "estado": "ACTIVO",
+    "cuotas": [
+      {
+        "id": 451,
+        "numeroCuota": 1,
+        "monto": 856.26,
+        "fechaVencimiento": "2025-12-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 452,
+        "numeroCuota": 2,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-01-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 453,
+        "numeroCuota": 3,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-02-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 454,
+        "numeroCuota": 4,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-03-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 455,
+        "numeroCuota": 5,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-04-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 456,
+        "numeroCuota": 6,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-05-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 457,
+        "numeroCuota": 7,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-06-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 458,
+        "numeroCuota": 8,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-07-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 459,
+        "numeroCuota": 9,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-08-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 460,
+        "numeroCuota": 10,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-09-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 461,
+        "numeroCuota": 11,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-10-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 462,
+        "numeroCuota": 12,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-11-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 463,
+        "numeroCuota": 13,
+        "monto": 856.26,
+        "fechaVencimiento": "2026-12-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 464,
+        "numeroCuota": 14,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-01-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 465,
+        "numeroCuota": 15,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-02-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 466,
+        "numeroCuota": 16,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-03-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 467,
+        "numeroCuota": 17,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-04-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 468,
+        "numeroCuota": 18,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-05-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 469,
+        "numeroCuota": 19,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-06-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 470,
+        "numeroCuota": 20,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-07-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 471,
+        "numeroCuota": 21,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-08-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 472,
+        "numeroCuota": 22,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-09-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 473,
+        "numeroCuota": 23,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-10-05",
+        "fechaPago": null,
+        "pagada": false
+      },
+      {
+        "id": 474,
+        "numeroCuota": 24,
+        "monto": 856.26,
+        "fechaVencimiento": "2027-11-05",
+        "fechaPago": null,
+        "pagada": false
+      }
+    ]
+  }
+]
+
+✓ PASS (Expected 200, got 200)
+
+Presiona ENTER para continuar...
+
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+  💳 MÓDULO 3: SISTEMA DE PAGOS DE CUOTAS
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #14: Pagar cuota 1 del préstamo 451
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   PUT
+Endpoint: http://localhost:8080/prestamos/451/pagar-cuota/1
+
+Response (HTTP 200):
+{
+  "id": 451,
+  "numeroCuota": 1,
+  "monto": 856.26,
+  "fechaVencimiento": "2025-12-05",
+  "fechaPago": "2025-11-05",
+  "pagada": true
+}
+
+✓ PASS (Expected 200, got 200)
+→ ID capturado: 451
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #15: Pagar cuota 2 del préstamo 451
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   PUT
+Endpoint: http://localhost:8080/prestamos/451/pagar-cuota/2
+
+Response (HTTP 200):
+{
+  "id": 452,
+  "numeroCuota": 2,
+  "monto": 856.26,
+  "fechaVencimiento": "2026-01-05",
+  "fechaPago": "2025-11-05",
+  "pagada": true
+}
+
+✓ PASS (Expected 200, got 200)
+→ ID capturado: 452
+
+Presiona ENTER para continuar...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test #16: Rechazar pago de cuota ya pagada
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Method:   PUT
+Endpoint: http://localhost:8080/prestamos/451/pagar-cuota/1
+
+Response (HTTP 409):
+
+✓ PASS (Expected 409, got 409)
+
+Presiona ENTER para continuar...
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  📊 RESUMEN DE EJECUCIÓN                                                ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+  🎉 ✓ TODOS LOS TESTS PASARON
+
+  ✓ Tests Exitosos:  16 / 16
+  ✗ Tests Fallidos:  0 / 16
+
+  📄 Resultados guardados en: resultados-tests-2025-11-05_22-07-36.txt
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  IDs Generados (para pruebas manuales)                                 ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+  Cliente 1 (María):  601
+  Cliente 2 (Carlos): 602
+  Cliente 3 (Rosa):   603
+  Préstamo 1:         451
+  Préstamo 2:         452
+

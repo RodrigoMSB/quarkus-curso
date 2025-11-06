@@ -115,7 +115,11 @@ run_test() {
     if [ -z "$data" ]; then
         response=$(curl -s -w "\n%{http_code}" -X "$method" "$endpoint" -H "Content-Type: application/json" 2>/dev/null)
     else
-        response=$(curl -s -w "\n%{http_code}" -X "$method" "$endpoint" -H "Content-Type: application/json" -d "$data" 2>/dev/null)
+        # Usar archivo temporal para evitar problemas con comillas en Windows
+        TEMP_JSON=$(mktemp)
+        printf '%s' "$data" > "$TEMP_JSON"
+        response=$(curl -s -w "\n%{http_code}" -X "$method" "$endpoint" -H "Content-Type: application/json" --data-binary "@$TEMP_JSON" 2>/dev/null)
+        rm -f "$TEMP_JSON"
     fi
     
     # Separar body y status (AHORA SON VARIABLES GLOBALES)
@@ -137,12 +141,16 @@ run_test() {
     fi
     
     # CAPTURAR ID si el response tiene uno
+    local captured_id=""
     if command -v jq &> /dev/null; then
-        local captured_id=$(echo "$body" | jq -r '.id' 2>/dev/null)
-        if [ -n "$captured_id" ] && [ "$captured_id" != "null" ]; then
-            log "${YELLOW}→ ID capturado: $captured_id${RESET}"
-            echo "$captured_id" > /tmp/last_cliente_id.txt
-        fi
+        captured_id=$(echo "$body" | jq -r '.id // empty' 2>/dev/null)
+    else
+        captured_id=$(echo "$body" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+    fi
+    
+    if [ -n "$captured_id" ] && [ "$captured_id" != "null" ]; then
+        log "${YELLOW}→ ID capturado: $captured_id${RESET}"
+        echo "$captured_id" > /tmp/last_cliente_id.txt
     fi
     
     log ""
