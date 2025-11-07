@@ -36,6 +36,11 @@ ADMIN_USER="admin:admin123"
 AUDITOR_USER="auditor:auditor123"
 EMPLOYEE_USER="employee:employee123"
 
+# Contadores de tests
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
+
 # Función de logging (muestra con colores en pantalla, guarda sin colores en archivo)
 log() {
     local message="$*"
@@ -76,6 +81,10 @@ log "${CYAN}🌐 API Base:${RESET} $BASE_URL"
 log "${CYAN}📄 Resultados:${RESET} $OUTPUT_FILE"
 log "${CYAN}🔐 Seguridad:${RESET} Basic Authentication + Role-Based Access Control"
 log ""
+log "${YELLOW}⚠️  IMPORTANTE:${RESET} El servidor debe iniciarse con el perfil ${GREEN}parte1${RESET}"
+log "${YELLOW}   Comando:${RESET} ${CYAN}./mvnw quarkus:dev -Dquarkus.profile=parte1${RESET}"
+log ""
+pause
 
 ##############################################################################
 # PRUEBA 1: Endpoint Público (@PermitAll)
@@ -94,6 +103,10 @@ log ""
 log "${CYAN}Ejecutando...${RESET}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 # Ejecutar request
 response=$(curl -s -w "\n%{http_code}" $BASE_URL/api/admin/secrets/health 2>/dev/null)
 body=$(echo "$response" | sed '$d')
@@ -105,8 +118,12 @@ log ""
 
 if [ "$status" == "200" ]; then
     log "${GREEN}✓ PASS${RESET} - Endpoint público accesible sin autenticación"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 200)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
@@ -132,6 +149,10 @@ log ""
 log "${CYAN}Ejecutando...${RESET}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 # Ejecutar request
 response=$(curl -s -w "\n%{http_code}" $BASE_URL/api/admin/secrets/all 2>/dev/null)
 body=$(echo "$response" | sed '$d')
@@ -147,8 +168,12 @@ log ""
 
 if [ "$status" == "401" ]; then
     log "${GREEN}✓ PASS${RESET} - Endpoint correctamente protegido"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 401)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
@@ -175,6 +200,8 @@ log ""
 log "${CYAN}Ejecutando...${RESET}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 # Ejecutar request
 response=$(curl -s -w "\n%{http_code}" -u $ADMIN_USER $BASE_URL/api/admin/secrets/all 2>/dev/null)
 body=$(echo "$response" | sed '$d')
@@ -186,8 +213,10 @@ log ""
 
 if [ "$status" == "200" ]; then
     log "${GREEN}✓ PASS${RESET} - Usuario admin autorizado correctamente"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 200)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
@@ -214,6 +243,8 @@ log ""
 log "${CYAN}Ejecutando...${RESET}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 # Ejecutar request
 response=$(curl -s -w "\n%{http_code}" -u $AUDITOR_USER $BASE_URL/api/admin/secrets/all 2>/dev/null)
 body=$(echo "$response" | sed '$d')
@@ -229,8 +260,10 @@ log ""
 
 if [ "$status" == "403" ]; then
     log "${GREEN}✓ PASS${RESET} - Autorización por roles funcionando correctamente"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 403)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
@@ -257,6 +290,8 @@ log ""
 log "${CYAN}Ejecutando...${RESET}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 # Ejecutar request
 response=$(curl -s -w "\n%{http_code}" -u $AUDITOR_USER $BASE_URL/api/admin/secrets/stats 2>/dev/null)
 body=$(echo "$response" | sed '$d')
@@ -268,8 +303,10 @@ log ""
 
 if [ "$status" == "200" ]; then
     log "${GREEN}✓ PASS${RESET} - El auditor tiene acceso permitido"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 200)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
@@ -296,12 +333,21 @@ log ""
 
 # Primero obtenemos un ID de secreto existente
 log "${CYAN}Obteniendo un ID de secreto para probar...${RESET}"
-SECRET_ID=$(curl -s -u $ADMIN_USER $BASE_URL/api/admin/secrets/all | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+all_secrets_response=$(curl -s -u $ADMIN_USER $BASE_URL/api/admin/secrets/all 2>/dev/null)
+
+if command -v jq &> /dev/null; then
+    SECRET_ID=$(echo "$all_secrets_response" | jq -r '.[0].id // empty' 2>/dev/null)
+else
+    SECRET_ID=$(echo "$all_secrets_response" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+fi
+
 log "${YELLOW}📌 ID del secreto a intentar eliminar:${RESET} $SECRET_ID"
 log ""
 
 log "${CYAN}Ejecutando DELETE con usuario auditor...${RESET}"
 log ""
+
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
 
 # Ejecutar request
 response=$(curl -s -w "\n%{http_code}" -X DELETE -u $AUDITOR_USER $BASE_URL/api/admin/secrets/$SECRET_ID 2>/dev/null)
@@ -318,8 +364,10 @@ log ""
 
 if [ "$status" == "403" ]; then
     log "${GREEN}✓ PASS${RESET} - El auditor NO puede eliminar secretos"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 403)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
@@ -346,6 +394,8 @@ log ""
 log "${CYAN}Ejecutando DELETE con usuario admin...${RESET}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 # Ejecutar request
 response=$(curl -s -w "\n%{http_code}" -X DELETE -u $ADMIN_USER $BASE_URL/api/admin/secrets/$SECRET_ID 2>/dev/null)
 body=$(echo "$response" | sed '$d')
@@ -357,8 +407,10 @@ log ""
 
 if [ "$status" == "200" ]; then
     log "${GREEN}✓ PASS${RESET} - Admin autorizado para eliminar secretos"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 200)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
@@ -383,12 +435,17 @@ log ""
 log "${CYAN}Listando todos los secretos...${RESET}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 # Ejecutar request
 all_secrets=$(curl -s -u $ADMIN_USER $BASE_URL/api/admin/secrets/all 2>/dev/null)
 
 log "${YELLOW}Response:${RESET}"
 show_json "$all_secrets"
 log ""
+
+# Esta prueba siempre pasa si obtiene respuesta
+PASSED_TESTS=$((PASSED_TESTS + 1))
 
 log "${GREEN}✓ Compara el número de secretos actual con el inicial (debería ser uno menos)${RESET}"
 pause
@@ -400,17 +457,23 @@ clear
 log ""
 log "${CYAN}╔════════════════════════════════════════════════════════════════╗${RESET}"
 log "${CYAN}║                    📊 RESUMEN DE PRUEBAS                       ║${RESET}"
-log "${CYAN}╚════════════════════════════════════════════════════════════════╗${RESET}"
+log "${CYAN}╚════════════════════════════════════════════════════════════════╝${RESET}"
 log ""
-log "${GREEN}✅ PRUEBA 1:${RESET} Endpoint público accesible sin autenticación"
-log "${GREEN}✅ PRUEBA 2:${RESET} Peticiones sin credenciales son rechazadas (401)"
-log "${GREEN}✅ PRUEBA 3:${RESET} Usuario con rol correcto accede exitosamente (200)"
-log "${GREEN}✅ PRUEBA 4:${RESET} Usuario sin rol requerido es rechazado (403)"
-log "${GREEN}✅ PRUEBA 5:${RESET} Múltiples roles pueden acceder al mismo endpoint"
-log "${GREEN}✅ PRUEBA 6:${RESET} Auditor no puede realizar operaciones destructivas"
-log "${GREEN}✅ PRUEBA 7:${RESET} Admin puede realizar operaciones destructivas"
-log "${GREEN}✅ PRUEBA 8:${RESET} Los cambios persisten correctamente"
+log "  ${CYAN}Total de tests:${RESET}      $TOTAL_TESTS"
+log "  ${GREEN}✓ Tests Exitosos:${RESET}  $PASSED_TESTS"
+log "  ${RED}✗ Tests Fallidos:${RESET}  $FAILED_TESTS"
 log ""
+
+if [ $FAILED_TESTS -gt 0 ]; then
+    log "${YELLOW}⚠️  ADVERTENCIA: Algunos tests fallaron${RESET}"
+    log ""
+    log "${YELLOW}Posible causa:${RESET} El servidor no se inició con el perfil correcto"
+    log "${YELLOW}Solución:${RESET}"
+    log "  ${CYAN}1.${RESET} Detén el servidor (Ctrl+C)"
+    log "  ${CYAN}2.${RESET} Inicia con: ${GREEN}./mvnw quarkus:dev -Dquarkus.profile=parte1${RESET}"
+    log "  ${CYAN}3.${RESET} Vuelve a ejecutar este script"
+    log ""
+fi
 
 log "${CYAN}╔════════════════════════════════════════════════════════════════╗${RESET}"
 log "${CYAN}║              🎓 CONCEPTOS CLAVE DEMOSTRADOS                    ║${RESET}"

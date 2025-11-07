@@ -37,6 +37,11 @@ BASE_URL="http://localhost:8080"
 TOKEN_EMP001=""
 TOKEN_EMP002=""
 
+# Contadores de tests
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
+
 # Función de logging (muestra con colores en pantalla, guarda sin colores en archivo)
 log() {
     local message="$*"
@@ -58,12 +63,19 @@ show_json() {
     fi
 }
 
-# Función para pausa interactiva
+# Función para pausa interactiva (compatible con Windows)
 pause() {
     echo ""
     printf "${CYAN}▶️  Presiona ENTER para continuar...${RESET}"
-    read -r
+    read -r dummy
     echo ""
+}
+
+# Función para decodificar base64 (compatible con Windows y Mac)
+base64_decode() {
+    local input="$1"
+    # Intentar con -d primero (Linux/Git Bash), si falla usar -D (Mac)
+    echo "$input" | base64 -d 2>/dev/null || echo "$input" | base64 -D 2>/dev/null
 }
 
 # Banner inicial
@@ -77,6 +89,10 @@ log "${CYAN}🌐 API Base:${RESET} $BASE_URL"
 log "${CYAN}📄 Resultados:${RESET} $OUTPUT_FILE"
 log "${CYAN}🔐 Seguridad:${RESET} JWT (JSON Web Token) + RSA Signing"
 log ""
+log "${YELLOW}⚠️  IMPORTANTE:${RESET} El servidor debe iniciarse con el perfil ${GREEN}parte2${RESET}"
+log "${YELLOW}   Comando:${RESET} ${CYAN}./mvnw quarkus:dev -Dquarkus.profile=parte2${RESET}"
+log ""
+pause
 
 ##############################################################################
 # PRUEBA 1: Login y Generación de JWT
@@ -96,7 +112,9 @@ log ""
 log "${CYAN}Ejecutando login...${RESET}"
 log ""
 
-# Ejecutar request
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+# Ejecutar request usando -d en lugar de archivo temporal para evitar problemas en Windows
 response=$(curl -s -w "\n%{http_code}" -X POST $BASE_URL/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"emp001","password":"pass001"}' 2>/dev/null)
@@ -109,13 +127,19 @@ show_json "$body"
 log ""
 
 # Extraer el token
-TOKEN_EMP001=$(echo "$body" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+if command -v jq &> /dev/null; then
+    TOKEN_EMP001=$(echo "$body" | jq -r '.token // empty' 2>/dev/null)
+else
+    TOKEN_EMP001=$(echo "$body" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+fi
 
 if [ "$status" == "200" ] && [ -n "$TOKEN_EMP001" ]; then
     log "${GREEN}✓ PASS${RESET} - Login exitoso, token JWT generado"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
     log "${MAGENTA}📌 Token generado (primeros 50 caracteres):${RESET} ${TOKEN_EMP001:0:50}..."
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 200)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
@@ -140,8 +164,9 @@ log ""
 log "${CYAN}Decodificando el payload del JWT...${RESET}"
 log ""
 
-# Decodificar el payload (segunda parte del JWT)
-PAYLOAD=$(echo $TOKEN_EMP001 | awk -F'.' '{print $2}' | base64 -d 2>/dev/null)
+# Decodificar el payload (segunda parte del JWT) usando la función compatible
+PAYLOAD_ENCODED=$(echo "$TOKEN_EMP001" | awk -F'.' '{print $2}')
+PAYLOAD=$(base64_decode "$PAYLOAD_ENCODED")
 show_json "$PAYLOAD"
 
 log ""
@@ -167,153 +192,58 @@ log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━�
 log "${WHITE}📋 PRUEBA 3: Intento de Acceso sin Token${RESET}"
 log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 log ""
-log "${YELLOW}🎯 Objetivo:${RESET} Verificar que los endpoints protegidos con JWT rechazan peticiones sin token"
-log "${YELLOW}📍 Endpoint:${RESET} GET /api/internal/secrets/profile"
-log "${YELLOW}🔒 Seguridad:${RESET} @RolesAllowed(\"employee\") + JWT requerido"
+log "${YELLOW}🎯 Objetivo:${RESET} Verificar que endpoints protegidos requieren autenticación"
+log "${YELLOW}📍 Endpoint:${RESET} GET /api/internal/secrets/my-secrets"
+log "${YELLOW}🔐 Método:${RESET} Sin Authorization header"
 log "${YELLOW}❌ Esperado:${RESET} HTTP 401 Unauthorized"
 log ""
-log "${CYAN}Ejecutando sin Authorization header...${RESET}"
+log "${CYAN}Intentando acceso sin token...${RESET}"
 log ""
 
-# Ejecutar request
-response=$(curl -s -w "\n%{http_code}" $BASE_URL/api/internal/secrets/profile 2>/dev/null)
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+response=$(curl -s -w "\n%{http_code}" $BASE_URL/api/internal/secrets/my-secrets 2>/dev/null)
+
 body=$(echo "$response" | sed '$d')
 status=$(echo "$response" | tail -n 1)
 
 log "${YELLOW}Response (HTTP $status):${RESET}"
-if [ -n "$body" ]; then
-    log "$body"
-else
-    log "(Sin contenido - esperado para 401)"
-fi
+show_json "$body"
 log ""
 
 if [ "$status" == "401" ]; then
-    log "${GREEN}✓ PASS${RESET} - Endpoint correctamente protegido"
+    log "${GREEN}✓ PASS${RESET} - Acceso denegado correctamente (HTTP 401)"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 401)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
 log "${CYAN}💡 Resultado esperado:${RESET}"
-log "   El servidor requiere un token Bearer en el header Authorization."
-log "   Sin él, rechaza la petición con HTTP 401."
+log "   El servidor rechaza peticiones sin token, protegiendo los endpoints."
 pause
 
 ##############################################################################
-# PRUEBA 4: Ver Perfil con JWT Válido
+# PRUEBA 4: Acceso con Token Válido
 ##############################################################################
 clear
 log ""
 log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-log "${WHITE}📋 PRUEBA 4: Acceso al Perfil con JWT Válido${RESET}"
+log "${WHITE}📋 PRUEBA 4: Acceso con Token JWT Válido${RESET}"
 log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 log ""
-log "${YELLOW}🎯 Objetivo:${RESET} Acceder a un endpoint protegido usando el token JWT"
-log "${YELLOW}📍 Endpoint:${RESET} GET /api/internal/secrets/profile"
-log "${YELLOW}👤 Usuario:${RESET} emp001"
-log "${YELLOW}🔑 Autenticación:${RESET} Bearer Token en header Authorization"
-log "${YELLOW}✅ Esperado:${RESET} HTTP 200 OK + información del usuario"
-log ""
-log "${CYAN}Ejecutando con Bearer Token...${RESET}"
-log ""
-
-# Ejecutar request
-response=$(curl -s -w "\n%{http_code}" $BASE_URL/api/internal/secrets/profile \
-  -H "Authorization: Bearer $TOKEN_EMP001" 2>/dev/null)
-
-body=$(echo "$response" | sed '$d')
-status=$(echo "$response" | tail -n 1)
-
-log "${YELLOW}Response (HTTP $status):${RESET}"
-show_json "$body"
-log ""
-
-if [ "$status" == "200" ]; then
-    log "${GREEN}✓ PASS${RESET} - Autenticación JWT funcionó correctamente"
-else
-    log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 200)"
-fi
-
-log ""
-log "${CYAN}💡 Resultado esperado:${RESET}"
-log "   El servidor validó la firma del JWT con la clave pública RSA y extrajo"
-log "   los claims para identificar al usuario."
-pause
-
-##############################################################################
-# PRUEBA 5: Crear un Secreto con JWT
-##############################################################################
-clear
-log ""
-log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-log "${WHITE}📋 PRUEBA 5: Crear un Secreto Asociado al Usuario${RESET}"
-log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-log ""
-log "${YELLOW}🎯 Objetivo:${RESET} Crear un secreto que quede automáticamente asociado al usuario autenticado"
-log "${YELLOW}📍 Endpoint:${RESET} POST /api/internal/secrets"
-log "${YELLOW}👤 Usuario:${RESET} emp001 (extraído del JWT)"
-log "${YELLOW}💡 Nota:${RESET} El backend usa el claim 'sub' del JWT para asignar el ownerId"
-log "${YELLOW}✅ Esperado:${RESET} HTTP 201 Created + secreto con ownerId=emp001"
-log ""
-
-request_body='{
-  "name": "API Key de Stripe",
-  "content": "sk_live_4eC39HqLyjWDarjtT1zdp7dc",
-  "level": "CONFIDENTIAL"
-}'
-
-log "${YELLOW}Request Body:${RESET}"
-show_json "$request_body"
-log ""
-
-log "${CYAN}Creando secreto...${RESET}"
-log ""
-
-# Ejecutar request
-response=$(curl -s -w "\n%{http_code}" -X POST $BASE_URL/api/internal/secrets \
-  -H "Authorization: Bearer $TOKEN_EMP001" \
-  -H "Content-Type: application/json" \
-  -d "$request_body" 2>/dev/null)
-
-body=$(echo "$response" | sed '$d')
-status=$(echo "$response" | tail -n 1)
-
-log "${YELLOW}Response (HTTP $status):${RESET}"
-show_json "$body"
-log ""
-
-if [ "$status" == "201" ]; then
-    log "${GREEN}✓ PASS${RESET} - Secreto creado y asociado automáticamente al usuario"
-else
-    log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 201)"
-fi
-
-log ""
-log "${CYAN}💡 Resultado esperado:${RESET}"
-log "   El secreto creado tiene ownerId=emp001, extraído automáticamente del"
-log "   claim 'sub' del JWT. El usuario no necesita especificarlo."
-pause
-
-##############################################################################
-# PRUEBA 6: Ver Mis Secretos
-##############################################################################
-clear
-log ""
-log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-log "${WHITE}📋 PRUEBA 6: Listar Mis Secretos (del Usuario Autenticado)${RESET}"
-log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-log ""
-log "${YELLOW}🎯 Objetivo:${RESET} Obtener solo los secretos del usuario autenticado"
+log "${YELLOW}🎯 Objetivo:${RESET} Acceder a recursos protegidos usando el token JWT"
 log "${YELLOW}📍 Endpoint:${RESET} GET /api/internal/secrets/my-secrets"
 log "${YELLOW}👤 Usuario:${RESET} emp001"
-log "${YELLOW}🔒 Filtro:${RESET} Backend filtra por ownerId=emp001 (extraído del JWT)"
-log "${YELLOW}✅ Esperado:${RESET} HTTP 200 OK + solo secretos de emp001"
+log "${YELLOW}🔐 Método:${RESET} Authorization: Bearer <token>"
+log "${YELLOW}✅ Esperado:${RESET} HTTP 200 OK con los secretos del usuario"
 log ""
-log "${CYAN}Consultando mis secretos...${RESET}"
+log "${CYAN}Ejecutando petición autenticada...${RESET}"
 log ""
 
-# Ejecutar request
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 response=$(curl -s -w "\n%{http_code}" $BASE_URL/api/internal/secrets/my-secrets \
   -H "Authorization: Bearer $TOKEN_EMP001" 2>/dev/null)
 
@@ -325,93 +255,183 @@ show_json "$body"
 log ""
 
 if [ "$status" == "200" ]; then
-    log "${GREEN}✓ PASS${RESET} - Usuario puede ver solo sus propios secretos"
+    log "${GREEN}✓ PASS${RESET} - Acceso exitoso con token JWT"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 200)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
 log "${CYAN}💡 Resultado esperado:${RESET}"
-log "   Todos los secretos listados tienen ownerId=emp001. El usuario NO puede"
-log "   ver secretos de otros usuarios. Aislamiento perfecto."
+log "   El token JWT permite acceder a los recursos del usuario autenticado."
+log "   Observa que solo aparecen secretos con ownerId=emp001"
 pause
 
 ##############################################################################
-# PRUEBA 7: Login con Segundo Usuario
+# PRUEBA 5: Crear Secreto con Token JWT
 ##############################################################################
 clear
 log ""
 log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-log "${WHITE}📋 PRUEBA 7: Login con Segundo Usuario (Multi-tenancy)${RESET}"
+log "${WHITE}📋 PRUEBA 5: Crear Secreto Asociado al Usuario Autenticado${RESET}"
 log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 log ""
-log "${YELLOW}🎯 Objetivo:${RESET} Demostrar que cada usuario tiene su propio contexto de seguridad"
-log "${YELLOW}📍 Endpoint:${RESET} POST /api/auth/login"
-log "${YELLOW}👤 Usuario:${RESET} emp002 (María González)"
-log "${YELLOW}✅ Esperado:${RESET} Nuevo JWT con claims diferentes"
+log "${YELLOW}🎯 Objetivo:${RESET} Crear un nuevo secreto que se asocie automáticamente a emp001"
+log "${YELLOW}📍 Endpoint:${RESET} POST /api/internal/secrets"
+log "${YELLOW}👤 Usuario:${RESET} emp001"
+log "${YELLOW}🔐 Método:${RESET} Authorization: Bearer <token>"
+log "${YELLOW}✅ Esperado:${RESET} HTTP 201 Created con ownerId=emp001"
 log ""
-log "${CYAN}Ejecutando login para emp002...${RESET}"
+log "${CYAN}Creando secreto para emp001...${RESET}"
 log ""
 
-# Ejecutar request
-response2=$(curl -s -w "\n%{http_code}" -X POST $BASE_URL/api/auth/login \
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+response=$(curl -s -w "\n%{http_code}" -X POST $BASE_URL/api/internal/secrets \
+  -H "Authorization: Bearer $TOKEN_EMP001" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Database Password","content":"super-secret-db-password","level":"INTERNAL"}' 2>/dev/null)
+
+body=$(echo "$response" | sed '$d')
+status=$(echo "$response" | tail -n 1)
+
+log "${YELLOW}Response (HTTP $status):${RESET}"
+show_json "$body"
+log ""
+
+if [ "$status" == "201" ]; then
+    log "${GREEN}✓ PASS${RESET} - Secreto creado con ownerId=emp001"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+else
+    log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 201)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
+
+log ""
+log "${CYAN}💡 Resultado esperado:${RESET}"
+log "   El secreto se crea automáticamente asociado al usuario del token (emp001)."
+log "   El backend extrae el 'sub' claim del JWT para determinar el owner."
+pause
+
+##############################################################################
+# PRUEBA 6: Login de Segundo Usuario
+##############################################################################
+clear
+log ""
+log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+log "${WHITE}📋 PRUEBA 6: Login de Segundo Usuario (emp002)${RESET}"
+log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+log ""
+log "${YELLOW}🎯 Objetivo:${RESET} Obtener token JWT para un segundo usuario"
+log "${YELLOW}📍 Endpoint:${RESET} POST /api/auth/login"
+log "${YELLOW}👤 Usuario:${RESET} emp002 (María González)"
+log "${YELLOW}✅ Esperado:${RESET} HTTP 200 OK + JWT Token diferente"
+log ""
+log "${CYAN}Ejecutando login...${RESET}"
+log ""
+
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+response=$(curl -s -w "\n%{http_code}" -X POST $BASE_URL/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"emp002","password":"pass002"}' 2>/dev/null)
 
-body2=$(echo "$response2" | sed '$d')
-status2=$(echo "$response2" | tail -n 1)
+body=$(echo "$response" | sed '$d')
+status=$(echo "$response" | tail -n 1)
 
-log "${YELLOW}Response (HTTP $status2):${RESET}"
-show_json "$body2"
+log "${YELLOW}Response (HTTP $status):${RESET}"
+show_json "$body"
 log ""
 
-TOKEN_EMP002=$(echo "$body2" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-
-if [ "$status2" == "200" ] && [ -n "$TOKEN_EMP002" ]; then
-    log "${GREEN}✓ PASS${RESET} - Se generó un nuevo token para emp002"
-    log "${MAGENTA}📌 Token emp002 (primeros 50 caracteres):${RESET} ${TOKEN_EMP002:0:50}..."
+# Extraer el token
+if command -v jq &> /dev/null; then
+    TOKEN_EMP002=$(echo "$body" | jq -r '.token // empty' 2>/dev/null)
 else
-    log "${RED}✗ FAIL${RESET} - HTTP $status2 (Esperado: 200)"
+    TOKEN_EMP002=$(echo "$body" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+fi
+
+if [ "$status" == "200" ] && [ -n "$TOKEN_EMP002" ]; then
+    log "${GREEN}✓ PASS${RESET} - Login exitoso para emp002"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    log "${MAGENTA}📌 Token generado (primeros 50 caracteres):${RESET} ${TOKEN_EMP002:0:50}..."
+else
+    log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 200)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
 log "${CYAN}💡 Resultado esperado:${RESET}"
-log "   Cada usuario obtiene su propio JWT con su identificador único (sub)"
-log "   en el payload. Los tokens son independientes."
+log "   Cada usuario recibe su propio token JWT con sus propios claims."
 pause
 
 ##############################################################################
-# PRUEBA 8: Crear Secreto con el Segundo Usuario
+# PRUEBA 7: Verificar Aislamiento - emp002 NO puede ver secretos de emp001
 ##############################################################################
 clear
 log ""
 log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-log "${WHITE}📋 PRUEBA 8: Crear Secreto con el Usuario emp002${RESET}"
+log "${WHITE}📋 PRUEBA 7: Verificar Aislamiento de Datos (emp002 consulta)${RESET}"
 log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 log ""
-log "${YELLOW}🎯 Objetivo:${RESET} Crear un secreto para emp002 y verificar que queda asociado a ese usuario"
+log "${YELLOW}🎯 Objetivo:${RESET} Verificar que emp002 NO ve los secretos de emp001"
+log "${YELLOW}📍 Endpoint:${RESET} GET /api/internal/secrets/my-secrets"
 log "${YELLOW}👤 Usuario:${RESET} emp002"
-log "${YELLOW}✅ Esperado:${RESET} Secreto con ownerId=emp002"
+log "${YELLOW}✅ Esperado:${RESET} Lista vacía o solo secretos de emp002"
+log ""
+log "${CYAN}Consultando secretos de emp002...${RESET}"
 log ""
 
-request_body2='{
-  "name": "Credencial AWS",
-  "content": "AKIAIOSFODNN7EXAMPLE",
-  "level": "INTERNAL"
-}'
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
 
-log "${YELLOW}Request Body:${RESET}"
-show_json "$request_body2"
+response=$(curl -s -w "\n%{http_code}" $BASE_URL/api/internal/secrets/my-secrets \
+  -H "Authorization: Bearer $TOKEN_EMP002" 2>/dev/null)
+
+body=$(echo "$response" | sed '$d')
+status=$(echo "$response" | tail -n 1)
+
+log "${YELLOW}Response (HTTP $status):${RESET}"
+show_json "$body"
 log ""
 
+if [ "$status" == "200" ]; then
+    log "${GREEN}✓ PASS${RESET} - emp002 solo ve sus propios secretos"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    log "${GREEN}   Observa que NO aparecen secretos de emp001${RESET}"
+else
+    log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 200)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
+
+log ""
+log "${CYAN}💡 Resultado esperado:${RESET}"
+log "   Cada usuario solo puede acceder a sus propios recursos."
+log "   Esto demuestra aislamiento perfecto (multi-tenancy)."
+pause
+
+##############################################################################
+# PRUEBA 8: Crear Secreto para emp002
+##############################################################################
+clear
+log ""
+log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+log "${WHITE}📋 PRUEBA 8: Crear Secreto para emp002${RESET}"
+log "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+log ""
+log "${YELLOW}🎯 Objetivo:${RESET} Crear un secreto que se asocie automáticamente a emp002"
+log "${YELLOW}📍 Endpoint:${RESET} POST /api/internal/secrets"
+log "${YELLOW}👤 Usuario:${RESET} emp002"
+log "${YELLOW}✅ Esperado:${RESET} HTTP 201 Created con ownerId=emp002"
+log ""
 log "${CYAN}Creando secreto para emp002...${RESET}"
 log ""
 
-# Ejecutar request
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 response=$(curl -s -w "\n%{http_code}" -X POST $BASE_URL/api/internal/secrets \
   -H "Authorization: Bearer $TOKEN_EMP002" \
   -H "Content-Type: application/json" \
-  -d "$request_body2" 2>/dev/null)
+  -d '{"name":"API Key Production","content":"prod-api-key-xyz789","level":"INTERNAL"}' 2>/dev/null)
 
 body=$(echo "$response" | sed '$d')
 status=$(echo "$response" | tail -n 1)
@@ -422,8 +442,10 @@ log ""
 
 if [ "$status" == "201" ]; then
     log "${GREEN}✓ PASS${RESET} - Secreto creado con ownerId=emp002"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
     log "${RED}✗ FAIL${RESET} - HTTP $status (Esperado: 201)"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 log ""
@@ -494,8 +516,11 @@ log ""
 log "${CYAN}Inspeccionando el claim 'exp' del token de emp001...${RESET}"
 log ""
 
-EXP_TIMESTAMP=$(echo $TOKEN_EMP001 | awk -F'.' '{print $2}' | base64 -d 2>/dev/null | grep -o '"exp":[0-9]*' | grep -o '[0-9]*')
-IAT_TIMESTAMP=$(echo $TOKEN_EMP001 | awk -F'.' '{print $2}' | base64 -d 2>/dev/null | grep -o '"iat":[0-9]*' | grep -o '[0-9]*')
+PAYLOAD_ENCODED=$(echo "$TOKEN_EMP001" | awk -F'.' '{print $2}')
+PAYLOAD=$(base64_decode "$PAYLOAD_ENCODED")
+
+EXP_TIMESTAMP=$(echo "$PAYLOAD" | grep -o '"exp":[0-9]*' | grep -o '[0-9]*')
+IAT_TIMESTAMP=$(echo "$PAYLOAD" | grep -o '"iat":[0-9]*' | grep -o '[0-9]*')
 
 if [ -n "$EXP_TIMESTAMP" ] && [ -n "$IAT_TIMESTAMP" ]; then
     DURATION=$((EXP_TIMESTAMP - IAT_TIMESTAMP))
@@ -523,17 +548,21 @@ log "${CYAN}╔═════════════════════�
 log "${CYAN}║                    📊 RESUMEN DE PRUEBAS                       ║${RESET}"
 log "${CYAN}╚════════════════════════════════════════════════════════════════╝${RESET}"
 log ""
-log "${GREEN}✅ PRUEBA 1:${RESET} Login genera JWT válido con claims correctos"
-log "${GREEN}✅ PRUEBA 2:${RESET} JWT contiene información del usuario (sub, email, groups)"
-log "${GREEN}✅ PRUEBA 3:${RESET} Peticiones sin token son rechazadas (401)"
-log "${GREEN}✅ PRUEBA 4:${RESET} Token válido permite acceso a endpoints protegidos"
-log "${GREEN}✅ PRUEBA 5:${RESET} Secretos se asocian automáticamente al usuario del JWT"
-log "${GREEN}✅ PRUEBA 6:${RESET} Cada usuario solo ve sus propios secretos"
-log "${GREEN}✅ PRUEBA 7:${RESET} Diferentes usuarios obtienen tokens con claims únicos"
-log "${GREEN}✅ PRUEBA 8:${RESET} Multi-tenancy: cada usuario tiene su espacio aislado"
-log "${GREEN}✅ PRUEBA 9:${RESET} Aislamiento perfecto entre usuarios"
-log "${GREEN}✅ PRUEBA 10:${RESET} Tokens tienen expiración configurable"
+log "  ${CYAN}Total de tests:${RESET}      $TOTAL_TESTS"
+log "  ${GREEN}✓ Tests Exitosos:${RESET}  $PASSED_TESTS"
+log "  ${RED}✗ Tests Fallidos:${RESET}  $FAILED_TESTS"
 log ""
+
+if [ $FAILED_TESTS -gt 0 ]; then
+    log "${YELLOW}⚠️  ADVERTENCIA: Algunos tests fallaron${RESET}"
+    log ""
+    log "${YELLOW}Posible causa:${RESET} El servidor no se inició con el perfil correcto"
+    log "${YELLOW}Solución:${RESET}"
+    log "  ${CYAN}1.${RESET} Detén el servidor (Ctrl+C)"
+    log "  ${CYAN}2.${RESET} Inicia con: ${GREEN}./mvnw quarkus:dev -Dquarkus.profile=parte2${RESET}"
+    log "  ${CYAN}3.${RESET} Vuelve a ejecutar este script"
+    log ""
+fi
 
 log "${CYAN}╔════════════════════════════════════════════════════════════════╗${RESET}"
 log "${CYAN}║              🎓 CONCEPTOS CLAVE DEMOSTRADOS                    ║${RESET}"

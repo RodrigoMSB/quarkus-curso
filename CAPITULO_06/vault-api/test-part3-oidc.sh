@@ -51,6 +51,13 @@ show_json() {
     fi
 }
 
+# Función para pausa interactiva (compatible con Windows)
+pause() {
+    echo ""
+    read -r -p "Presiona ENTER para continuar..." dummy
+    echo ""
+}
+
 # URL base del microservicio
 BASE_URL="http://localhost:8080"
 
@@ -72,6 +79,11 @@ fi
 # Variables globales para tokens
 TOKEN_CUSTOMER=""
 TOKEN_PREMIUM=""
+
+# Contadores de tests
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
 
 log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
 log "${CYAN}║     🔐 PRUEBAS DE SEGURIDAD - PARTE 3: OIDC + KEYCLOAK       ║${NC}"
@@ -96,17 +108,21 @@ log ""
 log "${CYAN}Verificando conexión...${NC}"
 log ""
 
-if curl -s -o /dev/null -w "%{http_code}" $KEYCLOAK_URL | grep -q "200"; then
-    log "${GREEN}✓ Keycloak está corriendo correctamente${NC}"
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+KEYCLOAK_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $KEYCLOAK_URL 2>/dev/null)
+if [ "$KEYCLOAK_STATUS" == "200" ] || [ "$KEYCLOAK_STATUS" == "303" ] || [ "$KEYCLOAK_STATUS" == "301" ]; then
+    log "${GREEN}✓ PASS - Keycloak está corriendo correctamente${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    log "${RED}❌ ERROR: No se puede conectar a Keycloak en $KEYCLOAK_URL${NC}"
+    log "${RED}✗ FAIL - No se puede conectar a Keycloak en $KEYCLOAK_URL (HTTP $KEYCLOAK_STATUS)${NC}"
     log "${YELLOW}Asegúrate de que Docker con Keycloak esté corriendo${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
     exit 1
 fi
 
 log ""
-read -p "Presiona ENTER para continuar..."
-log ""
+pause
 
 ##############################################################################
 # PRUEBA 1: Obtener Token desde Keycloak (Cliente Básico)
@@ -124,26 +140,37 @@ log ""
 log "${CYAN}Ejecutando login en Keycloak...${NC}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 RESPONSE=$(curl -s -X POST $KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=password" \
   -d "client_id=$CLIENT_ID" \
   -d "client_secret=$CLIENT_SECRET" \
   -d "username=client001" \
-  -d "password=pass001")
+  -d "password=pass001" 2>/dev/null)
 
 show_json "$RESPONSE"
 
-# Extraer el access_token
-TOKEN_CUSTOMER=$(echo "$RESPONSE" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+# Extraer el access_token (compatible con jq o sin jq)
+if command -v jq &> /dev/null; then
+    TOKEN_CUSTOMER=$(echo "$RESPONSE" | jq -r '.access_token // empty' 2>/dev/null)
+else
+    TOKEN_CUSTOMER=$(echo "$RESPONSE" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+fi
 
 log ""
-log "${GREEN}✓ Si ves un 'access_token', ¡Keycloak emitió el token correctamente!${NC}"
-log "${CYAN}ℹ️  Este token está firmado por Keycloak, no por nuestra aplicación${NC}"
-log "${MAGENTA}📌 Token obtenido (primeros 50 caracteres): ${TOKEN_CUSTOMER:0:50}...${NC}"
+if [ -n "$TOKEN_CUSTOMER" ]; then
+    log "${GREEN}✓ PASS - Keycloak emitió el token correctamente${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    log "${CYAN}ℹ️  Este token está firmado por Keycloak, no por nuestra aplicación${NC}"
+    log "${MAGENTA}📌 Token obtenido (primeros 50 caracteres): ${TOKEN_CUSTOMER:0:50}...${NC}"
+else
+    log "${RED}✗ FAIL - No se pudo obtener el access_token${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log ""
-read -p "Presiona ENTER para continuar..."
-log ""
+pause
 
 ##############################################################################
 # PRUEBA 2: Acceso sin Token (Debe Fallar)
@@ -160,6 +187,8 @@ log ""
 log "${CYAN}Ejecutando sin Authorization header...${NC}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 RESPONSE_NO_AUTH=$(curl -s -w "\n%{http_code}" $BASE_URL/api/external/secrets/profile 2>/dev/null)
 BODY_NO_AUTH=$(echo "$RESPONSE_NO_AUTH" | sed '$d')
 STATUS_NO_AUTH=$(echo "$RESPONSE_NO_AUTH" | tail -n 1)
@@ -172,10 +201,15 @@ else
 fi
 
 log ""
-log "${GREEN}✓ Si ves 'HTTP 401 Unauthorized', ¡el endpoint está protegido!${NC}"
+if [ "$STATUS_NO_AUTH" == "401" ]; then
+    log "${GREEN}✓ PASS - El endpoint está protegido correctamente (401)${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+else
+    log "${RED}✗ FAIL - HTTP $STATUS_NO_AUTH (Esperado: 401)${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log ""
-read -p "Presiona ENTER para continuar..."
-log ""
+pause
 
 ##############################################################################
 # PRUEBA 3: Ver Perfil con Token OIDC
@@ -186,58 +220,72 @@ log "${BLUE}══════════════════════�
 log ""
 log "🎯 Objetivo: Acceder a un endpoint usando token emitido por Keycloak"
 log "📍 Endpoint: GET /api/external/secrets/profile"
-log "👤 Usuario: client001 (autenticado vía Keycloak)"
-log "🔑 Token: Access Token OIDC"
-log "✅ Resultado Esperado: HTTP 200 OK + información del usuario desde Keycloak"
+log "👤 Usuario: client001 (customer)"
+log "✅ Resultado Esperado: HTTP 200 OK + datos del perfil"
 log ""
-log "${CYAN}Ejecutando con Bearer Token de Keycloak...${NC}"
+log "${CYAN}Ejecutando con token OIDC...${NC}"
 log ""
+
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
 
 RESPONSE_PROFILE=$(curl -s -w "\n%{http_code}" $BASE_URL/api/external/secrets/profile \
   -H "Authorization: Bearer $TOKEN_CUSTOMER" 2>/dev/null)
+
 BODY_PROFILE=$(echo "$RESPONSE_PROFILE" | sed '$d')
 STATUS_PROFILE=$(echo "$RESPONSE_PROFILE" | tail -n 1)
 
-log "${YELLOW}Response (HTTP $STATUS_PROFILE):${NC}"
 show_json "$BODY_PROFILE"
 
 log ""
-log "${GREEN}✓ Si ves 'HTTP 200 OK' y authMethod: 'OIDC (Keycloak)', ¡funcionó!${NC}"
-log "${CYAN}ℹ️  Quarkus validó el token contra la clave pública de Keycloak${NC}"
+if [ "$STATUS_PROFILE" == "200" ]; then
+    log "${GREEN}✓ PASS - El token OIDC de Keycloak es válido para nuestra aplicación${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    log "${CYAN}ℹ️  La app validó el token usando la clave pública de Keycloak${NC}"
+else
+    log "${RED}✗ FAIL - HTTP $STATUS_PROFILE (Esperado: 200)${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log ""
-read -p "Presiona ENTER para continuar..."
-log ""
+pause
 
 ##############################################################################
-# PRUEBA 4: Listar Secretos Públicos (Cliente Básico)
+# PRUEBA 4: Ver Secretos Públicos
 ##############################################################################
 log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
-log "${YELLOW}📋 PRUEBA 4: Acceso a Secretos Públicos (Cliente Básico)${NC}"
+log "${YELLOW}📋 PRUEBA 4: Cliente Básico puede ver Secretos Públicos${NC}"
 log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
 log ""
-log "🎯 Objetivo: Verificar que clientes básicos pueden acceder a secretos PUBLIC"
+log "🎯 Objetivo: Verificar que clientes básicos pueden ver secretos PUBLIC"
 log "📍 Endpoint: GET /api/external/secrets/public"
-log "👤 Usuario: client001 (rol: customer)"
-log "🔒 Seguridad: @RolesAllowed({\"customer\", \"premium-customer\"})"
-log "✅ Resultado Esperado: HTTP 200 OK + secretos con accessLevel=PUBLIC"
+log "👤 Usuario: client001 (customer)"
+log "✅ Resultado Esperado: HTTP 200 OK + secretos con level=PUBLIC"
 log ""
-log "${CYAN}Listando secretos públicos...${NC}"
+log "${CYAN}Accediendo a secretos públicos...${NC}"
 log ""
 
-RESPONSE_PUBLIC=$(curl -s $BASE_URL/api/external/secrets/public \
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+RESPONSE_PUBLIC=$(curl -s -w "\n%{http_code}" $BASE_URL/api/external/secrets/public \
   -H "Authorization: Bearer $TOKEN_CUSTOMER" 2>/dev/null)
 
-show_json "$RESPONSE_PUBLIC"
+BODY_PUBLIC=$(echo "$RESPONSE_PUBLIC" | sed '$d')
+STATUS_PUBLIC=$(echo "$RESPONSE_PUBLIC" | tail -n 1)
+
+show_json "$BODY_PUBLIC"
 
 log ""
-log "${GREEN}✓ Los clientes básicos SÍ pueden ver secretos PUBLIC${NC}"
-log "${CYAN}ℹ️  Ambos roles (customer y premium-customer) tienen acceso a PUBLIC${NC}"
+if [ "$STATUS_PUBLIC" == "200" ]; then
+    log "${GREEN}✓ PASS - Cliente básico (customer) SÍ puede ver secretos PUBLIC${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+else
+    log "${RED}✗ FAIL - HTTP $STATUS_PUBLIC (Esperado: 200)${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log ""
-read -p "Presiona ENTER para continuar..."
-log ""
+pause
 
 ##############################################################################
-# PRUEBA 5: Cliente Básico NO puede ver Secretos Confidenciales
+# PRUEBA 5: Intento de Ver Secretos Confidenciales (Debe Fallar)
 ##############################################################################
 log "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
 log "${YELLOW}📋 PRUEBA 5: Cliente Básico NO puede ver Secretos Confidenciales${NC}"
@@ -245,15 +293,17 @@ log "${BLUE}══════════════════════�
 log ""
 log "🎯 Objetivo: Verificar que clientes básicos NO pueden ver secretos CONFIDENTIAL"
 log "📍 Endpoint: GET /api/external/secrets/confidential"
-log "👤 Usuario: client001 (rol: customer)"
-log "🔒 Seguridad: @RolesAllowed(\"premium-customer\")"
+log "👤 Usuario: client001 (customer)"
 log "❌ Resultado Esperado: HTTP 403 Forbidden"
 log ""
 log "${CYAN}Intentando acceder a secretos confidenciales con cliente básico...${NC}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 RESPONSE_FORBIDDEN=$(curl -s -w "\n%{http_code}" $BASE_URL/api/external/secrets/confidential \
   -H "Authorization: Bearer $TOKEN_CUSTOMER" 2>/dev/null)
+
 BODY_FORBIDDEN=$(echo "$RESPONSE_FORBIDDEN" | sed '$d')
 STATUS_FORBIDDEN=$(echo "$RESPONSE_FORBIDDEN" | tail -n 1)
 
@@ -265,11 +315,16 @@ else
 fi
 
 log ""
-log "${GREEN}✓ Si ves 'HTTP 403 Forbidden', ¡la autorización funciona!${NC}"
-log "${CYAN}ℹ️  Los clientes básicos NO tienen acceso a secretos CONFIDENTIAL${NC}"
+if [ "$STATUS_FORBIDDEN" == "403" ]; then
+    log "${GREEN}✓ PASS - La autorización funciona correctamente (403)${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    log "${CYAN}ℹ️  Los clientes básicos NO tienen acceso a secretos CONFIDENTIAL${NC}"
+else
+    log "${RED}✗ FAIL - HTTP $STATUS_FORBIDDEN (Esperado: 403)${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log ""
-read -p "Presiona ENTER para continuar..."
-log ""
+pause
 
 ##############################################################################
 # PRUEBA 6: Obtener Token para Cliente Premium
@@ -285,24 +340,36 @@ log ""
 log "${CYAN}Ejecutando login para cliente premium...${NC}"
 log ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 RESPONSE_PREMIUM=$(curl -s -X POST $KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=password" \
   -d "client_id=$CLIENT_ID" \
   -d "client_secret=$CLIENT_SECRET" \
   -d "username=client002" \
-  -d "password=pass002")
+  -d "password=pass002" 2>/dev/null)
 
 show_json "$RESPONSE_PREMIUM"
 
-TOKEN_PREMIUM=$(echo "$RESPONSE_PREMIUM" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+# Extraer el access_token (compatible con jq o sin jq)
+if command -v jq &> /dev/null; then
+    TOKEN_PREMIUM=$(echo "$RESPONSE_PREMIUM" | jq -r '.access_token // empty' 2>/dev/null)
+else
+    TOKEN_PREMIUM=$(echo "$RESPONSE_PREMIUM" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+fi
 
 log ""
-log "${GREEN}✓ Token premium obtenido correctamente${NC}"
-log "${MAGENTA}📌 Token premium (primeros 50 caracteres): ${TOKEN_PREMIUM:0:50}...${NC}"
+if [ -n "$TOKEN_PREMIUM" ]; then
+    log "${GREEN}✓ PASS - Token premium obtenido correctamente${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    log "${MAGENTA}📌 Token premium (primeros 50 caracteres): ${TOKEN_PREMIUM:0:50}...${NC}"
+else
+    log "${RED}✗ FAIL - No se pudo obtener el token premium${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log ""
-read -p "Presiona ENTER para continuar..."
-log ""
+pause
 
 ##############################################################################
 # PRUEBA 7: Acceso a Secretos Confidenciales (Cliente Premium)
@@ -319,17 +386,27 @@ log ""
 log "${CYAN}Accediendo a secretos confidenciales con cliente premium...${NC}"
 log ""
 
-RESPONSE_CONFIDENTIAL=$(curl -s $BASE_URL/api/external/secrets/confidential \
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+RESPONSE_CONFIDENTIAL=$(curl -s -w "\n%{http_code}" $BASE_URL/api/external/secrets/confidential \
   -H "Authorization: Bearer $TOKEN_PREMIUM" 2>/dev/null)
 
-show_json "$RESPONSE_CONFIDENTIAL"
+BODY_CONFIDENTIAL=$(echo "$RESPONSE_CONFIDENTIAL" | sed '$d')
+STATUS_CONFIDENTIAL=$(echo "$RESPONSE_CONFIDENTIAL" | tail -n 1)
+
+show_json "$BODY_CONFIDENTIAL"
 
 log ""
-log "${GREEN}✓ El cliente premium SÍ puede ver secretos CONFIDENTIAL${NC}"
-log "${CYAN}ℹ️  El nivel de acceso depende del rol asignado en Keycloak${NC}"
+if [ "$STATUS_CONFIDENTIAL" == "200" ]; then
+    log "${GREEN}✓ PASS - El cliente premium SÍ puede ver secretos CONFIDENTIAL${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    log "${CYAN}ℹ️  El nivel de acceso depende del rol asignado en Keycloak${NC}"
+else
+    log "${RED}✗ FAIL - HTTP $STATUS_CONFIDENTIAL (Esperado: 200)${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log ""
-read -p "Presiona ENTER para continuar..."
-log ""
+pause
 
 ##############################################################################
 # PRUEBA 8: Comparación de Roles (Educativa)
@@ -365,15 +442,38 @@ log ""
 log "${GREEN}✓ Observa la diferencia en los roles: 'customer' vs 'premium-customer'${NC}"
 log "${CYAN}ℹ️  Los roles vienen directamente de Keycloak, no de nuestra aplicación${NC}"
 log ""
-read -p "Presiona ENTER para ver el resumen final..."
-log ""
+pause
 
 ##############################################################################
 # RESUMEN FINAL
 ##############################################################################
 log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
 log "${CYAN}║                    📊 RESUMEN DE PRUEBAS                       ║${NC}"
+log "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+log ""
+log "  ${CYAN}Total de tests:${NC}      $TOTAL_TESTS"
+log "  ${GREEN}✓ Tests Exitosos:${NC}  $PASSED_TESTS"
+log "  ${RED}✗ Tests Fallidos:${NC}  $FAILED_TESTS"
+log ""
+
+if [ $FAILED_TESTS -gt 0 ]; then
+    log "${YELLOW}⚠️  ADVERTENCIA: Algunos tests fallaron${NC}"
+    log ""
+    log "${YELLOW}Posibles causas:${NC}"
+    log "  ${CYAN}1.${NC} Keycloak no está corriendo o no está configurado"
+    log "  ${CYAN}2.${NC} El servidor Quarkus no se inició con el perfil correcto"
+    log "  ${CYAN}3.${NC} El CLIENT_SECRET no coincide con el configurado en Keycloak"
+    log ""
+    log "${YELLOW}Solución:${NC}"
+    log "  ${CYAN}1.${NC} Verifica que Docker con Keycloak esté corriendo: ${GREEN}docker-compose ps${NC}"
+    log "  ${CYAN}2.${NC} Inicia el servidor: ${GREEN}./mvnw quarkus:dev -Dquarkus.profile=parte3${NC}"
+    log "  ${CYAN}3.${NC} Verifica el CLIENT_SECRET en Keycloak Admin Console"
+    log ""
+fi
+
 log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+log "${CYAN}║                   🎯 TESTS EJECUTADOS                          ║${NC}"
+log "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
 log ""
 log "${GREEN}✅ PRUEBA 0:${NC} Keycloak está accesible y corriendo"
 log "${GREEN}✅ PRUEBA 1:${NC} Keycloak emite tokens OIDC válidos"
@@ -383,7 +483,6 @@ log "${GREEN}✅ PRUEBA 4:${NC} Clientes básicos pueden ver secretos PUBLIC"
 log "${GREEN}✅ PRUEBA 5:${NC} Clientes básicos NO pueden ver secretos CONFIDENTIAL (403)"
 log "${GREEN}✅ PRUEBA 6:${NC} Clientes premium obtienen tokens con rol premium"
 log "${GREEN}✅ PRUEBA 7:${NC} Clientes premium SÍ pueden ver secretos CONFIDENTIAL"
-log "${GREEN}✅ PRUEBA 8:${NC} Autorización diferenciada según roles de Keycloak"
 log ""
 log "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
 log "${CYAN}║              🎓 CONCEPTOS CLAVE DEMOSTRADOS                    ║${NC}"

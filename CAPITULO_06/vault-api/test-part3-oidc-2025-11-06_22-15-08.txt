@@ -1,0 +1,333 @@
+╔════════════════════════════════════════════════════════════════╗
+║     🔐 PRUEBAS DE SEGURIDAD - PARTE 3: OIDC + KEYCLOAK       ║
+╔════════════════════════════════════════════════════════════════╗
+
+📅 Fecha: 06/11/2025 22:15:08
+🌐 API Base: http://localhost:8080
+📄 Resultados: test-part3-oidc-2025-11-06_22-15-08.txt
+🔐 Seguridad: OIDC (OpenID Connect) + Keycloak
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 0: Verificar Conectividad con Keycloak
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Confirmar que Keycloak está accesible
+📍 URL: http://localhost:8180
+
+Verificando conexión...
+
+✓ PASS - Keycloak está corriendo correctamente
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 1: Obtener Access Token desde Keycloak (Cliente Básico)
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Autenticarse con Keycloak y obtener un Access Token OIDC
+📍 Endpoint: POST http://localhost:8180/realms/vaultcorp/protocol/openid-connect/token
+👤 Usuario: client001 (rol: customer)
+🔑 Grant Type: password (Resource Owner Password Credentials)
+✅ Resultado Esperado: Access Token válido emitido por Keycloak
+
+Ejecutando login en Keycloak...
+
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJIdjdLa0VhYVNSYnJtSG5HUDRZN3paTlFCRXlBSHVzdUZrdWRCTTJZb0hvIn0.eyJleHAiOjE3NjI0Nzg0MDksImlhdCI6MTc2MjQ3ODEwOSwianRpIjoiOGFiOTEyMGMtOWY0ZS00ZDg1LWFiYzAtY2NhNzcyMmQ0YWJmIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy92YXVsdGNvcnAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMTI0NDYxYzUtNjBlOC00YTE4LTk4Y2YtOTQ3YzY3MjMxYWY1IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidmF1bHQtYXBpIiwic2Vzc2lvbl9zdGF0ZSI6IjMxYzM4YjZkLThhNTctNGI5MC1hYjA4LTBiNjI0OWNjZTE4MCIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJkZWZhdWx0LXJvbGVzLXZhdWx0Y29ycCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJjdXN0b21lciJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsInNpZCI6IjMxYzM4YjZkLThhNTctNGI5MC1hYjA4LTBiNjI0OWNjZTE4MCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiQ2FybG9zIEfDs21leiIsInByZWZlcnJlZF91c2VybmFtZSI6ImNsaWVudDAwMSIsImdpdmVuX25hbWUiOiJDYXJsb3MiLCJmYW1pbHlfbmFtZSI6IkfDs21leiIsImVtYWlsIjoiY2xpZW50ZTFAZW1wcmVzYS5jb20ifQ.kMpzw1chBYktpge7zok3u_udgTPukRLf37es53WreAZgs8TkKSXjPFqHp61swZfAGwCCF7iXPl__0-XBE9gxI-SbHirslFHgg15X3TxFn1Ai_9OkdgtjWnT7c-yd6FmFzZvv2o6rwi4PyNVaM9eBUVMPyDrdPMq-tRMaNNZGPCtygq7XlJmguL5PPH7bR1-3nk0Hz20DBVAV9-hkMWQ3_hvN_EyZHXj4tMTXn5UbXhfx3cnUtsFdAuVcDmtzIx8UgbHtcStHfEq2jIPa5XaI6xjsPS93HtdSAzCzQN76XRjvVNysAhAUCMIeswEOoTL5IYKExeW5mopeKzCCAIWwVQ",
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjMDVjNmNlNy05MzdhLTRkNzQtYmFhOC04NDM4NzAwODM1MDcifQ.eyJleHAiOjE3NjI0Nzk5MDksImlhdCI6MTc2MjQ3ODEwOSwianRpIjoiMzFkMjM0NDQtZDExNS00M2ViLTgwMzUtMTcxZTg3N2E4MGIzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy92YXVsdGNvcnAiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjgxODAvcmVhbG1zL3ZhdWx0Y29ycCIsInN1YiI6IjEyNDQ2MWM1LTYwZTgtNGExOC05OGNmLTk0N2M2NzIzMWFmNSIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJ2YXVsdC1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiMzFjMzhiNmQtOGE1Ny00YjkwLWFiMDgtMGI2MjQ5Y2NlMTgwIiwic2NvcGUiOiJlbWFpbCBwcm9maWxlIiwic2lkIjoiMzFjMzhiNmQtOGE1Ny00YjkwLWFiMDgtMGI2MjQ5Y2NlMTgwIn0.l_aLYymgKPe5h4VjrU14fVqhxSuXNrrpfhGarkwZbiA",
+  "token_type": "Bearer",
+  "not-before-policy": 0,
+  "session_state": "31c38b6d-8a57-4b90-ab08-0b6249cce180",
+  "scope": "email profile"
+}
+
+✓ PASS - Keycloak emitió el token correctamente
+ℹ️  Este token está firmado por Keycloak, no por nuestra aplicación
+📌 Token obtenido (primeros 50 caracteres): eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6IC...
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 2: Intento de Acceso sin Token OIDC
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que los endpoints OIDC rechazan peticiones sin token
+📍 Endpoint: GET /api/external/secrets/profile
+🔒 Seguridad: @RolesAllowed + OIDC
+❌ Resultado Esperado: HTTP 401 Unauthorized
+
+Ejecutando sin Authorization header...
+
+Response (HTTP 401):
+(Sin contenido - esperado para 401)
+
+✓ PASS - El endpoint está protegido correctamente (401)
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 3: Acceso al Perfil con Token OIDC de Keycloak
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Acceder a un endpoint usando token emitido por Keycloak
+📍 Endpoint: GET /api/external/secrets/profile
+👤 Usuario: client001 (customer)
+✅ Resultado Esperado: HTTP 200 OK + datos del perfil
+
+Ejecutando con token OIDC...
+
+{
+  "username": "client001",
+  "authMethod": "OIDC (Keycloak)",
+  "roles": [
+    "default-roles-vaultcorp",
+    "offline_access",
+    "uma_authorization",
+    "customer"
+  ]
+}
+
+✓ PASS - El token OIDC de Keycloak es válido para nuestra aplicación
+ℹ️  La app validó el token usando la clave pública de Keycloak
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 4: Cliente Básico puede ver Secretos Públicos
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que clientes básicos pueden ver secretos PUBLIC
+📍 Endpoint: GET /api/external/secrets/public
+👤 Usuario: client001 (customer)
+✅ Resultado Esperado: HTTP 200 OK + secretos con level=PUBLIC
+
+Accediendo a secretos públicos...
+
+{
+  "totalSecrets": 2,
+  "roles": [
+    "default-roles-vaultcorp",
+    "offline_access",
+    "uma_authorization",
+    "customer"
+  ],
+  "secrets": [
+    {
+      "id": "9444a549-95bd-4fab-983d-2542c161a482",
+      "name": "Manual de Usuario",
+      "content": "https://docs.vaultcorp.com/manual",
+      "level": "PUBLIC",
+      "ownerId": "marketing",
+      "createdAt": "2025-11-06T22:10:37.851168",
+      "expiresAt": null
+    },
+    {
+      "id": "2f5a9982-65b1-4c4d-98de-5f086a14a428",
+      "name": "API Pública de Consultas",
+      "content": "https://api.vaultcorp.com/public/v1",
+      "level": "PUBLIC",
+      "ownerId": "marketing",
+      "createdAt": "2025-11-06T22:10:37.851179",
+      "expiresAt": null
+    }
+  ],
+  "user": "client001"
+}
+
+✓ PASS - Cliente básico (customer) SÍ puede ver secretos PUBLIC
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 5: Cliente Básico NO puede ver Secretos Confidenciales
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que clientes básicos NO pueden ver secretos CONFIDENTIAL
+📍 Endpoint: GET /api/external/secrets/confidential
+👤 Usuario: client001 (customer)
+❌ Resultado Esperado: HTTP 403 Forbidden
+
+Intentando acceder a secretos confidenciales con cliente básico...
+
+Response (HTTP 403):
+(Sin contenido - esperado para 403)
+
+✓ PASS - La autorización funciona correctamente (403)
+ℹ️  Los clientes básicos NO tienen acceso a secretos CONFIDENTIAL
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 6: Obtener Token para Cliente Premium
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Autenticar un cliente con rol premium-customer
+👤 Usuario: client002 (rol: premium-customer)
+✅ Resultado Esperado: Access Token con rol premium
+
+Ejecutando login para cliente premium...
+
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJIdjdLa0VhYVNSYnJtSG5HUDRZN3paTlFCRXlBSHVzdUZrdWRCTTJZb0hvIn0.eyJleHAiOjE3NjI0Nzg0MTIsImlhdCI6MTc2MjQ3ODExMiwianRpIjoiNTVkOTZmNDAtNjA0Yi00MDYwLTg0MWMtMDViODM5OGJiM2Q5IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy92YXVsdGNvcnAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiNjVkMmYwYjMtZDlmMS00ZWIxLTgyOWItYjZlYTkyZDZiNjZmIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidmF1bHQtYXBpIiwic2Vzc2lvbl9zdGF0ZSI6IjRmNzVhYjUxLWRmOWItNGI0My1hNjM0LTk1MjBhMDJhOWMyMiIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJkZWZhdWx0LXJvbGVzLXZhdWx0Y29ycCIsInByZW1pdW0tY3VzdG9tZXIiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJlbWFpbCBwcm9maWxlIiwic2lkIjoiNGY3NWFiNTEtZGY5Yi00YjQzLWE2MzQtOTUyMGEwMmE5YzIyIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJNYXLDrWEgTMOzcGV6IiwicHJlZmVycmVkX3VzZXJuYW1lIjoiY2xpZW50MDAyIiwiZ2l2ZW5fbmFtZSI6Ik1hcsOtYSIsImZhbWlseV9uYW1lIjoiTMOzcGV6IiwiZW1haWwiOiJjbGllbnRlMkBlbXByZXNhLmNvbSJ9.MGXCrrfa4BCBh-QeJspZnYPWhKEgJPg3jzvbwwNP7uS5JoEUdX7lnydJemJG7nWqVU29Yr-1VcyukoRv2lQ-iJorP_tvi_AC62aYu4zMv7WhGfyyxVPDwxAFGf9WaXDPzpbAbDzJYCwYMFSrZHcXXRNf_ropanFhlpNmJDRf_zta_TtAOd2O2KaGDbLgu4OfwKRr_s1v5XbjSdvMNz9rPdOmzpGfYE7qSd8EJRMgbo6zCKPtKbHqZYAdW1pBt750NsQLIQXqBFI_z7DeJqxe1nVbl8Dj9RALGzWoEOx5kygg5AmopnCnOyBmBR6iS3-01izPvBcWYYkTteENTdFjmQ",
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjMDVjNmNlNy05MzdhLTRkNzQtYmFhOC04NDM4NzAwODM1MDcifQ.eyJleHAiOjE3NjI0Nzk5MTIsImlhdCI6MTc2MjQ3ODExMiwianRpIjoiMzNlZjliZWQtNWY0Ny00MmI2LTkwMjgtOTZiMzJhMWY2OTk0IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy92YXVsdGNvcnAiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjgxODAvcmVhbG1zL3ZhdWx0Y29ycCIsInN1YiI6IjY1ZDJmMGIzLWQ5ZjEtNGViMS04MjliLWI2ZWE5MmQ2YjY2ZiIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJ2YXVsdC1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiNGY3NWFiNTEtZGY5Yi00YjQzLWE2MzQtOTUyMGEwMmE5YzIyIiwic2NvcGUiOiJlbWFpbCBwcm9maWxlIiwic2lkIjoiNGY3NWFiNTEtZGY5Yi00YjQzLWE2MzQtOTUyMGEwMmE5YzIyIn0.3W5YkwmtZgvGGD3gBXXQ3HQjCbs1hOIUwZm46av1IRc",
+  "token_type": "Bearer",
+  "not-before-policy": 0,
+  "session_state": "4f75ab51-df9b-4b43-a634-9520a02a9c22",
+  "scope": "email profile"
+}
+
+✓ PASS - Token premium obtenido correctamente
+📌 Token premium (primeros 50 caracteres): eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6IC...
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 7: Cliente Premium SÍ puede ver Secretos Confidenciales
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que clientes premium SÍ pueden ver secretos CONFIDENTIAL
+📍 Endpoint: GET /api/external/secrets/confidential
+👤 Usuario: client002 (rol: premium-customer)
+✅ Resultado Esperado: HTTP 200 OK + secretos CONFIDENTIAL
+
+Accediendo a secretos confidenciales con cliente premium...
+
+{
+  "roles": [
+    "default-roles-vaultcorp",
+    "premium-customer",
+    "offline_access",
+    "uma_authorization"
+  ],
+  "secrets": [
+    {
+      "id": "25e67237-cb60-41d6-9b50-542929e8e24a",
+      "name": "Credenciales AWS S3",
+      "content": "AKIAIOSFODNN7EXAMPLE",
+      "level": "CONFIDENTIAL",
+      "ownerId": "ops",
+      "createdAt": "2025-11-06T22:10:37.851183",
+      "expiresAt": null
+    },
+    {
+      "id": "f21edd1c-1f63-4968-aed3-1614fd4a78f7",
+      "name": "Token Analytics Premium",
+      "content": "analytics_premium_token_xyz789",
+      "level": "CONFIDENTIAL",
+      "ownerId": "analytics",
+      "createdAt": "2025-11-06T22:10:37.851187",
+      "expiresAt": null
+    }
+  ],
+  "user": "client002",
+  "level": "CONFIDENTIAL",
+  "totalSecrets": 2
+}
+
+✓ PASS - El cliente premium SÍ puede ver secretos CONFIDENTIAL
+ℹ️  El nivel de acceso depende del rol asignado en Keycloak
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 8: Comparación de Roles entre Cliente Básico y Premium
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Visualizar las diferencias de autorización según el rol
+
+───────────────────────────────────────────────────────────────
+Perfil de client001 (customer):
+───────────────────────────────────────────────────────────────
+
+{
+  "username": "client001",
+  "authMethod": "OIDC (Keycloak)",
+  "roles": [
+    "default-roles-vaultcorp",
+    "offline_access",
+    "uma_authorization",
+    "customer"
+  ]
+}
+
+───────────────────────────────────────────────────────────────
+Perfil de client002 (premium-customer):
+───────────────────────────────────────────────────────────────
+
+{
+  "username": "client002",
+  "authMethod": "OIDC (Keycloak)",
+  "roles": [
+    "default-roles-vaultcorp",
+    "premium-customer",
+    "offline_access",
+    "uma_authorization"
+  ]
+}
+
+✓ Observa la diferencia en los roles: 'customer' vs 'premium-customer'
+ℹ️  Los roles vienen directamente de Keycloak, no de nuestra aplicación
+
+╔════════════════════════════════════════════════════════════════╗
+║                    📊 RESUMEN DE PRUEBAS                       ║
+╚════════════════════════════════════════════════════════════════╝
+
+  Total de tests:      8
+  ✓ Tests Exitosos:  8
+  ✗ Tests Fallidos:  0
+
+╔════════════════════════════════════════════════════════════════╗
+║                   🎯 TESTS EJECUTADOS                          ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ PRUEBA 0: Keycloak está accesible y corriendo
+✅ PRUEBA 1: Keycloak emite tokens OIDC válidos
+✅ PRUEBA 2: Peticiones sin token son rechazadas (401)
+✅ PRUEBA 3: Token OIDC permite acceso a endpoints protegidos
+✅ PRUEBA 4: Clientes básicos pueden ver secretos PUBLIC
+✅ PRUEBA 5: Clientes básicos NO pueden ver secretos CONFIDENTIAL (403)
+✅ PRUEBA 6: Clientes premium obtienen tokens con rol premium
+✅ PRUEBA 7: Clientes premium SÍ pueden ver secretos CONFIDENTIAL
+
+╔════════════════════════════════════════════════════════════════╗
+║              🎓 CONCEPTOS CLAVE DEMOSTRADOS                    ║
+╔════════════════════════════════════════════════════════════════╗
+
+🔑 OIDC (OpenID Connect): Protocolo de autenticación sobre OAuth2
+🔑 Identity Provider:    Keycloak gestiona usuarios y roles externamente
+🔑 Federación:           Autenticación delegada a sistema externo
+🔑 Access Token:         Token emitido por Keycloak, validado por Quarkus
+🔑 Realm:                Espacio aislado en Keycloak (vaultcorp)
+🔑 Client:               Nuestra app registrada en Keycloak (vault-api)
+🔑 Roles externos:       Roles gestionados en Keycloak, no en nuestra app
+
+╔════════════════════════════════════════════════════════════════╗
+║              🆚 OIDC vs JWT Propio (Parte 2)                   ║
+╔════════════════════════════════════════════════════════════════╗
+
+JWT Propio (Parte 2):
+  ✓ Nosotros generamos y firmamos los tokens
+  ✓ Nosotros gestionamos usuarios y roles
+  ✓ Control total del proceso
+  ✗ Debemos mantener base de datos de usuarios
+
+OIDC con Keycloak (Parte 3):
+  ✓ Keycloak genera y firma los tokens
+  ✓ Keycloak gestiona usuarios y roles
+  ✓ SSO (Single Sign-On) entre múltiples apps
+  ✓ Federación con otros Identity Providers
+  ✗ Dependencia de servicio externo (Keycloak)
+
+╔════════════════════════════════════════════════════════════════╗
+║                    📁 ARCHIVO DE LOG                           ║
+╚════════════════════════════════════════════════════════════════╝
+
+📝 Todas las pruebas han sido guardadas en:
+   test-part3-oidc-2025-11-06_22-15-08.txt
+
+💡 Puedes revisar el log completo en cualquier momento para:
+   • Verificar las respuestas HTTP completas
+   • Analizar los tokens OIDC generados por Keycloak
+   • Compartir los resultados con tu instructor
+   • Documentar el comportamiento del sistema de seguridad
+
+🎉 ¡Pruebas de la Parte 3 (OIDC) completadas exitosamente!
+
+╔════════════════════════════════════════════════════════════════╗
+║                  🎓 COMPARATIVA FINAL                          ║
+╔════════════════════════════════════════════════════════════════╗
+
+Parte 1 (Basic Auth):     Admins/Auditores  → /api/admin/*
+Parte 2 (JWT Propio):     Empleados         → /api/internal/*
+Parte 3 (OIDC):           Clientes Externos → /api/external/*
+
+✨ Has completado las 3 partes del ejercicio de seguridad en Quarkus ✨
+
