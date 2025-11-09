@@ -455,44 +455,49 @@ curl http://localhost:8081/api/products
 #### 2. Crear una Orden (Happy Path)
 
 ```bash
+# JSON en una sola línea (compatible Mac + Windows GitBash)
 curl -X POST http://localhost:8080/api/orders \
   -H "Content-Type: application/json" \
-  -d '{
-    "customerId": "CUST-001",
-    "items": [
-      {
-        "productCode": "LAPTOP-001",
-        "quantity": 2,
-        "price": 899.99
-      }
-    ],
-    "paymentMethod": "CREDIT_CARD",
-    "cardNumber": "4111111111111111"
-  }'
+  -d '{"userId":"test-user-001","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":2}]}'
 
 # Respuesta esperada: Orden creada con status: COMPLETED
+```
+
+**💡 Alternativa con archivo temporal (más legible):**
+```bash
+# Crear archivo temporal con el JSON
+cat > /tmp/order-success.json << 'EOF'
+{"userId":"test-user-001","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":2}]}
+EOF
+
+# Enviar request
+curl -X POST http://localhost:8080/api/orders \
+  -H "Content-Type: application/json" \
+  --data-binary "@/tmp/order-success.json"
 ```
 
 #### 3. Simular Fallo en Pago (SAGA Compensation)
 
 ```bash
+# JSON en una sola línea (compatible Mac + Windows GitBash)
 curl -X POST http://localhost:8080/api/orders \
   -H "Content-Type: application/json" \
-  -d '{
-    "customerId": "CUST-002",
-    "items": [
-      {
-        "productCode": "LAPTOP-001",
-        "quantity": 1,
-        "price": 899.99
-      }
-    ],
-    "paymentMethod": "CREDIT_CARD",
-    "cardNumber": "0000000000000000"
-  }'
+  -d '{"userId":"test-user-002","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":10000}]}'
 
 # Respuesta esperada: Orden fallida con status: FAILED
 # SAGA ejecutará compensación liberando el inventario reservado
+```
+
+**💡 Alternativa con archivo temporal:**
+```bash
+# Cantidad imposible para forzar fallo
+cat > /tmp/order-fail.json << 'EOF'
+{"userId":"test-user-002","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":10000}]}
+EOF
+
+curl -X POST http://localhost:8080/api/orders \
+  -H "Content-Type: application/json" \
+  --data-binary "@/tmp/order-fail.json"
 ```
 
 #### 4. Verificar Cache de Redis

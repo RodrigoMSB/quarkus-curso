@@ -64,7 +64,7 @@ check_service() {
     local service_name=$1
     local service_url=$2
     
-    if curl -s -f "${service_url}/q/health" > /dev/null 2>&1; then
+    if curl -s -f "${service_url}/health" > /dev/null 2>&1; then
         print_success "${service_name} está corriendo en ${service_url}"
         return 0
     else
@@ -179,16 +179,15 @@ demo_saga_exitoso() {
     
     print_step "Creando orden..."
     
+    # Crear archivo temporal con JSON (cross-platform: Mac + Windows GitBash)
+    local temp_file=$(mktemp)
+    printf '%s' '{"userId":"user-demo-1","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":1},{"productCode":"MOUSE-001","quantity":2}]}' > "$temp_file"
+    
     response=$(curl -s -X POST "$ORDER_SERVICE/api/orders" \
       -H "Content-Type: application/json" \
-      -d '{
-        "userId": "user-demo-1",
-        "paymentMethod": "credit_card",
-        "items": [
-          {"productCode": "LAPTOP-001", "quantity": 1},
-          {"productCode": "MOUSE-001", "quantity": 2}
-        ]
-      }')
+      --data-binary "@$temp_file")
+    
+    rm -f "$temp_file"
     
     echo "$response" | jq '.'
     
@@ -219,15 +218,15 @@ demo_saga_compensacion() {
     
     print_step "Intentando crear orden con stock insuficiente..."
     
+    # Crear archivo temporal con JSON (cross-platform: Mac + Windows GitBash)
+    local temp_file=$(mktemp)
+    printf '%s' '{"userId":"user-demo-2","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":10000}]}' > "$temp_file"
+    
     response=$(curl -s -X POST "$ORDER_SERVICE/api/orders" \
       -H "Content-Type: application/json" \
-      -d '{
-        "userId": "user-demo-2",
-        "paymentMethod": "credit_card",
-        "items": [
-          {"productCode": "LAPTOP-001", "quantity": 10000}
-        ]
-      }')
+      --data-binary "@$temp_file")
+    
+    rm -f "$temp_file"
     
     echo "$response" | jq '.'
     
@@ -263,15 +262,15 @@ generar_trafico() {
     
     print_step "Generando órdenes exitosas..."
     for i in {1..10}; do
+        # Crear archivo temporal con JSON (cross-platform: Mac + Windows GitBash)
+        local temp_file=$(mktemp)
+        printf '%s' "{\"userId\":\"user-load-$i\",\"paymentMethod\":\"credit_card\",\"items\":[{\"productCode\":\"MOUSE-001\",\"quantity\":1}]}" > "$temp_file"
+        
         curl -s -X POST "$ORDER_SERVICE/api/orders" \
           -H "Content-Type: application/json" \
-          -d "{
-            \"userId\": \"user-load-$i\",
-            \"paymentMethod\": \"credit_card\",
-            \"items\": [
-              {\"productCode\": \"MOUSE-001\", \"quantity\": 1}
-            ]
-          }" > /dev/null
+          --data-binary "@$temp_file" > /dev/null
+        
+        rm -f "$temp_file"
         echo -n "."
         sleep 0.5
     done
@@ -279,15 +278,15 @@ generar_trafico() {
     
     print_step "Generando órdenes fallidas (para métricas de error)..."
     for i in {1..3}; do
+        # Crear archivo temporal con JSON (cross-platform: Mac + Windows GitBash)
+        local temp_file=$(mktemp)
+        printf '%s' "{\"userId\":\"user-fail-$i\",\"paymentMethod\":\"credit_card\",\"items\":[{\"productCode\":\"LAPTOP-001\",\"quantity\":9999}]}" > "$temp_file"
+        
         curl -s -X POST "$ORDER_SERVICE/api/orders" \
           -H "Content-Type: application/json" \
-          -d "{
-            \"userId\": \"user-fail-$i\",
-            \"paymentMethod\": \"credit_card\",
-            \"items\": [
-              {\"productCode\": \"LAPTOP-001\", \"quantity\": 9999}
-            ]
-          }" > /dev/null
+          --data-binary "@$temp_file" > /dev/null
+        
+        rm -f "$temp_file"
         echo -n "."
         sleep 0.5
     done

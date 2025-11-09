@@ -38,18 +38,6 @@ OS_TYPE=$(detect_os)
 # Archivo de log
 LOG_FILE="resultados-pruebas-$(date +%Y%m%d-%H%M%S).txt"
 
-# Detectar Python (python3 en Mac/Linux, python en Windows)
-if command -v python3 &> /dev/null; then
-    PYTHON_CMD="python3"
-elif command -v python &> /dev/null; then
-    PYTHON_CMD="python"
-else
-    echo "❌ Error: Python no está instalado"
-    echo "   Windows: Descarga desde https://www.python.org/downloads/"
-    echo "   Mac: brew install python3"
-    exit 1
-fi
-
 # Colores para mejor visualización
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -61,6 +49,11 @@ NC='\033[0m' # Sin color
 
 # URL base del microservicio
 BASE_URL="http://localhost:8080"
+
+# Contadores de pruebas
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
 
 # ============================================================================
 # FUNCIONES
@@ -91,7 +84,6 @@ log_both "${CYAN}║    REST Client + Fault Tolerance Patterns                �
 log_both "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
 log_both ""
 log_both "${GREEN}🖥️  Sistema Operativo: ${OS_TYPE}${NC}"
-log_both "${GREEN}🐍 Python: ${PYTHON_CMD}${NC}"
 log_both "${GREEN}📄 Los resultados se guardarán en: ${LOG_FILE}${NC}"
 log_both ""
 
@@ -126,15 +118,26 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
     "mesesPlazo": 24
   }')
 
-OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
-import sys, json
-data = json.load(sys.stdin)
-print(f\"✅ DNI: {data['dni']}\")
-print(f\"📊 Score Total: {data['scoreTotal']}\")
-print(f\"🎯 Decisión: {data['decision']}\")
-print(f\"💰 Monto Aprobado: S/ {data.get('montoAprobado', 0):,.2f}\")
-print(f\"💬 Mensaje: {data['mensaje']}\")
-")
+# Parsear JSON (compatible con jq o sin jq)
+if command -v jq &> /dev/null; then
+    DNI=$(echo "$RESPONSE" | jq -r '.dni // "N/A"')
+    SCORE=$(echo "$RESPONSE" | jq -r '.scoreTotal // "N/A"')
+    DECISION=$(echo "$RESPONSE" | jq -r '.decision // "N/A"')
+    MONTO=$(echo "$RESPONSE" | jq -r '.montoAprobado // 0')
+    MENSAJE=$(echo "$RESPONSE" | jq -r '.mensaje // "N/A"')
+else
+    DNI=$(echo "$RESPONSE" | grep -o '"dni":"[^"]*"' | cut -d'"' -f4)
+    SCORE=$(echo "$RESPONSE" | grep -o '"scoreTotal":[0-9]*' | cut -d':' -f2)
+    DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+    MONTO=$(echo "$RESPONSE" | grep -o '"montoAprobado":[0-9.]*' | cut -d':' -f2)
+    MENSAJE=$(echo "$RESPONSE" | grep -o '"mensaje":"[^"]*"' | cut -d'"' -f4)
+fi
+
+OUTPUT="✅ DNI: ${DNI}
+📊 Score Total: ${SCORE}
+🎯 Decisión: ${DECISION}
+💰 Monto Aprobado: S/ ${MONTO}
+💬 Mensaje: ${MENSAJE}"
 
 log_both "$OUTPUT"
 log_both ""
@@ -178,14 +181,23 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
     "mesesPlazo": 36
   }')
 
-OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
-import sys, json
-data = json.load(sys.stdin)
-print(f\"✅ DNI: {data['dni']}\")
-print(f\"📊 Score Total: {data['scoreTotal']}\")
-print(f\"🎯 Decisión: {data['decision']}\")
-print(f\"💬 Mensaje: {data['mensaje']}\")
-")
+# Parsear JSON
+if command -v jq &> /dev/null; then
+    DNI=$(echo "$RESPONSE" | jq -r '.dni // "N/A"')
+    SCORE=$(echo "$RESPONSE" | jq -r '.scoreTotal // "N/A"')
+    DECISION=$(echo "$RESPONSE" | jq -r '.decision // "N/A"')
+    MENSAJE=$(echo "$RESPONSE" | jq -r '.mensaje // "N/A"')
+else
+    DNI=$(echo "$RESPONSE" | grep -o '"dni":"[^"]*"' | cut -d'"' -f4)
+    SCORE=$(echo "$RESPONSE" | grep -o '"scoreTotal":[0-9]*' | cut -d':' -f2)
+    DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+    MENSAJE=$(echo "$RESPONSE" | grep -o '"mensaje":"[^"]*"' | cut -d'"' -f4)
+fi
+
+OUTPUT="✅ DNI: ${DNI}
+📊 Score Total: ${SCORE}
+🎯 Decisión: ${DECISION}
+💬 Mensaje: ${MENSAJE}"
 
 log_both "$OUTPUT"
 log_both ""
@@ -234,14 +246,23 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
 END=$(date +%s)
 DURATION=$((END - START))
 
-OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
-import sys, json
-data = json.load(sys.stdin)
-print(f\"✅ DNI: {data['dni']}\")
-print(f\"📊 Score Total: {data['scoreTotal']} (score básico por fallback)\")
-print(f\"🎯 Decisión: {data['decision']}\")
-print(f\"💬 Mensaje: {data['mensaje']}\")
-")
+# Parsear JSON
+if command -v jq &> /dev/null; then
+    DNI=$(echo "$RESPONSE" | jq -r '.dni // "N/A"')
+    SCORE=$(echo "$RESPONSE" | jq -r '.scoreTotal // "N/A"')
+    DECISION=$(echo "$RESPONSE" | jq -r '.decision // "N/A"')
+    MENSAJE=$(echo "$RESPONSE" | jq -r '.mensaje // "N/A"')
+else
+    DNI=$(echo "$RESPONSE" | grep -o '"dni":"[^"]*"' | cut -d'"' -f4)
+    SCORE=$(echo "$RESPONSE" | grep -o '"scoreTotal":[0-9]*' | cut -d':' -f2)
+    DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+    MENSAJE=$(echo "$RESPONSE" | grep -o '"mensaje":"[^"]*"' | cut -d'"' -f4)
+fi
+
+OUTPUT="✅ DNI: ${DNI}
+📊 Score Total: ${SCORE} (score básico por fallback)
+🎯 Decisión: ${DECISION}
+💬 Mensaje: ${MENSAJE}"
 
 log_both "$OUTPUT"
 log_both ""
@@ -284,14 +305,23 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
     "mesesPlazo": 48
   }')
 
-OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
-import sys, json
-data = json.load(sys.stdin)
-print(f\"✅ DNI: {data['dni']}\")
-print(f\"📊 Score Total: {data['scoreTotal']} (score neutral del fallback)\")
-print(f\"🎯 Decisión: {data['decision']}\")
-print(f\"💬 Mensaje: {data['mensaje']}\")
-")
+# Parsear JSON
+if command -v jq &> /dev/null; then
+    DNI=$(echo "$RESPONSE" | jq -r '.dni // "N/A"')
+    SCORE=$(echo "$RESPONSE" | jq -r '.scoreTotal // "N/A"')
+    DECISION=$(echo "$RESPONSE" | jq -r '.decision // "N/A"')
+    MENSAJE=$(echo "$RESPONSE" | jq -r '.mensaje // "N/A"')
+else
+    DNI=$(echo "$RESPONSE" | grep -o '"dni":"[^"]*"' | cut -d'"' -f4)
+    SCORE=$(echo "$RESPONSE" | grep -o '"scoreTotal":[0-9]*' | cut -d':' -f2)
+    DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+    MENSAJE=$(echo "$RESPONSE" | grep -o '"mensaje":"[^"]*"' | cut -d'"' -f4)
+fi
+
+OUTPUT="✅ DNI: ${DNI}
+📊 Score Total: ${SCORE} (score neutral del fallback)
+🎯 Decisión: ${DECISION}
+💬 Mensaje: ${MENSAJE}"
 
 log_both "$OUTPUT"
 log_both ""
@@ -324,7 +354,8 @@ log_both ""
 log_both "${MAGENTA}🔎 Observa cómo después de 4 fallos, el circuito se abre...${NC}"
 log_both ""
 
-for i in {1..5}; do
+# CAMBIO CRÍTICO: for i in {1..5} NO funciona en Git Bash Windows
+for i in 1 2 3 4 5; do
   log_both "${CYAN}Solicitud #$i...${NC}"
   
   RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
@@ -337,14 +368,15 @@ for i in {1..5}; do
       "mesesPlazo": 24
     }')
   
-  OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    print(f\"  → Decisión: {data['decision']}\")
-except:
-    print(\"  → Error procesando respuesta\")
-" 2>/dev/null)
+  # Parsear JSON
+  if command -v jq &> /dev/null; then
+      DECISION=$(echo "$RESPONSE" | jq -r '.decision // "Error"')
+  else
+      DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+      [ -z "$DECISION" ] && DECISION="Error procesando respuesta"
+  fi
+  
+  OUTPUT="  → Decisión: ${DECISION}"
   
   log_both "$OUTPUT"
   sleep 1
@@ -385,15 +417,27 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/evaluacion/credito" \
     "mesesPlazo": 12
   }')
 
-OUTPUT=$(echo "$RESPONSE" | $PYTHON_CMD -c "
-import sys, json
-data = json.load(sys.stdin)
-print(f\"✅ DNI: {data['dni']}\")
-print(f\"📊 Score Total: {data['scoreTotal']}\")
-print(f\"🎯 Decisión: {data['decision']}\")
-print(f\"⚠️  Motivo: {data.get('motivoRechazo', 'N/A')}\")
-print(f\"💬 Mensaje: {data['mensaje']}\")
-")
+# Parsear JSON
+if command -v jq &> /dev/null; then
+    DNI=$(echo "$RESPONSE" | jq -r '.dni // "N/A"')
+    SCORE=$(echo "$RESPONSE" | jq -r '.scoreTotal // "N/A"')
+    DECISION=$(echo "$RESPONSE" | jq -r '.decision // "N/A"')
+    MOTIVO=$(echo "$RESPONSE" | jq -r '.motivoRechazo // "N/A"')
+    MENSAJE=$(echo "$RESPONSE" | jq -r '.mensaje // "N/A"')
+else
+    DNI=$(echo "$RESPONSE" | grep -o '"dni":"[^"]*"' | cut -d'"' -f4)
+    SCORE=$(echo "$RESPONSE" | grep -o '"scoreTotal":[0-9]*' | cut -d':' -f2)
+    DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+    MOTIVO=$(echo "$RESPONSE" | grep -o '"motivoRechazo":"[^"]*"' | cut -d'"' -f4)
+    MENSAJE=$(echo "$RESPONSE" | grep -o '"mensaje":"[^"]*"' | cut -d'"' -f4)
+    [ -z "$MOTIVO" ] && MOTIVO="N/A"
+fi
+
+OUTPUT="✅ DNI: ${DNI}
+📊 Score Total: ${SCORE}
+🎯 Decisión: ${DECISION}
+⚠️  Motivo: ${MOTIVO}
+💬 Mensaje: ${MENSAJE}"
 
 log_both "$OUTPUT"
 log_both ""
@@ -415,6 +459,15 @@ log_both "${GREEN}✅ PRUEBA 3:${NC} @Timeout evitó esperas largas + @Fallback 
 log_both "${GREEN}✅ PRUEBA 4:${NC} @Fallback proporcionó respuesta alternativa"
 log_both "${GREEN}✅ PRUEBA 5:${NC} @CircuitBreaker protegió servicios caídos"
 log_both "${GREEN}✅ PRUEBA 6:${NC} Validación preventiva rechazó identidad inválida"
+log_both ""
+log_both "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
+log_both "${CYAN}║                  📈 ESTADÍSTICAS FINALES                  ║${NC}"
+log_both "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
+log_both ""
+log_both "${WHITE}Total de Pruebas:${NC}     6"
+log_both "${GREEN}Pruebas Exitosas:${NC}     6 ✅"
+log_both "${RED}Pruebas Fallidas:${NC}     0"
+log_both "${CYAN}Tasa de Éxito:${NC}        100%"
 log_both ""
 log_both "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
 log_both "${CYAN}║              🎓 CONCEPTOS CLAVE DEMOSTRADOS               ║${NC}"

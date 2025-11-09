@@ -61,25 +61,38 @@ TIMESTAMP=$(date +"%Y-%m-%d-%H%M%S")
 REPORT_FILE="test-report-${TIMESTAMP}.txt"
 
 # ----------------------------------------------------------------------------
-# FUNCIÓN PORTABLE PARA EXTRAER HTTP CODE Y BODY
+# FUNCIÓN PORTABLE PARA HACER REQUESTS - CROSS-PLATFORM (Mac + Windows)
 # ----------------------------------------------------------------------------
 
-# Función para hacer request y separar body de status code
+# Función para hacer request GET
 # FUNCIONA EN: Windows (Git Bash), macOS, Linux
-do_curl() {
+do_curl_get() {
     local url=$1
-    local method=${2:-GET}
-    local data=${3:-}
+    curl -s -w "\n---HTTP_CODE---\n%{http_code}" "$url" 2>/dev/null
+}
+
+# Función para hacer request POST con JSON
+# FUNCIONA EN: Windows (Git Bash), macOS, Linux
+# Usa archivo temporal + printf para evitar problemas con echo en Windows
+do_curl_post() {
+    local url=$1
+    local json_data=$2
     
-    if [ -n "$data" ]; then
-        # POST con datos
-        curl -s -w "\n---HTTP_CODE---\n%{http_code}" -X "$method" \
+    if [ -n "$json_data" ]; then
+        local temp_file=$(mktemp)
+        printf '%s' "$json_data" > "$temp_file"
+        
+        local response=$(curl -s -w "\n---HTTP_CODE---\n%{http_code}" \
+            -X POST \
             -H "Content-Type: application/json" \
-            -d "$data" \
-            "$url"
+            --data-binary "@$temp_file" \
+            "$url" 2>/dev/null)
+        
+        rm -f "$temp_file"
+        echo "$response"
     else
-        # GET simple
-        curl -s -w "\n---HTTP_CODE---\n%{http_code}" "$url"
+        echo "ERROR: No JSON data provided"
+        return 1
     fi
 }
 
@@ -162,6 +175,8 @@ print_warning() {
 format_json() {
     if command -v jq &> /dev/null; then
         echo "$1" | jq '.' 2>/dev/null || echo "$1"
+    elif command -v python3 &> /dev/null; then
+        echo "$1" | python3 -m json.tool 2>/dev/null || echo "$1"
     elif command -v python &> /dev/null; then
         echo "$1" | python -m json.tool 2>/dev/null || echo "$1"
     else
@@ -173,7 +188,7 @@ format_json() {
 check_service() {
     print_info "Verificando que el servicio esté disponible..."
     
-    response=$(do_curl "${BASE_URL}/q/health/ready")
+    response=$(do_curl_get "${BASE_URL}/q/health/ready")
     http_code=$(extract_code "$response")
     
     if [ "$http_code" != "200" ]; then
@@ -204,6 +219,15 @@ run_test() {
         print_error "TEST #${TESTS_TOTAL}: ${test_name} (esperado: ${expected_status}, obtenido: ${actual_status})"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
+}
+
+# Función para pausar entre pruebas
+pause_between_tests() {
+    echo ""
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    read -p "Presiona ENTER para continuar con la siguiente prueba..."
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
 }
 
 # ----------------------------------------------------------------------------
@@ -257,90 +281,96 @@ INTRO
 
 read -p "Presiona ENTER para comenzar las pruebas..."
 
-# Verificar disponibilidad del servicio
+# Verificar que el servicio esté disponible
 check_service
 
 # ----------------------------------------------------------------------------
 # PRUEBA 1: HEALTH CHECKS
 # ----------------------------------------------------------------------------
 
-print_header "${FIRE} PRUEBA 1: HEALTH CHECKS"
+print_header "${ROCKET} PRUEBA 1: HEALTH CHECKS"
 
-print_section "1.1 - Health Liveness"
-response=$(do_curl "${BASE_URL}/q/health/live")
+print_section "1.1 - Liveness Probe (¿Está vivo?)"
+print_info "Verificando endpoint: ${BASE_URL}/q/health/live"
+
+response=$(do_curl_get "${BASE_URL}/q/health/live")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
-echo "Response:" | tee -a "$REPORT_FILE"
+echo "Respuesta:" | tee -a "$REPORT_FILE"
 format_json "$body" | tee -a "$REPORT_FILE"
-run_test "Health Liveness" "200" "$http_code"
 
-print_section "1.2 - Health Readiness"
-response=$(do_curl "${BASE_URL}/q/health/ready")
+run_test "Health check - Liveness" "200" "$http_code"
+
+print_section "1.2 - Readiness Probe (¿Está listo?)"
+print_info "Verificando endpoint: ${BASE_URL}/q/health/ready"
+
+response=$(do_curl_get "${BASE_URL}/q/health/ready")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
-echo "Response:" | tee -a "$REPORT_FILE"
+echo "Respuesta:" | tee -a "$REPORT_FILE"
 format_json "$body" | tee -a "$REPORT_FILE"
-run_test "Health Readiness" "200" "$http_code"
+
+run_test "Health check - Readiness" "200" "$http_code"
+
+pause_between_tests
 
 # ----------------------------------------------------------------------------
-# PRUEBA 2: MÉTRICAS
+# PRUEBA 2: MÉTRICAS PROMETHEUS
 # ----------------------------------------------------------------------------
 
 print_header "${CHART} PRUEBA 2: MÉTRICAS PROMETHEUS"
 
-print_section "2.1 - Endpoint de Métricas"
-response=$(do_curl "${BASE_URL}/q/metrics")
+print_section "2.1 - Endpoint de métricas"
+print_info "Obteniendo métricas de: ${BASE_URL}/q/metrics"
+
+response=$(do_curl_get "${BASE_URL}/q/metrics")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
-echo "Primeras 10 líneas de métricas:" | tee -a "$REPORT_FILE"
-echo "$body" | head -10 | tee -a "$REPORT_FILE"
-run_test "Métricas disponibles" "200" "$http_code"
+log_file "Primeras 20 líneas de métricas:"
+echo "$body" | head -20 | tee -a "$REPORT_FILE"
+log_file "..."
+log_file "(Total: $(echo "$body" | wc -l) líneas)"
+
+run_test "Métricas Prometheus disponibles" "200" "$http_code"
+
+pause_between_tests
 
 # ----------------------------------------------------------------------------
-# PRUEBA 3: ESTADÍSTICAS
+# PRUEBA 3: ESTADÍSTICAS DEL SISTEMA
 # ----------------------------------------------------------------------------
 
 print_header "${CHART} PRUEBA 3: ESTADÍSTICAS DEL SISTEMA"
 
-print_section "3.1 - Obtener Estadísticas"
-response=$(do_curl "${API_URL}/estadisticas")
+print_section "3.1 - Consultar estadísticas generales"
+print_info "Obteniendo estadísticas de: ${API_URL}/estadisticas"
+
+response=$(do_curl_get "${API_URL}/estadisticas")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
 echo "Estadísticas:" | tee -a "$REPORT_FILE"
 format_json "$body" | tee -a "$REPORT_FILE"
-run_test "Obtener estadísticas" "200" "$http_code"
+
+run_test "Consultar estadísticas del sistema" "200" "$http_code"
+
+pause_between_tests
 
 # ----------------------------------------------------------------------------
-# PRUEBA 4: CASO DE APROBACIÓN - CLIENTE EXCELENTE
+# PRUEBA 4: CLIENTE PERFIL EXCELENTE - APROBADO
 # ----------------------------------------------------------------------------
 
-print_header "${MONEY} PRUEBA 4: SOLICITUD APROBADA - CLIENTE EXCELENTE"
+print_header "${CHECK} PRUEBA 4: SOLICITUD APROBADA - CLIENTE PERFIL EXCELENTE"
 
-print_section "4.1 - Crear solicitud (Cliente perfil excelente)"
+print_section "4.1 - Crear solicitud (Cliente con excelente perfil crediticio)"
 
-# CORREGIDO: Ingreso 10,000 → Solicita 50,000 (5x - cumple regla)
-solicitud_excelente='{
-  "numeroDocumento": "70001234",
-  "tipoDocumento": "DNI",
-  "nombreCompleto": "Andrea Valeria Rojas Mendoza",
-  "ingresoMensual": 10000.00,
-  "montoSolicitado": 50000.00,
-  "deudaActual": 2000.00,
-  "antiguedadLaboralAnios": 15,
-  "edad": 42,
-  "tieneGarantia": true,
-  "tipoGarantia": "HIPOTECARIA"
-}'
+# JSON en UNA SOLA LÍNEA (importante para cross-platform)
+solicitud_aprobada='{"numeroDocumento":"70001234","tipoDocumento":"DNI","nombreCompleto":"Andrea Valeria Rojas Mendoza","ingresoMensual":10000.00,"montoSolicitado":50000.00,"deudaActual":2000.00,"antiguedadLaboralAnios":15,"edad":42,"tieneGarantia":true,"tipoGarantia":"HIPOTECARIA"}'
 
-print_info "Enviando solicitud..."
-log_file "Solicitud enviada:"
-format_json "$solicitud_excelente" | tee -a "$REPORT_FILE"
-
-response=$(do_curl "${API_URL}/evaluar" "POST" "$solicitud_excelente")
+print_info "Enviando solicitud (DNI: 70001234)..."
+response=$(do_curl_post "${API_URL}/evaluar" "$solicitud_aprobada")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -348,50 +378,37 @@ log_file ""
 print_info "Resultado de la evaluación:"
 format_json "$body" | tee -a "$REPORT_FILE"
 
-# Extraer ID de la solicitud
-solicitud_id=$(echo "$body" | grep -o '"solicitudId":[0-9]*' | grep -o '[0-9]*' | head -1)
+# Extraer ID de la solicitud para pruebas posteriores
+solicitud_id=$(echo "$body" | grep -o '"id":[0-9]*' | grep -o '[0-9]*' | head -1)
 
-# Verificar aprobación
+if [ -n "$solicitud_id" ]; then
+    print_info "ID de solicitud creada: ${solicitud_id}"
+    log_file "ID de solicitud: ${solicitud_id}"
+fi
+
 if echo "$body" | grep -q '"aprobado":true'; then
     print_success "Solicitud APROBADA como se esperaba"
-    
-    monto=$(echo "$body" | grep -o '"montoMaximoAprobado":[0-9.]*' | grep -o '[0-9.]*')
-    tasa=$(echo "$body" | grep -o '"tasaInteres":[0-9.]*' | grep -o '[0-9.]*')
-    plazo=$(echo "$body" | grep -o '"plazoMaximoMeses":[0-9]*' | grep -o '[0-9]*')
-    
-    print_info "Monto aprobado: S/ ${monto}"
-    print_info "Tasa de interés: ${tasa}% anual"
-    print_info "Plazo máximo: ${plazo} meses"
 else
     print_error "Solicitud RECHAZADA (se esperaba aprobación)"
 fi
 
-run_test "Cliente excelente aprobado" "200" "$http_code"
+run_test "Cliente perfil excelente aprobado" "200" "$http_code"
+
+pause_between_tests
 
 # ----------------------------------------------------------------------------
-# PRUEBA 5: CASO DE APROBACIÓN - CLIENTE CON GARANTÍA
+# PRUEBA 5: CLIENTE CON GARANTÍA - APROBADO
 # ----------------------------------------------------------------------------
 
-print_header "${MONEY} PRUEBA 5: SOLICITUD APROBADA - CLIENTE CON GARANTÍA VEHICULAR"
+print_header "${CHECK} PRUEBA 5: SOLICITUD APROBADA - CLIENTE CON GARANTÍA"
 
-print_section "5.1 - Crear solicitud (Cliente con garantía vehicular)"
+print_section "5.1 - Crear solicitud (Cliente con garantía)"
 
-# CORREGIDO: Ingreso 6,000 → Solicita 30,000 (5x - cumple regla)
-solicitud_garantia='{
-  "numeroDocumento": "70005678",
-  "tipoDocumento": "DNI",
-  "nombreCompleto": "Roberto Carlos Medina Torres",
-  "ingresoMensual": 6000.00,
-  "montoSolicitado": 30000.00,
-  "deudaActual": 2000.00,
-  "antiguedadLaboralAnios": 7,
-  "edad": 38,
-  "tieneGarantia": true,
-  "tipoGarantia": "VEHICULAR"
-}'
+# JSON en UNA SOLA LÍNEA (Ingreso 6000 → Solicita 30000 = 5x, cumple la regla)
+solicitud_garantia='{"numeroDocumento":"70005678","tipoDocumento":"DNI","nombreCompleto":"Roberto Carlos Medina Torres","ingresoMensual":6000.00,"montoSolicitado":30000.00,"deudaActual":2000.00,"antiguedadLaboralAnios":7,"edad":38,"tieneGarantia":true,"tipoGarantia":"VEHICULAR"}'
 
-print_info "Enviando solicitud..."
-response=$(do_curl "${API_URL}/evaluar" "POST" "$solicitud_garantia")
+print_info "Enviando solicitud (DNI: 70005678 con garantía)..."
+response=$(do_curl_post "${API_URL}/evaluar" "$solicitud_garantia")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -407,6 +424,8 @@ fi
 
 run_test "Cliente con garantía aprobado" "200" "$http_code"
 
+pause_between_tests
+
 # ----------------------------------------------------------------------------
 # PRUEBA 6: CASO DE RECHAZO - LISTA NEGRA
 # ----------------------------------------------------------------------------
@@ -415,21 +434,11 @@ print_header "${CROSS} PRUEBA 6: SOLICITUD RECHAZADA - CLIENTE EN LISTA NEGRA"
 
 print_section "6.1 - Crear solicitud (Cliente en lista negra del bureau)"
 
-# CORREGIDO: Ingreso 5,000 → Solicita 25,000 (5x - cumple regla, pero se rechaza por lista negra)
-solicitud_lista_negra='{
-  "numeroDocumento": "12345678",
-  "tipoDocumento": "DNI",
-  "nombreCompleto": "Juan Carlos Pérez López",
-  "ingresoMensual": 5000.00,
-  "montoSolicitado": 25000.00,
-  "deudaActual": 3000.00,
-  "antiguedadLaboralAnios": 5,
-  "edad": 35,
-  "tieneGarantia": false
-}'
+# JSON en UNA SOLA LÍNEA
+solicitud_lista_negra='{"numeroDocumento":"12345678","tipoDocumento":"DNI","nombreCompleto":"Juan Carlos Pérez López","ingresoMensual":5000.00,"montoSolicitado":25000.00,"deudaActual":3000.00,"antiguedadLaboralAnios":5,"edad":35,"tieneGarantia":false}'
 
 print_info "Enviando solicitud (DNI: 12345678 está en lista negra)..."
-response=$(do_curl "${API_URL}/evaluar" "POST" "$solicitud_lista_negra")
+response=$(do_curl_post "${API_URL}/evaluar" "$solicitud_lista_negra")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -446,6 +455,8 @@ fi
 
 run_test "Cliente lista negra rechazado" "200" "$http_code"
 
+pause_between_tests
+
 # ----------------------------------------------------------------------------
 # PRUEBA 7: CASO DE RECHAZO - DEUDA MUY ALTA
 # ----------------------------------------------------------------------------
@@ -454,21 +465,11 @@ print_header "${CROSS} PRUEBA 7: SOLICITUD RECHAZADA - RATIO DEUDA/INGRESO ALTO"
 
 print_section "7.1 - Crear solicitud (Cliente con deuda muy alta)"
 
-# CORREGIDO: Ingreso 3,000 → Solicita 15,000 (5x - cumple regla, pero se rechaza por deuda alta)
-solicitud_deuda_alta='{
-  "numeroDocumento": "70009876",
-  "tipoDocumento": "DNI",
-  "nombreCompleto": "María Elena Castro Ruiz",
-  "ingresoMensual": 3000.00,
-  "montoSolicitado": 15000.00,
-  "deudaActual": 15000.00,
-  "antiguedadLaboralAnios": 4,
-  "edad": 32,
-  "tieneGarantia": false
-}'
+# JSON en UNA SOLA LÍNEA
+solicitud_deuda_alta='{"numeroDocumento":"70009876","tipoDocumento":"DNI","nombreCompleto":"María Elena Castro Ruiz","ingresoMensual":3000.00,"montoSolicitado":15000.00,"deudaActual":15000.00,"antiguedadLaboralAnios":4,"edad":32,"tieneGarantia":false}'
 
 print_info "Enviando solicitud (deuda 5x mayor que ingreso)..."
-response=$(do_curl "${API_URL}/evaluar" "POST" "$solicitud_deuda_alta")
+response=$(do_curl_post "${API_URL}/evaluar" "$solicitud_deuda_alta")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -484,6 +485,8 @@ fi
 
 run_test "Cliente deuda alta rechazado" "200" "$http_code"
 
+pause_between_tests
+
 # ----------------------------------------------------------------------------
 # PRUEBA 8: VALIDACIONES - DATOS INVÁLIDOS
 # ----------------------------------------------------------------------------
@@ -492,20 +495,11 @@ print_header "${WARNING} PRUEBA 8: VALIDACIONES DE ENTRADA"
 
 print_section "8.1 - Solicitud con datos inválidos (ingreso negativo)"
 
-solicitud_invalida='{
-  "numeroDocumento": "70011111",
-  "tipoDocumento": "DNI",
-  "nombreCompleto": "Test Validación",
-  "ingresoMensual": -1000.00,
-  "montoSolicitado": 10000.00,
-  "deudaActual": 0.00,
-  "antiguedadLaboralAnios": 2,
-  "edad": 25,
-  "tieneGarantia": false
-}'
+# JSON en UNA SOLA LÍNEA
+solicitud_invalida='{"numeroDocumento":"70011111","tipoDocumento":"DNI","nombreCompleto":"Test Validación","ingresoMensual":-1000.00,"montoSolicitado":10000.00,"deudaActual":0.00,"antiguedadLaboralAnios":2,"edad":25,"tieneGarantia":false}'
 
 print_info "Enviando solicitud con ingreso negativo (debe ser rechazada)..."
-response=$(do_curl "${API_URL}/evaluar" "POST" "$solicitud_invalida")
+response=$(do_curl_post "${API_URL}/evaluar" "$solicitud_invalida")
 http_code=$(extract_code "$response")
 
 if [ "$http_code" == "400" ]; then
@@ -518,20 +512,11 @@ run_test "Validación de ingreso negativo" "400" "$http_code"
 
 print_section "8.2 - Solicitud con edad menor a 18 años"
 
-solicitud_menor_edad='{
-  "numeroDocumento": "70012222",
-  "tipoDocumento": "DNI",
-  "nombreCompleto": "Test Menor Edad",
-  "ingresoMensual": 3000.00,
-  "montoSolicitado": 10000.00,
-  "deudaActual": 0.00,
-  "antiguedadLaboralAnios": 1,
-  "edad": 17,
-  "tieneGarantia": false
-}'
+# JSON en UNA SOLA LÍNEA
+solicitud_menor_edad='{"numeroDocumento":"70012222","tipoDocumento":"DNI","nombreCompleto":"Test Menor Edad","ingresoMensual":3000.00,"montoSolicitado":10000.00,"deudaActual":0.00,"antiguedadLaboralAnios":1,"edad":17,"tieneGarantia":false}'
 
 print_info "Enviando solicitud con edad = 17 años (debe ser rechazada)..."
-response=$(do_curl "${API_URL}/evaluar" "POST" "$solicitud_menor_edad")
+response=$(do_curl_post "${API_URL}/evaluar" "$solicitud_menor_edad")
 http_code=$(extract_code "$response")
 
 if [ "$http_code" == "400" ]; then
@@ -541,6 +526,8 @@ else
 fi
 
 run_test "Validación de edad mínima" "400" "$http_code"
+
+pause_between_tests
 
 # ----------------------------------------------------------------------------
 # PRUEBA 9: CONSULTA DE SOLICITUDES
@@ -552,7 +539,7 @@ print_section "9.1 - Consultar solicitud por ID"
 
 if [ -n "$solicitud_id" ] && [ "$solicitud_id" != "" ]; then
     print_info "Consultando solicitud ID: ${solicitud_id}..."
-    response=$(do_curl "${API_URL}/${solicitud_id}")
+    response=$(do_curl_get "${API_URL}/${solicitud_id}")
     http_code=$(extract_code "$response")
     body=$(extract_body "$response")
     
@@ -566,7 +553,7 @@ fi
 print_section "9.2 - Consultar solicitud inexistente"
 
 print_info "Consultando solicitud ID: 999999..."
-response=$(do_curl "${API_URL}/999999")
+response=$(do_curl_get "${API_URL}/999999")
 http_code=$(extract_code "$response")
 
 if [ "$http_code" == "404" ]; then
@@ -577,6 +564,8 @@ fi
 
 run_test "Consultar solicitud inexistente" "404" "$http_code"
 
+pause_between_tests
+
 # ----------------------------------------------------------------------------
 # PRUEBA 10: LISTADO CON PAGINACIÓN
 # ----------------------------------------------------------------------------
@@ -586,7 +575,7 @@ print_header "${CHART} PRUEBA 10: LISTADO DE SOLICITUDES"
 print_section "10.1 - Listar todas las solicitudes (página 0, tamaño 5)"
 
 print_info "Obteniendo lista..."
-response=$(do_curl "${API_URL}/listar?page=0&size=5")
+response=$(do_curl_get "${API_URL}/listar?page=0&size=5")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -641,7 +630,7 @@ Fecha: $(date +"%Y-%m-%d %H:%M:%S")
 Para más información, consulta:
 - README.md: Guía de usuario
 - TEORIA.md: Conceptos técnicos
-- instructor.md: Guía del profesor
+- INSTRUCTOR.md: Guía del profesor
 
 ================================================================================
 FOOTER

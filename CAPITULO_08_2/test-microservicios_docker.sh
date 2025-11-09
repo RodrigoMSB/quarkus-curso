@@ -5,10 +5,36 @@
 # 
 # Este script verifica que los 4 microservicios contenerizados estén
 # funcionando correctamente.
+#
+# COMPATIBLE: Mac y Windows (Git Bash)
 ##############################################################################
+
+# ============================================================================
+# DETECCIÓN DE SISTEMA OPERATIVO
+# ============================================================================
+
+detect_os() {
+    case "$(uname -s)" in
+        Darwin*)    echo "mac" ;;
+        Linux*)     echo "linux" ;;
+        MINGW*|MSYS*|CYGWIN*)    echo "windows" ;;
+        *)          echo "unknown" ;;
+    esac
+}
+
+OS_TYPE=$(detect_os)
+
+# ============================================================================
+# CONFIGURACIÓN
+# ============================================================================
 
 # Archivo de log
 LOG_FILE="resultados-docker-$(date +%Y%m%d-%H%M%S).txt"
+
+# Contadores de pruebas
+TOTAL_TESTS=0
+PASSED_TESTS=0
+FAILED_TESTS=0
 
 # Función para escribir en terminal y archivo
 log_both() {
@@ -25,11 +51,19 @@ CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 NC='\033[0m'
 
+# Función para pausar (compatible con ambos sistemas)
+pause_script() {
+    echo ""
+    read -p "Presiona ENTER para continuar..." dummy
+    echo ""
+}
+
 log_both "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
 log_both "${CYAN}║    🐳  PRUEBAS DE MICROSERVICIOS CON DOCKER              ║${NC}"
 log_both "${CYAN}║    Arquitectura Contenerizada con Docker Compose         ║${NC}"
 log_both "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
 log_both ""
+log_both "${GREEN}🖥️  Sistema Operativo: ${OS_TYPE}${NC}"
 log_both "${GREEN}📄 Los resultados se guardarán en: ${LOG_FILE}${NC}"
 log_both ""
 
@@ -106,7 +140,7 @@ fi
 
 log_both "${GREEN}✅ Todos los contenedores están activos. Iniciando pruebas...${NC}"
 log_both ""
-read -p "Presiona ENTER para continuar..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -130,6 +164,8 @@ log_both ""
 log_both "${CYAN}Ejecutando solicitud...${NC}"
 log_both ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 RESPONSE=$(curl -s -X POST "http://localhost:8080/api/evaluacion/credito" \
   -H "Content-Type: application/json" \
   -d '{
@@ -140,21 +176,39 @@ RESPONSE=$(curl -s -X POST "http://localhost:8080/api/evaluacion/credito" \
     "mesesPlazo": 24
   }')
 
-OUTPUT=$(echo "$RESPONSE" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-print(f\"✅ DNI: {data['dni']}\")
-print(f\"📊 Score Total: {data['scoreTotal']}\")
-print(f\"🎯 Decisión: {data['decision']}\")
-print(f\"💰 Monto Aprobado: S/ {data.get('montoAprobado', 0):,.2f}\")
-print(f\"💬 Mensaje: {data['mensaje']}\")
-")
+# Parsear JSON (compatible con jq o sin jq)
+if command -v jq &> /dev/null; then
+    DNI=$(echo "$RESPONSE" | jq -r '.dni // "N/A"')
+    SCORE=$(echo "$RESPONSE" | jq -r '.scoreTotal // "N/A"')
+    DECISION=$(echo "$RESPONSE" | jq -r '.decision // "N/A"')
+    MONTO=$(echo "$RESPONSE" | jq -r '.montoAprobado // 0')
+    MENSAJE=$(echo "$RESPONSE" | jq -r '.mensaje // "N/A"')
+else
+    DNI=$(echo "$RESPONSE" | grep -o '"dni":"[^"]*"' | cut -d'"' -f4)
+    SCORE=$(echo "$RESPONSE" | grep -o '"scoreTotal":[0-9]*' | cut -d':' -f2)
+    DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+    MONTO=$(echo "$RESPONSE" | grep -o '"montoAprobado":[0-9.]*' | cut -d':' -f2)
+    MENSAJE=$(echo "$RESPONSE" | grep -o '"mensaje":"[^"]*"' | cut -d'"' -f4)
+fi
+
+OUTPUT="✅ DNI: ${DNI}
+📊 Score Total: ${SCORE}
+🎯 Decisión: ${DECISION}
+💰 Monto Aprobado: S/ ${MONTO}
+💬 Mensaje: ${MENSAJE}"
 
 log_both "$OUTPUT"
 log_both ""
-log_both "${GREEN}✅ Los 4 contenedores se comunicaron correctamente!${NC}"
+
+if [ "$DECISION" = "APROBADO" ]; then
+    log_both "${GREEN}✅ Los 4 contenedores se comunicaron correctamente!${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+else
+    log_both "${RED}❌ Error en la comunicación${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log_both ""
-read -p "Presiona ENTER para continuar..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -171,6 +225,8 @@ log_both ""
 log_both "${CYAN}Ejecutando solicitud...${NC}"
 log_both ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 RESPONSE=$(curl -s -X POST "http://localhost:8080/api/evaluacion/credito" \
   -H "Content-Type: application/json" \
   -d '{
@@ -181,21 +237,40 @@ RESPONSE=$(curl -s -X POST "http://localhost:8080/api/evaluacion/credito" \
     "mesesPlazo": 12
   }')
 
-OUTPUT=$(echo "$RESPONSE" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-print(f\"✅ DNI: {data['dni']}\")
-print(f\"📊 Score Total: {data['scoreTotal']}\")
-print(f\"🎯 Decisión: {data['decision']}\")
-print(f\"⚠️  Motivo: {data.get('motivoRechazo', 'N/A')}\")
-print(f\"💬 Mensaje: {data['mensaje']}\")
-")
+# Parsear JSON
+if command -v jq &> /dev/null; then
+    DNI=$(echo "$RESPONSE" | jq -r '.dni // "N/A"')
+    SCORE=$(echo "$RESPONSE" | jq -r '.scoreTotal // "N/A"')
+    DECISION=$(echo "$RESPONSE" | jq -r '.decision // "N/A"')
+    MOTIVO=$(echo "$RESPONSE" | jq -r '.motivoRechazo // "N/A"')
+    MENSAJE=$(echo "$RESPONSE" | jq -r '.mensaje // "N/A"')
+else
+    DNI=$(echo "$RESPONSE" | grep -o '"dni":"[^"]*"' | cut -d'"' -f4)
+    SCORE=$(echo "$RESPONSE" | grep -o '"scoreTotal":[0-9]*' | cut -d':' -f2)
+    DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+    MOTIVO=$(echo "$RESPONSE" | grep -o '"motivoRechazo":"[^"]*"' | cut -d'"' -f4)
+    MENSAJE=$(echo "$RESPONSE" | grep -o '"mensaje":"[^"]*"' | cut -d'"' -f4)
+    [ -z "$MOTIVO" ] && MOTIVO="N/A"
+fi
+
+OUTPUT="✅ DNI: ${DNI}
+📊 Score Total: ${SCORE}
+🎯 Decisión: ${DECISION}
+⚠️  Motivo: ${MOTIVO}
+💬 Mensaje: ${MENSAJE}"
 
 log_both "$OUTPUT"
 log_both ""
-log_both "${GREEN}✅ Identidad Container funcionó correctamente${NC}"
+
+if [ "$DECISION" = "RECHAZADO" ]; then
+    log_both "${GREEN}✅ Identidad Container funcionó correctamente${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+else
+    log_both "${RED}❌ Error: Debió rechazar${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log_both ""
-read -p "Presiona ENTER para continuar..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -212,6 +287,8 @@ log_both ""
 log_both "${CYAN}Ejecutando solicitud...${NC}"
 log_both ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 RESPONSE=$(curl -s -X POST "http://localhost:8080/api/evaluacion/credito" \
   -H "Content-Type: application/json" \
   -d '{
@@ -222,21 +299,40 @@ RESPONSE=$(curl -s -X POST "http://localhost:8080/api/evaluacion/credito" \
     "mesesPlazo": 36
   }')
 
-OUTPUT=$(echo "$RESPONSE" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-print(f\"✅ DNI: {data['dni']}\")
-print(f\"📊 Score Total: {data['scoreTotal']}\")
-print(f\"🎯 Decisión: {data['decision']}\")
-print(f\"⚠️  Motivo: {data.get('motivoRechazo', 'N/A')}\")
-print(f\"💬 Mensaje: {data['mensaje']}\")
-")
+# Parsear JSON
+if command -v jq &> /dev/null; then
+    DNI=$(echo "$RESPONSE" | jq -r '.dni // "N/A"')
+    SCORE=$(echo "$RESPONSE" | jq -r '.scoreTotal // "N/A"')
+    DECISION=$(echo "$RESPONSE" | jq -r '.decision // "N/A"')
+    MOTIVO=$(echo "$RESPONSE" | jq -r '.motivoRechazo // "N/A"')
+    MENSAJE=$(echo "$RESPONSE" | jq -r '.mensaje // "N/A"')
+else
+    DNI=$(echo "$RESPONSE" | grep -o '"dni":"[^"]*"' | cut -d'"' -f4)
+    SCORE=$(echo "$RESPONSE" | grep -o '"scoreTotal":[0-9]*' | cut -d':' -f2)
+    DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+    MOTIVO=$(echo "$RESPONSE" | grep -o '"motivoRechazo":"[^"]*"' | cut -d'"' -f4)
+    MENSAJE=$(echo "$RESPONSE" | grep -o '"mensaje":"[^"]*"' | cut -d'"' -f4)
+    [ -z "$MOTIVO" ] && MOTIVO="N/A"
+fi
+
+OUTPUT="✅ DNI: ${DNI}
+📊 Score Total: ${SCORE}
+🎯 Decisión: ${DECISION}
+⚠️  Motivo: ${MOTIVO}
+💬 Mensaje: ${MENSAJE}"
 
 log_both "$OUTPUT"
 log_both ""
-log_both "${GREEN}✅ Bureau Container funcionó correctamente${NC}"
+
+if [ "$DECISION" = "RECHAZADO" ]; then
+    log_both "${GREEN}✅ Bureau Container funcionó correctamente${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+else
+    log_both "${RED}❌ Error: Debió rechazar${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log_both ""
-read -p "Presiona ENTER para continuar..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -253,6 +349,8 @@ log_both ""
 log_both "${CYAN}Ejecutando solicitud...${NC}"
 log_both ""
 
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
 RESPONSE=$(curl -s -X POST "http://localhost:8080/api/evaluacion/credito" \
   -H "Content-Type: application/json" \
   -d '{
@@ -263,21 +361,40 @@ RESPONSE=$(curl -s -X POST "http://localhost:8080/api/evaluacion/credito" \
     "mesesPlazo": 48
   }')
 
-OUTPUT=$(echo "$RESPONSE" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-print(f\"✅ DNI: {data['dni']}\")
-print(f\"📊 Score Total: {data['scoreTotal']}\")
-print(f\"🎯 Decisión: {data['decision']}\")
-print(f\"⚠️  Motivo: {data.get('motivoRechazo', 'N/A')}\")
-print(f\"💬 Mensaje: {data['mensaje']}\")
-")
+# Parsear JSON
+if command -v jq &> /dev/null; then
+    DNI=$(echo "$RESPONSE" | jq -r '.dni // "N/A"')
+    SCORE=$(echo "$RESPONSE" | jq -r '.scoreTotal // "N/A"')
+    DECISION=$(echo "$RESPONSE" | jq -r '.decision // "N/A"')
+    MOTIVO=$(echo "$RESPONSE" | jq -r '.motivoRechazo // "N/A"')
+    MENSAJE=$(echo "$RESPONSE" | jq -r '.mensaje // "N/A"')
+else
+    DNI=$(echo "$RESPONSE" | grep -o '"dni":"[^"]*"' | cut -d'"' -f4)
+    SCORE=$(echo "$RESPONSE" | grep -o '"scoreTotal":[0-9]*' | cut -d':' -f2)
+    DECISION=$(echo "$RESPONSE" | grep -o '"decision":"[^"]*"' | cut -d'"' -f4)
+    MOTIVO=$(echo "$RESPONSE" | grep -o '"motivoRechazo":"[^"]*"' | cut -d'"' -f4)
+    MENSAJE=$(echo "$RESPONSE" | grep -o '"mensaje":"[^"]*"' | cut -d'"' -f4)
+    [ -z "$MOTIVO" ] && MOTIVO="N/A"
+fi
+
+OUTPUT="✅ DNI: ${DNI}
+📊 Score Total: ${SCORE}
+🎯 Decisión: ${DECISION}
+⚠️  Motivo: ${MOTIVO}
+💬 Mensaje: ${MENSAJE}"
 
 log_both "$OUTPUT"
 log_both ""
-log_both "${GREEN}✅ Scoring Container funcionó correctamente${NC}"
+
+if [ "$DECISION" = "RECHAZADO" ] || [ "$DECISION" = "REQUIERE_ANALISIS_MANUAL" ]; then
+    log_both "${GREEN}✅ Scoring Container funcionó correctamente${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+else
+    log_both "${RED}❌ Error: Debió rechazar${NC}"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
 log_both ""
-read -p "Presiona ENTER para ver el resumen..."
+pause_script
 log_both ""
 
 ##############################################################################
@@ -291,6 +408,18 @@ log_both "${GREEN}✅ PRUEBA 1:${NC} Comunicación exitosa entre 4 contenedores 
 log_both "${GREEN}✅ PRUEBA 2:${NC} Identidad Container rechazó DNI suspendido"
 log_both "${GREEN}✅ PRUEBA 3:${NC} Bureau Container detectó morosidad"
 log_both "${GREEN}✅ PRUEBA 4:${NC} Scoring Container rechazó monto alto"
+log_both ""
+log_both "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
+log_both "${CYAN}║                  📈 ESTADÍSTICAS FINALES                  ║${NC}"
+log_both "${CYAN}╚═══════════════════════════════════════════════════════════╝${NC}"
+log_both ""
+log_both "${YELLOW}Total de Pruebas:${NC}     ${TOTAL_TESTS}"
+log_both "${GREEN}Pruebas Exitosas:${NC}     ${PASSED_TESTS} ✅"
+log_both "${RED}Pruebas Fallidas:${NC}     ${FAILED_TESTS}"
+if [ $TOTAL_TESTS -gt 0 ]; then
+    SUCCESS_RATE=$((PASSED_TESTS * 100 / TOTAL_TESTS))
+    log_both "${CYAN}Tasa de Éxito:${NC}        ${SUCCESS_RATE}%"
+fi
 log_both ""
 log_both "${CYAN}╔═══════════════════════════════════════════════════════════╗${NC}"
 log_both "${CYAN}║          🐳 ARQUITECTURA DOCKER VERIFICADA                ║${NC}"

@@ -87,19 +87,39 @@ get_time_ms() {
     fi
 }
 
-# Función para hacer request y separar body de status code
-do_curl() {
+# ----------------------------------------------------------------------------
+# FUNCIONES CURL - CROSS-PLATFORM (Mac + Windows Git Bash)
+# ----------------------------------------------------------------------------
+
+# Función para hacer request GET
+# FUNCIONA EN: Windows (Git Bash), macOS, Linux
+do_curl_get() {
     local url=$1
-    local method=${2:-GET}
-    local data=${3:-}
+    curl -s -w "\n---HTTP_CODE---\n%{http_code}" "$url" 2>/dev/null
+}
+
+# Función para hacer request POST con JSON
+# FUNCIONA EN: Windows (Git Bash), macOS, Linux
+# Usa archivo temporal + printf para evitar problemas con echo en Windows
+do_curl_post() {
+    local url=$1
+    local json_data=$2
     
-    if [ -n "$data" ]; then
-        curl -s -w "\n---HTTP_CODE---\n%{http_code}" -X "$method" \
+    if [ -n "$json_data" ]; then
+        local temp_file=$(mktemp)
+        printf '%s' "$json_data" > "$temp_file"
+        
+        local response=$(curl -s -w "\n---HTTP_CODE---\n%{http_code}" \
+            -X POST \
             -H "Content-Type: application/json" \
-            -d "$data" \
-            "$url"
+            --data-binary "@$temp_file" \
+            "$url" 2>/dev/null)
+        
+        rm -f "$temp_file"
+        echo "$response"
     else
-        curl -s -w "\n---HTTP_CODE---\n%{http_code}" "$url"
+        echo "ERROR: No JSON data provided"
+        return 1
     fi
 }
 
@@ -258,7 +278,7 @@ pause
 print_header "${INFO} PRUEBA 1: HEALTH CHECKS DE LOS SERVICIOS"
 
 print_section "1.1 - Health Check: Order Service (8080)"
-response=$(do_curl "${ORDER_SERVICE}/health")
+response=$(do_curl_get "${ORDER_SERVICE}/health")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -267,7 +287,7 @@ format_json "$body" | tee -a "$REPORT_FILE"
 run_test "Order Service Health" "200" "$http_code"
 
 print_section "1.2 - Health Check: Inventory Service (8081)"
-response=$(do_curl "${INVENTORY_SERVICE}/health")
+response=$(do_curl_get "${INVENTORY_SERVICE}/health")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -276,7 +296,7 @@ format_json "$body" | tee -a "$REPORT_FILE"
 run_test "Inventory Service Health" "200" "$http_code"
 
 print_section "1.3 - Health Check: Payment Service (8082)"
-response=$(do_curl "${PAYMENT_SERVICE}/health")
+response=$(do_curl_get "${PAYMENT_SERVICE}/health")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -294,7 +314,7 @@ print_header "${PACKAGE} PRUEBA 2: VERIFICAR PRODUCTOS EN INVENTARIO"
 
 print_section "2.1 - Listar productos disponibles"
 print_info "Consultando inventario..."
-response=$(do_curl "${INVENTORY_SERVICE}/api/inventory/products")
+response=$(do_curl_get "${INVENTORY_SERVICE}/api/inventory/products")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -311,7 +331,7 @@ fi
 run_test "Listar productos" "200" "$http_code"
 
 print_section "2.2 - Consultar producto específico (LAPTOP-001)"
-response=$(do_curl "${INVENTORY_SERVICE}/api/inventory/products/LAPTOP-001")
+response=$(do_curl_get "${INVENTORY_SERVICE}/api/inventory/products/LAPTOP-001")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -337,20 +357,14 @@ print_header "${CHECK} PRUEBA 3: SAGA EXITOSA - CREAR ORDEN"
 
 print_section "3.1 - Crear orden con stock suficiente"
 
-orden_exitosa='{
-  "userId": "test-user-saga-001",
-  "paymentMethod": "credit_card",
-  "items": [
-    {"productCode": "LAPTOP-001", "quantity": 1},
-    {"productCode": "MOUSE-001", "quantity": 2}
-  ]
-}'
+# JSON en UNA SOLA LÍNEA (importante para cross-platform)
+orden_exitosa='{"userId":"test-user-saga-001","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":1},{"productCode":"MOUSE-001","quantity":2}]}'
 
 print_info "Enviando solicitud de orden..."
 log_file "Request:"
 log_file "$orden_exitosa"
 
-response=$(do_curl "${ORDER_SERVICE}/api/orders" "POST" "$orden_exitosa")
+response=$(do_curl_post "${ORDER_SERVICE}/api/orders" "$orden_exitosa")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -395,7 +409,7 @@ if [ -n "$orden_id" ] && [ "$orden_id" != "null" ] && [ "$orden_id" != "" ]; the
     print_info "Esta consulta va directo a PostgreSQL..."
     
     start_time=$(get_time_ms)
-    response=$(do_curl "${ORDER_SERVICE}/api/orders/${orden_id}")
+    response=$(do_curl_get "${ORDER_SERVICE}/api/orders/${orden_id}")
     end_time=$(get_time_ms)
     http_code=$(extract_code "$response")
     body=$(extract_body "$response")
@@ -452,7 +466,7 @@ if [ -n "$orden_id" ] && [ "$orden_id" != "null" ] && [ "$orden_id" != "" ]; the
     print_info "Esta consulta debería venir desde Redis (más rápida)..."
     
     start_time=$(get_time_ms)
-    response=$(do_curl "${ORDER_SERVICE}/api/orders/${orden_id}")
+    response=$(do_curl_get "${ORDER_SERVICE}/api/orders/${orden_id}")
     end_time=$(get_time_ms)
     http_code=$(extract_code "$response")
     
@@ -482,7 +496,7 @@ if [ -n "$orden_id" ] && [ "$orden_id" != "null" ] && [ "$orden_id" != "" ]; the
     print_info "Consultando una vez más para confirmar cache..."
     
     start_time=$(get_time_ms)
-    response=$(do_curl "${ORDER_SERVICE}/api/orders/${orden_id}")
+    response=$(do_curl_get "${ORDER_SERVICE}/api/orders/${orden_id}")
     end_time=$(get_time_ms)
     http_code=$(extract_code "$response")
     
@@ -533,20 +547,15 @@ print_header "${CROSS} PRUEBA 5: SAGA CON COMPENSACIÓN - STOCK INSUFICIENTE"
 
 print_section "5.1 - Crear orden con stock INSUFICIENTE"
 
-orden_fallida='{
-  "userId": "test-user-saga-002",
-  "paymentMethod": "credit_card",
-  "items": [
-    {"productCode": "LAPTOP-001", "quantity": 10000}
-  ]
-}'
+# JSON en UNA SOLA LÍNEA (importante para cross-platform)
+orden_fallida='{"userId":"test-user-saga-002","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":10000}]}'
 
 print_info "Enviando solicitud con cantidad imposible (10000 unidades)..."
 print_info "Esto debería disparar la compensación SAGA..."
 log_file "Request:"
 log_file "$orden_fallida"
 
-response=$(do_curl "${ORDER_SERVICE}/api/orders" "POST" "$orden_fallida")
+response=$(do_curl_post "${ORDER_SERVICE}/api/orders" "$orden_fallida")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
@@ -574,7 +583,7 @@ run_test "Orden fallida con compensación SAGA" "400" "$http_code"
 
 print_section "5.2 - Verificar que el inventario NO fue afectado"
 print_info "Consultando producto LAPTOP-001..."
-response=$(do_curl "${INVENTORY_SERVICE}/api/inventory/products/LAPTOP-001")
+response=$(do_curl_get "${INVENTORY_SERVICE}/api/inventory/products/LAPTOP-001")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
