@@ -9,15 +9,52 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio de gestión de secretos en VaultCorp.
+ * <p>
+ * Proporciona operaciones CRUD para secretos con almacenamiento en memoria.
+ * En un entorno de producción, este servicio se conectaría a una base de datos
+ * o un servicio de gestión de secretos como HashiCorp Vault o AWS Secrets Manager.
+ * </p>
+ * 
+ * <p>Es análogo al sistema de gestión de una bóveda bancaria: permite depositar,
+ * consultar y retirar elementos (secretos), manteniendo un registro organizado
+ * por clasificación de seguridad y propietario.</p>
+ * 
+ * <p><b>Datos de prueba incluidos:</b></p>
+ * <ul>
+ *   <li>2 secretos TOP_SECRET (solo admin)</li>
+ *   <li>1 secreto INTERNAL (empleados)</li>
+ *   <li>2 secretos PUBLIC (cualquier usuario)</li>
+ *   <li>2 secretos CONFIDENTIAL (premium customers)</li>
+ * </ul>
+ * 
+ * @author VaultCorp Development Team
+ * @since 1.0
+ */
 @ApplicationScoped
 public class SecretService {
     
+    /** 
+     * Almacenamiento en memoria de todos los secretos.
+     * NOTA: En producción, usar persistencia con base de datos.
+     */
     private final List<Secret> secrets = new ArrayList<>();
 
+    /**
+     * Constructor que inicializa el servicio con datos de prueba.
+     */
     public SecretService() {
         initializeMockData();
     }
 
+    /**
+     * Inicializa el sistema con secretos de ejemplo para demostración.
+     * <p>
+     * Crea secretos de diferentes niveles de clasificación con propietarios
+     * variados para facilitar las pruebas de control de acceso.
+     * </p>
+     */
     private void initializeMockData() {
         // Secretos TOP_SECRET (solo admin)
         Secret s1 = new Secret();
@@ -66,37 +103,92 @@ public class SecretService {
         secrets.add(s6);
     }
 
+    /**
+     * Obtiene todos los secretos almacenados en el sistema.
+     * <p>
+     * IMPORTANTE: Este método no aplica filtros de seguridad.
+     * El control de acceso debe manejarse a nivel de endpoint.
+     * </p>
+     * 
+     * @return lista con todos los secretos (copia defensiva)
+     */
     public List<Secret> getAllSecrets() {
         return new ArrayList<>(secrets);
     }
 
+    /**
+     * Busca un secreto específico por su ID único.
+     * 
+     * @param id identificador UUID del secreto
+     * @return Optional conteniendo el secreto si existe, Optional.empty() si no
+     */
     public Optional<Secret> getSecretById(String id) {
         return secrets.stream()
                 .filter(s -> s.getId().equals(id))
                 .findFirst();
     }
 
+    /**
+     * Filtra secretos por nivel de clasificación de seguridad.
+     * <p>
+     * Útil para endpoints que deben retornar solo secretos de un nivel específico
+     * según los permisos del usuario autenticado.
+     * </p>
+     * 
+     * @param level nivel de clasificación a filtrar (PUBLIC, INTERNAL, etc.)
+     * @return lista de secretos que coinciden con el nivel especificado
+     */
     public List<Secret> getSecretsByLevel(SecretLevel level) {
         return secrets.stream()
                 .filter(s -> s.getLevel() == level)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Filtra secretos por propietario.
+     * <p>
+     * Permite a los usuarios consultar únicamente los secretos que ellos
+     * han creado, implementando el principio de propiedad de datos.
+     * </p>
+     * 
+     * @param ownerId identificador del usuario propietario
+     * @return lista de secretos pertenecientes al usuario especificado
+     */
     public List<Secret> getSecretsByOwner(String ownerId) {
         return secrets.stream()
                 .filter(s -> s.getOwnerId().equals(ownerId))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Crea y almacena un nuevo secreto en el sistema.
+     * 
+     * @param secret el secreto a crear (debe tener todos los campos requeridos)
+     * @return el secreto creado con su ID y timestamp asignados
+     */
     public Secret createSecret(Secret secret) {
         secrets.add(secret);
         return secret;
     }
 
+    /**
+     * Elimina un secreto del sistema por su ID.
+     * 
+     * @param id identificador del secreto a eliminar
+     * @return true si el secreto fue eliminado, false si no existía
+     */
     public boolean deleteSecret(String id) {
         return secrets.removeIf(s -> s.getId().equals(id));
     }
 
+    /**
+     * Obtiene el conteo total de secretos almacenados.
+     * <p>
+     * Útil para estadísticas y reportes administrativos.
+     * </p>
+     * 
+     * @return número total de secretos en el sistema
+     */
     public int getTotalCount() {
         return secrets.size();
     }
