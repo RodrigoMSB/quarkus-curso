@@ -1,0 +1,180 @@
+╔════════════════════════════════════════════════════════════════╗
+║   🔐 PRUEBAS DE CIFRADO CON GOOGLE TINK                       ║
+║   Cifrado a Nivel de Aplicación - AES-256-GCM                ║
+╚════════════════════════════════════════════════════════════════╝
+
+🖥️  Sistema: mac
+📅 Fecha: 13/11/2025 12:48:50
+🌐 API Base: http://localhost:8080
+📄 Resultados: test-documentos-cifrados-2025-11-13_12-48-50.txt
+🔧 Algoritmo: AES-256-GCM (Google Tink)
+
+╔════════════════════════════════════════════════════════════════╗
+║   ✅ VERIFICACIÓN DE REQUISITOS                               ║
+╚════════════════════════════════════════════════════════════════╝
+
+✓ curl instalado
+
+Verificando conectividad con el servicio...
+✓ Servicio accesible en http://localhost:8080
+
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 1: Crear Documento con Cifrado Automático
+═══════════════════════════════════════════════════════════
+
+🎯 Objetivo: Crear un documento y verificar que se cifra automáticamente
+🔐 Algoritmo: AES-256-GCM (Authenticated Encryption)
+📝 Contenido: "Información confidencial del cliente - DNI: 12345678"
+
+Ejecutando POST /api/v1/documentos...
+
+{
+  "contenido": "Información confidencial del cliente - DNI: 12345678",
+  "titulo": "Contrato Confidencial",
+  "fechaCreacion": "2025-11-13T12:48:54.107487",
+  "id": 1
+}
+
+✅ Documento creado exitosamente con ID: 1
+
+💡 El contenido fue cifrado ANTES de guardarse en PostgreSQL
+💡 La API te devuelve el contenido descifrado automáticamente
+
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 2: Descifrado Automático al Consultar
+═══════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que el documento se descifra al consultarlo
+🔓 Proceso: BD guarda cifrado → API descifra → Cliente recibe texto plano
+
+Ejecutando GET /api/v1/documentos/1...
+
+{
+  "contenido": "Información confidencial del cliente - DNI: 12345678",
+  "titulo": "Contrato Confidencial",
+  "fechaCreacion": "2025-11-13T12:48:54.107487",
+  "id": 1
+}
+
+✅ Documento descifrado correctamente
+💡 El contenido está cifrado en la BD pero la API lo descifra automáticamente
+
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 3: Crear Múltiples Documentos Cifrados
+═══════════════════════════════════════════════════════════
+
+🎯 Objetivo: Crear varios documentos con diferentes contenidos
+📊 Cantidad: 3 documentos
+
+Creando documento 2...
+✅ Documento 2 creado con ID: 2
+Creando documento 3...
+✅ Documento 3 creado con ID: 3
+Creando documento 4...
+✅ Documento 4 creado con ID: 4
+
+✅ 4 documentos creados exitosamente, todos cifrados en BD
+
+
+═══════════════════════════════════════════════════════════
+📋 PRUEBA 4: Listar Todos los Documentos
+═══════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar descifrado masivo de múltiples documentos
+🔓 Proceso: Cada documento se descifra automáticamente
+
+Ejecutando GET /api/v1/documentos...
+
+[
+  {
+    "contenido": "Información confidencial del cliente - DNI: 12345678",
+    "titulo": "Contrato Confidencial",
+    "fechaCreacion": "2025-11-13T12:48:54.107487",
+    "id": 1
+  },
+  {
+    "contenido": "Nombre: Juan Pérez | Email: juan@mail.com | Teléfono: 987654321",
+    "titulo": "Datos Personales Cliente VIP",
+    "fechaCreacion": "2025-11-13T12:50:24.321755",
+    "id": 2
+  },
+  {
+    "contenido": "Score: 850 | Deudas: S/0.00 | Línea de crédito: S/50,000",
+    "titulo": "Historial Crediticio",
+    "fechaCreacion": "2025-11-13T12:50:24.364423",
+    "id": 3
+  },
+  {
+    "contenido": "Banco: BCP | Cuenta: 191-1234567-0-89 | CCI: 00219100123456708912",
+    "titulo": "Información Bancaria",
+    "fechaCreacion": "2025-11-13T12:50:24.40982",
+    "id": 4
+  }
+]
+✅ Todos los documentos descifrados correctamente
+💡 Cada documento se descifró individualmente de forma automática
+
+
+╔════════════════════════════════════════════════════════════════╗
+║                    📊 RESUMEN DE PRUEBAS                       ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ PRUEBA 1: Documento creado y cifrado automáticamente
+✅ PRUEBA 2: Descifrado automático al consultar por ID
+✅ PRUEBA 3: Múltiples documentos creados con cifrado
+✅ PRUEBA 4: Listado masivo con descifrado automático
+
+╔════════════════════════════════════════════════════════════════╗
+║              🎓 CONCEPTOS CLAVE DEMOSTRADOS                    ║
+╚════════════════════════════════════════════════════════════════╝
+
+🔐 AES-256-GCM (AEAD):     Cifrado + Autenticación integrados
+📦 Google Tink:            API segura y fácil de usar
+🔄 Flujo de Cifrado:       Antes de INSERT en BD
+🔓 Flujo de Descifrado:    Después de SELECT de BD
+🗄️  BD nunca ve:           Texto plano (solo contenido cifrado)
+🔑 Gestión de Claves:      Crítica para producción (KMS recomendado)
+
+╔════════════════════════════════════════════════════════════════╗
+║              🔐 FLUJO COMPLETO DE CIFRADO                      ║
+╚════════════════════════════════════════════════════════════════╝
+
+POST /documentos
+    ↓
+Cliente envía: "Información confidencial"
+    ↓
+CryptoService.cifrar() → AES-256-GCM
+    ↓
+PostgreSQL guarda: "AebqJ3oc/tkB8ryE..." ← CIFRADO
+    ↓
+GET /documentos/1
+    ↓
+PostgreSQL lee: "AebqJ3oc/tkB8ryE..."
+    ↓
+CryptoService.descifrar() → Texto plano
+    ↓
+API devuelve: "Información confidencial" ← DESCIFRADO
+
+╔════════════════════════════════════════════════════════════════╗
+║           ⚠️  ADVERTENCIAS PARA PRODUCCIÓN                    ║
+╚════════════════════════════════════════════════════════════════╝
+
+🚨 NO HACER:
+   ❌ Regenerar claves en cada inicio
+   ❌ Hardcodear claves en código
+   ❌ Compartir claves por email
+
+✅ SÍ HACER:
+   ✓ Usar KMS (AWS/Google/Azure)
+   ✓ Rotación de claves periódica
+   ✓ Auditar accesos a datos
+   ✓ Backup seguro de claves
+
+
+📝 Log completo guardado en: test-documentos-cifrados-2025-11-13_12-48-50.txt
+
+🎉 ¡Pruebas de cifrado completadas exitosamente!
+

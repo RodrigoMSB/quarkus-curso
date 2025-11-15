@@ -52,7 +52,6 @@ import java.util.stream.IntStream;
  */
 @Path("/api/v1/productos/reactivo")
 @Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 public class ProductoReactivoResource {
 
     @Inject
@@ -172,6 +171,7 @@ public class ProductoReactivoResource {
      * @return {@link Uni} que emite un {@link Response} con status 201 y el producto creado
      */
     @POST
+    @Consumes(MediaType.APPLICATION_JSON)
     public Uni<Response> crear(@Valid ProductoRequest request) {
         // Validación programática explícita para asegurar que se ejecuta
         if (request.precio != null && request.precio <= 0) {
@@ -240,6 +240,7 @@ public class ProductoReactivoResource {
      */
     @PUT
     @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Uni<Response> actualizar(@PathParam("id") Long id, @Valid ProductoRequest request) {
         // Validación programática explícita
         if (request.precio != null && request.precio <= 0) {
@@ -293,7 +294,7 @@ public class ProductoReactivoResource {
      * }</pre>
      * 
      * <p><strong>⚠️ Advertencia:</strong> Esta operación es irreversible. El producto
-     * se elimina permanentemente de la base de datos.</p>
+     * se elimina permanentemente de la base de datos.
      * 
      * @param id Identificador único del producto a eliminar
      * @return {@link Uni} que emite un {@link Response} con status 204 (NO CONTENT) o 404 (NOT FOUND)
@@ -353,7 +354,7 @@ public class ProductoReactivoResource {
      * 
      * <p><strong>Códigos de respuesta:</strong></p>
      * <ul>
-     *   <li><strong>200 OK:</strong> Productos creados exitosamente</li>
+     *   <li><strong>201 CREATED:</strong> Productos creados exitosamente</li>
      *   <li><strong>400 BAD REQUEST:</strong> Cantidad inválida (menor a 1)</li>
      * </ul>
      * 
@@ -388,6 +389,7 @@ public class ProductoReactivoResource {
      */
     @POST
     @Path("/carga-masiva/{cantidad}")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Uni<Response> cargaMasiva(@PathParam("cantidad") int cantidad) {
         List<Producto> productos = IntStream.range(1, cantidad + 1)
                 .mapToObj(i -> new Producto(
