@@ -2,9 +2,9 @@
 ║    🔐 PRUEBAS DE SEGURIDAD - PARTE 1: AUTENTICACIÓN BÁSICA    ║
 ╔════════════════════════════════════════════════════════════════╗
 
-📅 Fecha: 10/11/2025 13:57:39
+📅 Fecha: 20/11/2025 09:50:39
 🌐 API Base: http://localhost:8080
-📄 Resultados: test-part1-security-2025-11-10_13-57-39.txt
+📄 Resultados: test-part1-security-2025-11-20_09-50-39.txt
 🔐 Seguridad: Basic Authentication + Role-Based Access Control
 
 ⚠️  IMPORTANTE: El servidor debe iniciarse con el perfil parte1
@@ -66,57 +66,57 @@ Ejecutando...
 Response (HTTP 200):
 [
   {
-    "id": "41cd9e65-50eb-4baa-a8c0-d79021375dfd",
+    "id": "1086c35b-5636-40c2-ad8f-21bdc1da8c70",
     "name": "API Key Producción",
     "content": "sk_prod_ABC123XYZ",
     "level": "TOP_SECRET",
     "ownerId": "admin",
-    "createdAt": "2025-11-10T13:58:16.932112",
+    "createdAt": "2025-11-20T09:51:04.43487",
     "expiresAt": null
   },
   {
-    "id": "f4ca70ff-bab8-4f23-aa79-436819c04a69",
+    "id": "5f9877ec-752b-47f5-a7f3-a74ec555fc24",
     "name": "Contraseña BD Dev",
     "content": "devPass2024",
     "level": "INTERNAL",
     "ownerId": "emp001",
-    "createdAt": "2025-11-10T13:58:16.932122",
+    "createdAt": "2025-11-20T09:51:04.434887",
     "expiresAt": null
   },
   {
-    "id": "099f63ef-ac47-4768-8470-b9869fd68a74",
+    "id": "fa287b00-f6fc-4427-b525-bd542947840d",
     "name": "Manual de Usuario",
     "content": "https://docs.vaultcorp.com/manual",
     "level": "PUBLIC",
     "ownerId": "marketing",
-    "createdAt": "2025-11-10T13:58:16.932131",
+    "createdAt": "2025-11-20T09:51:04.434892",
     "expiresAt": null
   },
   {
-    "id": "5bbbdda6-e336-4f56-82cd-d5303ba0eb4c",
+    "id": "262441c3-aac4-452c-ad16-19e8ef85df09",
     "name": "API Pública de Consultas",
     "content": "https://api.vaultcorp.com/public/v1",
     "level": "PUBLIC",
     "ownerId": "marketing",
-    "createdAt": "2025-11-10T13:58:16.932135",
+    "createdAt": "2025-11-20T09:51:04.434896",
     "expiresAt": null
   },
   {
-    "id": "05699530-77a2-4628-ac0e-08256b00d58f",
+    "id": "fe97fd9e-251d-48ad-9838-44b7a7af5f23",
     "name": "Credenciales AWS S3",
     "content": "AKIAIOSFODNN7EXAMPLE",
     "level": "CONFIDENTIAL",
     "ownerId": "ops",
-    "createdAt": "2025-11-10T13:58:16.932138",
+    "createdAt": "2025-11-20T09:51:04.4349",
     "expiresAt": null
   },
   {
-    "id": "8b9b1b3e-6dd4-45e5-a01b-3e29edfeae7c",
+    "id": "09db2dae-a735-4f7e-972b-0c14870b7035",
     "name": "Token Analytics Premium",
     "content": "analytics_premium_token_xyz789",
     "level": "CONFIDENTIAL",
     "ownerId": "analytics",
-    "createdAt": "2025-11-10T13:58:16.932141",
+    "createdAt": "2025-11-20T09:51:04.434903",
     "expiresAt": null
   }
 ]
@@ -162,8 +162,8 @@ Ejecutando...
 
 Response (HTTP 200):
 {
-  "totalSecrets": 6,
-  "timestamp": "2025-11-10T13:59:18.833803"
+  "timestamp": "2025-11-20T09:51:38.994306",
+  "totalSecrets": 6
 }
 
 ✓ PASS - El auditor tiene acceso permitido
@@ -183,7 +183,7 @@ Response (HTTP 200):
 ❌ Esperado: HTTP 403 Forbidden
 
 Obteniendo un ID de secreto para probar...
-📌 ID del secreto a intentar eliminar: 41cd9e65-50eb-4baa-a8c0-d79021375dfd
+📌 ID del secreto a intentar eliminar: 1086c35b-5636-40c2-ad8f-21bdc1da8c70
 
 Ejecutando DELETE con usuario auditor...
 
@@ -232,48 +232,48 @@ Listando todos los secretos...
 Response:
 [
   {
-    "id": "f4ca70ff-bab8-4f23-aa79-436819c04a69",
+    "id": "5f9877ec-752b-47f5-a7f3-a74ec555fc24",
     "name": "Contraseña BD Dev",
     "content": "devPass2024",
     "level": "INTERNAL",
     "ownerId": "emp001",
-    "createdAt": "2025-11-10T13:58:16.932122",
+    "createdAt": "2025-11-20T09:51:04.434887",
     "expiresAt": null
   },
   {
-    "id": "099f63ef-ac47-4768-8470-b9869fd68a74",
+    "id": "fa287b00-f6fc-4427-b525-bd542947840d",
     "name": "Manual de Usuario",
     "content": "https://docs.vaultcorp.com/manual",
     "level": "PUBLIC",
     "ownerId": "marketing",
-    "createdAt": "2025-11-10T13:58:16.932131",
+    "createdAt": "2025-11-20T09:51:04.434892",
     "expiresAt": null
   },
   {
-    "id": "5bbbdda6-e336-4f56-82cd-d5303ba0eb4c",
+    "id": "262441c3-aac4-452c-ad16-19e8ef85df09",
     "name": "API Pública de Consultas",
     "content": "https://api.vaultcorp.com/public/v1",
     "level": "PUBLIC",
     "ownerId": "marketing",
-    "createdAt": "2025-11-10T13:58:16.932135",
+    "createdAt": "2025-11-20T09:51:04.434896",
     "expiresAt": null
   },
   {
-    "id": "05699530-77a2-4628-ac0e-08256b00d58f",
+    "id": "fe97fd9e-251d-48ad-9838-44b7a7af5f23",
     "name": "Credenciales AWS S3",
     "content": "AKIAIOSFODNN7EXAMPLE",
     "level": "CONFIDENTIAL",
     "ownerId": "ops",
-    "createdAt": "2025-11-10T13:58:16.932138",
+    "createdAt": "2025-11-20T09:51:04.4349",
     "expiresAt": null
   },
   {
-    "id": "8b9b1b3e-6dd4-45e5-a01b-3e29edfeae7c",
+    "id": "09db2dae-a735-4f7e-972b-0c14870b7035",
     "name": "Token Analytics Premium",
     "content": "analytics_premium_token_xyz789",
     "level": "CONFIDENTIAL",
     "ownerId": "analytics",
-    "createdAt": "2025-11-10T13:58:16.932141",
+    "createdAt": "2025-11-20T09:51:04.434903",
     "expiresAt": null
   }
 ]
@@ -318,7 +318,7 @@ Usuarios de Prueba:
 ╚════════════════════════════════════════════════════════════════╝
 
 📝 Todas las pruebas han sido guardadas en:
-   test-part1-security-2025-11-10_13-57-39.txt
+   test-part1-security-2025-11-20_09-50-39.txt
 
 💡 Puedes revisar el log completo en cualquier momento para:
    • Verificar las respuestas HTTP completas

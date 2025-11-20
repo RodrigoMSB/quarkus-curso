@@ -2,9 +2,9 @@
 ║      🔐 PRUEBAS DE SEGURIDAD - PARTE 2: JWT AUTHENTICATION    ║
 ╔════════════════════════════════════════════════════════════════╗
 
-📅 Fecha: 10/11/2025 14:28:58
+📅 Fecha: 20/11/2025 09:53:22
 🌐 API Base: http://localhost:8080
-📄 Resultados: test-part2-jwt-2025-11-10_14-28-58.txt
+📄 Resultados: test-part2-jwt-2025-11-20_09-53-22.txt
 🔐 Seguridad: JWT (JSON Web Token) + RSA Signing
 
 ⚠️  IMPORTANTE: El servidor debe iniciarse con el perfil parte2
@@ -25,7 +25,7 @@ Ejecutando login...
 
 Response (HTTP 200):
 {
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL3ZhdWx0Y29ycC5jb20iLCJzdWIiOiJlbXAwMDEiLCJlbWFpbCI6Imp1YW4ucGVyZXpAdmF1bHRjb3JwLmNvbSIsInVwbiI6Imp1YW4ucGVyZXpAdmF1bHRjb3JwLmNvbSIsImlhdCI6MTc2Mjc5NTc0NywiZXhwIjoxNzYyNzk5MzQ3LCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJqdWFuLnBlcmV6QHZhdWx0Y29ycC5jb20iLCJncm91cHMiOlsiZW1wbG95ZWUiXSwianRpIjoiYTBjMDFkYWYtNjZlNi00MWE0LTk0NmYtZTA3ZmYyMzc3MjZiIn0.ezkBjI9NCGz-XAc6_WnCzzeAPtuoLS_vfKI60HS_zdYQa4hQ3Hh-mpyWoeR0tfbqAgD2JAqky1G5fjSItu6tzoWjx4-Vgy6GlwL2Myj4BfUMN6DE8y8TR1q5SlIFOYED1KqWGfmsMzLQdHDglqFa0jREGSblTCD-IAyVDakI2HpeDAwY9BFNyfJP1qhlIpGPKqDSFELLk-_LD5iWN7hKVSTfqWLbJOrL3V4N7IyBQBXoM3haYUOirbm4uz3VlAb6mS_t_xamZqGLZlZIG2y5AafQuNDR09Pb-zGuvNtLYd9cq8864VkyBIiIrtCtSboUobSXLxizkKd6kAjkO6mM7w",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL3ZhdWx0Y29ycC5jb20iLCJzdWIiOiJlbXAwMDEiLCJlbWFpbCI6Imp1YW4ucGVyZXpAdmF1bHRjb3JwLmNvbSIsInVwbiI6Imp1YW4ucGVyZXpAdmF1bHRjb3JwLmNvbSIsImlhdCI6MTc2MzY0MzIwNSwiZXhwIjoxNzYzNjQ2ODA1LCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJqdWFuLnBlcmV6QHZhdWx0Y29ycC5jb20iLCJncm91cHMiOlsiZW1wbG95ZWUiXSwianRpIjoiNzdhZThmZmEtZmE1MC00YzUwLTk3YjgtNmZjMmE0N2MyN2YyIn0.Ubj3k5mWxMbkVjRq_sADqJOSe2ESJvoFzLKiTcPOHRclpW4CYXLIjqDGQKcuDnzwNBefOYRGOl-b9s0nPdPfkF6RhdQ5uPvV-bLUkIiMhP5RjEaD6nF98zOTeS6ZDK8RmvXUT3i42NpF_MjJS2jeYKWcPBmysAa1Ds2kmZsdAFOHDO20T9CWBo5r91RgYfttgKigRLzU8FT4xMO9G4LlBTFlQveRF2P7-ChpQPlnR4hGjcLO3EBsQTm_6ZcnXMeJAtSl_BQ47vB8Rxel0bYOv1bQB_rsmCN-LriqjMFyiO5AwtLPtmMzCU4eZoYIMv9dzLx0MB_BllCWcfQaRIA2KA",
   "type": "Bearer",
   "expiresIn": 3600
 }
@@ -92,20 +92,20 @@ Ejecutando petición autenticada...
 
 Response (HTTP 200):
 {
-  "userId": "emp001",
   "totalSecrets": 1,
   "secrets": [
     {
-      "id": "9f69a01a-3c3b-4ea5-af31-85c91134885d",
+      "id": "777710eb-0fdb-40fa-9ad1-fd3223f3f273",
       "name": "Contraseña BD Dev",
       "content": "devPass2024",
       "level": "INTERNAL",
       "ownerId": "emp001",
-      "createdAt": "2025-11-10T14:30:49.582627",
+      "createdAt": "2025-11-20T09:54:08.875107",
       "expiresAt": null
     }
   ],
-  "email": "juan.perez@vaultcorp.com"
+  "email": "juan.perez@vaultcorp.com",
+  "userId": "emp001"
 }
 
 ✓ PASS - Acceso exitoso con token JWT
@@ -129,12 +129,12 @@ Creando secreto para emp001...
 Response (HTTP 201):
 {
   "secret": {
-    "id": "66a4ca9c-39fd-4fed-ae62-985be906edd2",
+    "id": "25bff914-6d50-45a5-8df5-20b25786fe5c",
     "name": "Database Password",
     "content": "super-secret-db-password",
     "level": "INTERNAL",
     "ownerId": "emp001",
-    "createdAt": "2025-11-10T14:31:14.77612",
+    "createdAt": "2025-11-20T09:54:21.483948",
     "expiresAt": null
   },
   "message": "Secreto creado exitosamente",
@@ -160,7 +160,7 @@ Ejecutando login...
 
 Response (HTTP 200):
 {
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL3ZhdWx0Y29ycC5jb20iLCJzdWIiOiJlbXAwMDIiLCJlbWFpbCI6Im1hcmlhLmdvbnphbGV6QHZhdWx0Y29ycC5jb20iLCJ1cG4iOiJtYXJpYS5nb256YWxlekB2YXVsdGNvcnAuY29tIiwiaWF0IjoxNzYyNzk1OTE3LCJleHAiOjE3NjI3OTk1MTcsInByZWZlcnJlZF91c2VybmFtZSI6Im1hcmlhLmdvbnphbGV6QHZhdWx0Y29ycC5jb20iLCJncm91cHMiOlsiZW1wbG95ZWUiXSwianRpIjoiMmRiYjc0MzYtNGVlZi00ZmYyLTgxMWMtMDk0YzJiOGIxMDA5In0.L6T0Sn3703e2Nhf3SgKGst3V6JfX_2NZEBuvHKyq8_zhX5CaCIfgp9D-3HAUO_-wzjKxUcMa9ivQl3wE-7HI_ss04mDIn9IRSy-RHPga23jTVngU6pDU61dfE0tgV-R-QknnJTSLIpjY5Je2siNkb4Qqdx6lcXNoxzQ-yeakj00kyeWQD0g2PpdPHdp9JR5BugTpdI6KPvDcfUaZvyoKQHr3SpdPGq39ob9BvgwVnBipNqDf-__Ty8pCn5SrxcLJAx4qeVVuk_tS5ksGkImePzrys_oSeb3l-FxbkQqtU27ynyyX_EWl7y8XYbeWa_CxGTR60qIWGQ2uKrhEXhTXVg",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL3ZhdWx0Y29ycC5jb20iLCJzdWIiOiJlbXAwMDIiLCJlbWFpbCI6Im1hcmlhLmdvbnphbGV6QHZhdWx0Y29ycC5jb20iLCJ1cG4iOiJtYXJpYS5nb256YWxlekB2YXVsdGNvcnAuY29tIiwiaWF0IjoxNzYzNjQzMjkyLCJleHAiOjE3NjM2NDY4OTIsInByZWZlcnJlZF91c2VybmFtZSI6Im1hcmlhLmdvbnphbGV6QHZhdWx0Y29ycC5jb20iLCJncm91cHMiOlsiZW1wbG95ZWUiXSwianRpIjoiMmFhOTYwYmEtMzNiOS00YTc0LWE5ZGItMmZhNDI2MmNkZDQ2In0.FKOQ-cGvG6dqD9wqv5MN2_J4-NACdyKRnzrul67dGpOlk09lOvTRApVj3Erv9FZVyI71hKwu_U5OyzLLh3N6Pfe-_1KIPS6kZOCpd3CRWHO2ODN25i8e_vlhZ7OMDCOv56PtIRsbsGUYIrrNApaSUx0HbAh5WUURHKlViggJ_KJDinvlmsya6pF6UBTOW0ENtSQ7Cc91gZyT_DVVM-_fpDJehnW3O25whcihR0OWAe_5No17gRhRm6guIsMj9Mdj7N3ltpp4gXs9-k18D0Fr1xnlCxuw2_FT1NfZmpYHArYcvHH1LqBEuYOd-44d3w1kPN_fIs_Lu-6CMathq-VgNw",
   "type": "Bearer",
   "expiresIn": 3600
 }
@@ -184,10 +184,10 @@ Consultando secretos de emp002...
 
 Response (HTTP 200):
 {
-  "userId": "emp002",
   "totalSecrets": 0,
   "secrets": [],
-  "email": "maria.gonzalez@vaultcorp.com"
+  "email": "maria.gonzalez@vaultcorp.com",
+  "userId": "emp002"
 }
 
 ✓ PASS - emp002 solo ve sus propios secretos
@@ -211,12 +211,12 @@ Creando secreto para emp002...
 Response (HTTP 201):
 {
   "secret": {
-    "id": "11acd3f9-6223-42c4-99e9-ec6b2b3c849b",
+    "id": "083f099b-70a1-47b3-a0b6-dc60a2769086",
     "name": "API Key Production",
     "content": "prod-api-key-xyz789",
     "level": "INTERNAL",
     "ownerId": "emp002",
-    "createdAt": "2025-11-10T14:32:47.314386",
+    "createdAt": "2025-11-20T09:55:25.165661",
     "expiresAt": null
   },
   "message": "Secreto creado exitosamente",
@@ -241,29 +241,29 @@ Secretos de emp001:
 ───────────────────────────────────────────────────────────────
 
 {
-  "userId": "emp001",
   "totalSecrets": 2,
   "secrets": [
     {
-      "id": "9f69a01a-3c3b-4ea5-af31-85c91134885d",
+      "id": "777710eb-0fdb-40fa-9ad1-fd3223f3f273",
       "name": "Contraseña BD Dev",
       "content": "devPass2024",
       "level": "INTERNAL",
       "ownerId": "emp001",
-      "createdAt": "2025-11-10T14:30:49.582627",
+      "createdAt": "2025-11-20T09:54:08.875107",
       "expiresAt": null
     },
     {
-      "id": "66a4ca9c-39fd-4fed-ae62-985be906edd2",
+      "id": "25bff914-6d50-45a5-8df5-20b25786fe5c",
       "name": "Database Password",
       "content": "super-secret-db-password",
       "level": "INTERNAL",
       "ownerId": "emp001",
-      "createdAt": "2025-11-10T14:31:14.77612",
+      "createdAt": "2025-11-20T09:54:21.483948",
       "expiresAt": null
     }
   ],
-  "email": "juan.perez@vaultcorp.com"
+  "email": "juan.perez@vaultcorp.com",
+  "userId": "emp001"
 }
 
 ───────────────────────────────────────────────────────────────
@@ -271,20 +271,20 @@ Secretos de emp002:
 ───────────────────────────────────────────────────────────────
 
 {
-  "userId": "emp002",
   "totalSecrets": 1,
   "secrets": [
     {
-      "id": "11acd3f9-6223-42c4-99e9-ec6b2b3c849b",
+      "id": "083f099b-70a1-47b3-a0b6-dc60a2769086",
       "name": "API Key Production",
       "content": "prod-api-key-xyz789",
       "level": "INTERNAL",
       "ownerId": "emp002",
-      "createdAt": "2025-11-10T14:32:47.314386",
+      "createdAt": "2025-11-20T09:55:25.165661",
       "expiresAt": null
     }
   ],
-  "email": "maria.gonzalez@vaultcorp.com"
+  "email": "maria.gonzalez@vaultcorp.com",
+  "userId": "emp002"
 }
 
 ✓ emp001 tiene 2 secreto(s) con ownerId=emp001
@@ -303,8 +303,8 @@ Secretos de emp002:
 
 Inspeccionando el claim 'exp' del token de emp001...
 
-Timestamp de emisión (iat): 1762795747
-Timestamp de expiración (exp): 1762799347
+Timestamp de emisión (iat): 1763643205
+Timestamp de expiración (exp): 1763646805
 Duración del token: 3600 segundos (60 minutos)
 
 ✓ Token tiene configuración de expiración correcta
@@ -364,7 +364,7 @@ JWT Authentication (Parte 2):
 ╚════════════════════════════════════════════════════════════════╝
 
 📝 Todas las pruebas han sido guardadas en:
-   test-part2-jwt-2025-11-10_14-28-58.txt
+   test-part2-jwt-2025-11-20_09-53-22.txt
 
 💡 Puedes revisar el log completo en cualquier momento para:
    • Verificar las respuestas HTTP completas
