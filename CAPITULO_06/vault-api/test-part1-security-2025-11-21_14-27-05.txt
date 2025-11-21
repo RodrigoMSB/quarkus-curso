@@ -1,0 +1,329 @@
+╔════════════════════════════════════════════════════════════════╗
+║    🔐 PRUEBAS DE SEGURIDAD - PARTE 1: AUTENTICACIÓN BÁSICA    ║
+╔════════════════════════════════════════════════════════════════╗
+
+📅 Fecha: 21/11/2025 14:27:05
+🌐 API Base: http://localhost:8080
+📄 Resultados: test-part1-security-2025-11-21_14-27-05.txt
+🔐 Seguridad: Basic Authentication + Role-Based Access Control
+
+⚠️  IMPORTANTE: El servidor debe iniciarse con el perfil parte1
+   Comando: ./mvnw quarkus:dev -Dquarkus.profile=parte1
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 1: Endpoint Público - Health Check
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que un endpoint con @PermitAll es accesible sin credenciales
+📍 Endpoint: GET /api/admin/secrets/health
+🔓 Seguridad: @PermitAll (sin autenticación requerida)
+✅ Esperado: HTTP 200 OK
+
+Ejecutando...
+
+Response (HTTP 200):
+VaultCorp Admin API is running
+
+✓ PASS - Endpoint público accesible sin autenticación
+
+💡 Resultado esperado:
+   El mensaje 'VaultCorp Admin API is running' confirma que el endpoint
+   con @PermitAll es accesible sin necesidad de credenciales.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 2: Acceso NO Autorizado (sin credenciales)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que un endpoint protegido rechaza peticiones sin credenciales
+📍 Endpoint: GET /api/admin/secrets/all
+🔒 Seguridad: @RolesAllowed("vault-admin")
+❌ Esperado: HTTP 401 Unauthorized
+
+Ejecutando...
+
+Response (HTTP 401):
+(Sin contenido - esperado para 401)
+
+✓ PASS - Endpoint correctamente protegido
+
+💡 Resultado esperado:
+   HTTP 401 significa: 'No estás autenticado, necesito saber quién eres'.
+   El servidor rechaza la petición porque no se proporcionaron credenciales.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 3: Acceso Autorizado con rol ADMIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que un usuario con rol 'vault-admin' puede listar todos los secretos
+📍 Endpoint: GET /api/admin/secrets/all
+👤 Usuario: admin (rol: vault-admin)
+🔒 Seguridad: @RolesAllowed("vault-admin")
+✅ Esperado: HTTP 200 OK + JSON con lista de secretos
+
+Ejecutando...
+
+Response (HTTP 200):
+[
+  {
+    "id": "7aeeffe4-0753-4b54-93bb-7055fc1c9092",
+    "name": "API Key Producción",
+    "content": "sk_prod_ABC123XYZ",
+    "level": "TOP_SECRET",
+    "ownerId": "admin",
+    "createdAt": "2025-11-21T14:29:34.120371",
+    "expiresAt": null
+  },
+  {
+    "id": "c2b2036c-794a-4301-9ed0-1106f1835e88",
+    "name": "Contraseña BD Dev",
+    "content": "devPass2024",
+    "level": "INTERNAL",
+    "ownerId": "emp001",
+    "createdAt": "2025-11-21T14:29:34.120381",
+    "expiresAt": null
+  },
+  {
+    "id": "98f257f6-013b-46e0-8a0f-330e27033e27",
+    "name": "Manual de Usuario",
+    "content": "https://docs.vaultcorp.com/manual",
+    "level": "PUBLIC",
+    "ownerId": "marketing",
+    "createdAt": "2025-11-21T14:29:34.120386",
+    "expiresAt": null
+  },
+  {
+    "id": "b9db4702-f2e5-4059-9da0-87dcad0ca427",
+    "name": "API Pública de Consultas",
+    "content": "https://api.vaultcorp.com/public/v1",
+    "level": "PUBLIC",
+    "ownerId": "marketing",
+    "createdAt": "2025-11-21T14:29:34.120391",
+    "expiresAt": null
+  },
+  {
+    "id": "7c782d79-09c2-42f7-87dc-ab588adff2ee",
+    "name": "Credenciales AWS S3",
+    "content": "AKIAIOSFODNN7EXAMPLE",
+    "level": "CONFIDENTIAL",
+    "ownerId": "ops",
+    "createdAt": "2025-11-21T14:29:34.120394",
+    "expiresAt": null
+  },
+  {
+    "id": "2402aab8-4045-42a7-9af7-b5e718dd3086",
+    "name": "Token Analytics Premium",
+    "content": "analytics_premium_token_xyz789",
+    "level": "CONFIDENTIAL",
+    "ownerId": "analytics",
+    "createdAt": "2025-11-21T14:29:34.120398",
+    "expiresAt": null
+  }
+]
+
+✓ PASS - Usuario admin autorizado correctamente
+
+💡 Resultado esperado:
+   El usuario 'admin' tiene el rol 'vault-admin' requerido por el endpoint,
+   por lo tanto puede acceder y ver la lista completa de secretos.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 4: Acceso Prohibido por Rol Insuficiente
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que un usuario autenticado pero SIN el rol requerido es rechazado
+📍 Endpoint: GET /api/admin/secrets/all
+👤 Usuario: auditor (rol: vault-auditor)
+🔒 Seguridad: @RolesAllowed("vault-admin") - El auditor NO tiene este rol
+❌ Esperado: HTTP 403 Forbidden
+
+Ejecutando...
+
+Response (HTTP 403):
+(Sin contenido - esperado para 403)
+
+✓ PASS - Autorización por roles funcionando correctamente
+
+💡 Resultado esperado:
+   HTTP 403 significa: 'Sé quién eres, pero no tienes permiso para hacer esto'.
+   El auditor está autenticado pero NO tiene el rol 'vault-admin' requerido.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 5: Acceso con Múltiples Roles Permitidos
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que un endpoint puede permitir múltiples roles
+📍 Endpoint: GET /api/admin/secrets/stats
+👤 Usuario: auditor (rol: vault-auditor)
+🔒 Seguridad: @RolesAllowed({"vault-admin", "vault-auditor"})
+✅ Esperado: HTTP 200 OK + JSON con estadísticas
+
+Ejecutando...
+
+Response (HTTP 200):
+{
+  "timestamp": "2025-11-21T14:31:28.16026",
+  "totalSecrets": 6
+}
+
+✓ PASS - El auditor tiene acceso permitido
+
+💡 Resultado esperado:
+   Este endpoint permite TANTO a admins COMO a auditores. El auditor puede
+   ver estadísticas generales sin necesidad de tener privilegios de administrador.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 6: Operación Destructiva Prohibida para Auditor
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que un auditor NO puede eliminar secretos (solo lectura)
+📍 Endpoint: DELETE /api/admin/secrets/{id}
+👤 Usuario: auditor (rol: vault-auditor)
+🔒 Seguridad: @RolesAllowed("vault-admin")
+❌ Esperado: HTTP 403 Forbidden
+
+Obteniendo un ID de secreto para probar...
+📌 ID del secreto a intentar eliminar: 7aeeffe4-0753-4b54-93bb-7055fc1c9092
+
+Ejecutando DELETE con usuario auditor...
+
+Response (HTTP 403):
+(Sin contenido - esperado para 403)
+
+✓ PASS - El auditor NO puede eliminar secretos
+
+💡 Resultado esperado:
+   Los auditores tienen permisos de solo lectura. No pueden realizar
+   operaciones destructivas como eliminar secretos.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 7: Operación Destructiva Autorizada para Admin
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que un admin SÍ puede eliminar secretos
+📍 Endpoint: DELETE /api/admin/secrets/{id}
+👤 Usuario: admin (rol: vault-admin)
+🔒 Seguridad: @RolesAllowed("vault-admin")
+✅ Esperado: HTTP 200 OK + mensaje de éxito
+
+Ejecutando DELETE con usuario admin...
+
+Response (HTTP 200):
+{
+  "message": "Secret deleted successfully"
+}
+
+✓ PASS - Admin autorizado para eliminar secretos
+
+💡 Resultado esperado:
+   El admin tiene permisos completos y puede realizar operaciones destructivas
+   como eliminar secretos del sistema.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 8: Verificación de Eliminación
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Confirmar que el secreto eliminado ya no existe en el sistema
+📍 Endpoint: GET /api/admin/secrets/all
+✅ Esperado: La lista debe tener un secreto menos
+
+Listando todos los secretos...
+
+Response:
+[
+  {
+    "id": "c2b2036c-794a-4301-9ed0-1106f1835e88",
+    "name": "Contraseña BD Dev",
+    "content": "devPass2024",
+    "level": "INTERNAL",
+    "ownerId": "emp001",
+    "createdAt": "2025-11-21T14:29:34.120381",
+    "expiresAt": null
+  },
+  {
+    "id": "98f257f6-013b-46e0-8a0f-330e27033e27",
+    "name": "Manual de Usuario",
+    "content": "https://docs.vaultcorp.com/manual",
+    "level": "PUBLIC",
+    "ownerId": "marketing",
+    "createdAt": "2025-11-21T14:29:34.120386",
+    "expiresAt": null
+  },
+  {
+    "id": "b9db4702-f2e5-4059-9da0-87dcad0ca427",
+    "name": "API Pública de Consultas",
+    "content": "https://api.vaultcorp.com/public/v1",
+    "level": "PUBLIC",
+    "ownerId": "marketing",
+    "createdAt": "2025-11-21T14:29:34.120391",
+    "expiresAt": null
+  },
+  {
+    "id": "7c782d79-09c2-42f7-87dc-ab588adff2ee",
+    "name": "Credenciales AWS S3",
+    "content": "AKIAIOSFODNN7EXAMPLE",
+    "level": "CONFIDENTIAL",
+    "ownerId": "ops",
+    "createdAt": "2025-11-21T14:29:34.120394",
+    "expiresAt": null
+  },
+  {
+    "id": "2402aab8-4045-42a7-9af7-b5e718dd3086",
+    "name": "Token Analytics Premium",
+    "content": "analytics_premium_token_xyz789",
+    "level": "CONFIDENTIAL",
+    "ownerId": "analytics",
+    "createdAt": "2025-11-21T14:29:34.120398",
+    "expiresAt": null
+  }
+]
+
+✓ Compara el número de secretos actual con el inicial (debería ser uno menos)
+
+╔════════════════════════════════════════════════════════════════╗
+║                    📊 RESUMEN DE PRUEBAS                       ║
+╚════════════════════════════════════════════════════════════════╝
+
+  Total de tests:      10
+  ✓ Tests Exitosos:  10
+  ✗ Tests Fallidos:  0
+
+╔════════════════════════════════════════════════════════════════╗
+║              🎓 CONCEPTOS CLAVE DEMOSTRADOS                    ║
+╚════════════════════════════════════════════════════════════════╝
+
+🔑 @PermitAll:      Permite acceso público sin autenticación
+🔑 @RolesAllowed:  Restringe acceso solo a usuarios con roles específicos
+🔑 HTTP 401:        No autenticado (falta identificación)
+🔑 HTTP 403:        No autorizado (identificado pero sin permiso)
+🔑 HTTP 200:        Operación exitosa
+
+╔════════════════════════════════════════════════════════════════╗
+║           🔐 MODELO DE SEGURIDAD: BASIC AUTHENTICATION        ║
+╚════════════════════════════════════════════════════════════════╝
+
+Características de Basic Auth:
+  • Credenciales codificadas en Base64
+  • Enviadas en header: Authorization: Basic <base64>
+  • Verificación en cada request
+  • Roles almacenados en application.properties
+
+Usuarios de Prueba:
+  • admin     → rol: vault-admin (permisos completos)
+  • auditor   → rol: vault-auditor (solo lectura)
+  • employee  → rol: vault-employee (acceso básico)
+
+╔════════════════════════════════════════════════════════════════╗
+║                    📁 ARCHIVO DE LOG                           ║
+╚════════════════════════════════════════════════════════════════╝
+
+📝 Todas las pruebas han sido guardadas en:
+   test-part1-security-2025-11-21_14-27-05.txt
+
+💡 Puedes revisar el log completo en cualquier momento para:
+   • Verificar las respuestas HTTP completas
+   • Compartir los resultados con tu instructor
+   • Documentar el comportamiento del sistema
+
+🎉 ¡Pruebas de la Parte 1 completadas exitosamente!
+
