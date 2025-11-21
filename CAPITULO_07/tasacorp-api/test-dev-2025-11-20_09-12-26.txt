@@ -1,0 +1,70 @@
+╔════════════════════════════════════════════════════════════════╗
+║              🟢 PRUEBAS - PERFIL DEV                           ║
+║              Desarrollo: Sin restricciones                     ║
+╚════════════════════════════════════════════════════════════════╝
+
+📅 Fecha: 20/11/2025 09:12:26
+🌐 API Base: http://localhost:8080
+📄 Resultados: test-dev-2025-11-20_09-12-26.txt
+🔧 Perfil: DEV (desarrollo)
+
+⚠️  IMPORTANTE: El servidor debe estar corriendo en perfil dev
+   Comando: ./mvnw quarkus:dev
+
+Características del perfil DEV:
+  ✓ Comisión: 0.0% (gratis para desarrollo)
+  ✓ Límite transaccional: 999,999 (ilimitado)
+  ✓ Cache: Desactivado
+  ✓ Auditoría: Desactivada
+  ✓ Proveedor: MockProvider
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 1: Configuración del Perfil DEV
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que la aplicación está en perfil DEV
+📍 Endpoint: GET /api/tasas/config
+✅ Esperado: perfil_activo=dev, comision=0.0%, limite=999,999
+
+Ejecutando consulta de configuración...
+
+Response (HTTP 200):
+{
+  "auditoria_habilitada": false,
+  "monedas_soportadas": [
+    "USD",
+    "EUR",
+    "MXN"
+  ],
+  "refresh_minutos": 60,
+  "ambiente": "desarrollo",
+  "aplicacion": "TasaCorp API",
+  "moneda_base": "PEN",
+  "perfil_activo": "dev",
+  "comision_porcentaje": 0.0,
+  "api_key_source": "application.properties",
+  "proveedor": "MockProvider",
+  "proveedor_url": "http://localhost:8080/mock",
+  "limite_transaccional": 999999,
+  "cache_habilitado": false
+}
+
+✓ PASS - Configuración DEV obtenida correctamente
+
+💡 Resultado esperado:
+   perfil_activo: 'dev'
+   comision_porcentaje: 0.0
+   limite_transaccional: 999999
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 2: Conversión SIN Comisión
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que DEV NO cobra comisión
+📍 Endpoint: GET /api/tasas/convertir/USD?monto=1000
+💰 Operación: Convertir 1,000 PEN a USD
+✅ Esperado: comision: 0.0
+
+Ejecutando conversión...
+

@@ -1,0 +1,298 @@
+╔════════════════════════════════════════════════════════════════╗
+║     ⚙️  PRUEBAS DE CONFIGURACIÓN - PARTE 1                     ║
+║     Externalización y Prioridades de Carga                    ║
+╔════════════════════════════════════════════════════════════════╗
+
+📅 Fecha: 20/11/2025 09:25:46
+🌐 API Base: http://localhost:8080
+📄 Resultados: test-part1-config-2025-11-20_09-25-46.txt
+🔧 Configuración: application.properties + application.yaml
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 1: Configuración Base desde Properties
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que la aplicación lee la configuración base
+📄 Fuente: application.properties
+🔧 Valores esperados:
+   - Moneda base: PEN
+   - Comisión: 0.0% (perfil dev)
+   - Límite transaccional: 999,999
+
+Ejecutando consulta de configuración...
+
+Response (HTTP 200):
+{
+  "auditoria_habilitada": false,
+  "monedas_soportadas": [
+    "USD",
+    "EUR",
+    "MXN"
+  ],
+  "refresh_minutos": 60,
+  "ambiente": "desarrollo",
+  "aplicacion": "TasaCorp API",
+  "moneda_base": "PEN",
+  "perfil_activo": "dev",
+  "comision_porcentaje": 0.0,
+  "api_key_source": "application.properties",
+  "proveedor": "MockProvider",
+  "proveedor_url": "http://localhost:8080/mock",
+  "limite_transaccional": 999999,
+  "cache_habilitado": false
+}
+
+✓ PASS - Configuración base leída correctamente
+
+💡 Resultado esperado:
+   La aplicación carga valores desde application.properties
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 2: Inyección de Configuración
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Ver cómo se inyectan las propiedades en el servicio
+💉 Mecanismos:
+   - @ConfigProperty: Para valores individuales
+   - @ConfigMapping: Para objetos complejos
+
+Configuración actual completa:
+
+{
+  "auditoria_habilitada": false,
+  "monedas_soportadas": [
+    "USD",
+    "EUR",
+    "MXN"
+  ],
+  "refresh_minutos": 60,
+  "ambiente": "desarrollo",
+  "aplicacion": "TasaCorp API",
+  "moneda_base": "PEN",
+  "perfil_activo": "dev",
+  "comision_porcentaje": 0.0,
+  "api_key_source": "application.properties",
+  "proveedor": "MockProvider",
+  "proveedor_url": "http://localhost:8080/mock",
+  "limite_transaccional": 999999,
+  "cache_habilitado": false
+}
+
+✓ PASS - Valores inyectados correctamente
+
+ℹ️  Todos estos valores fueron inyectados automáticamente por Quarkus
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 3: Conversión usando Configuración Base
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Ver cómo la configuración afecta el comportamiento
+💰 Operación: Convertir 1000 PEN a USD
+🔧 Config: Comisión 0.0% (perfil dev)
+
+Ejecutando conversión...
+
+Response (HTTP 200):
+{
+  "monto_origen": 1000.0,
+  "moneda_origen": "PEN",
+  "monto_convertido": 3750.0,
+  "moneda_destino": "USD",
+  "tasa_aplicada": 3.75,
+  "comision": 0.0,
+  "monto_total": 3750.0,
+  "proveedor": "MockProvider",
+  "limite_transaccional": 999999,
+  "dentro_limite": true
+}
+
+✓ PASS - Conversión realizada correctamente
+
+💡 Resultado esperado:
+   La comisión del 0.0% viene del perfil dev
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 4: Variables de Entorno (Explicación)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Demostrar que ENV vars tienen MAYOR prioridad
+📊 Prioridades de carga:
+   1. System Properties (-D)    ← Máxima prioridad
+   2. Variables de Entorno      ↑
+   3. application.yaml          ↑
+   4. application.properties    ← Mínima prioridad
+
+⚠️  IMPORTANTE:
+Para probar ENV vars, necesitas reiniciar la aplicación con:
+
+TASACORP_COMMISSION_RATE=9.99 ./mvnw quarkus:dev
+
+Esto sobrescribirá la comisión de 0.0% a 9.99%
+
+⏸️  Por ahora, continuaremos con System Properties...
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 5: System Properties (Máxima Prioridad)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Demostrar System Properties como máxima prioridad
+⚙️  System Properties (-D): Son argumentos de la JVM al arrancar
+
+Para probar esto, reinicia la aplicación con:
+
+./mvnw quarkus:dev -Dtasacorp.commission.rate=15.0
+
+📊 Jerarquía que se aplicaría:
+   ✓ System Property: 15.0%      ← ¡GANA! (máxima prioridad)
+   ✗ ENV var: 9.99%              ← Ignorado
+   ✗ Properties: 0.0%             ← Ignorado
+
+ℹ️  Configuración actual:
+{
+  "auditoria_habilitada": false,
+  "monedas_soportadas": [
+    "USD",
+    "EUR",
+    "MXN"
+  ],
+  "refresh_minutos": 60,
+  "ambiente": "desarrollo",
+  "aplicacion": "TasaCorp API",
+  "moneda_base": "PEN",
+  "perfil_activo": "dev",
+  "comision_porcentaje": 0.0,
+  "api_key_source": "application.properties",
+  "proveedor": "MockProvider",
+  "proveedor_url": "http://localhost:8080/mock",
+  "limite_transaccional": 999999,
+  "cache_habilitado": false
+}
+
+✓ PASS - Demostración de prioridades explicada
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 6: Properties vs YAML
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Ver valores que vienen de YAML
+📄 Fuentes:
+   - application.properties: Configuración simple
+   - application.yaml: Configuración compleja (tasas, metadata)
+
+Valores desde YAML:
+
+{
+  "auditoria_habilitada": false,
+  "monedas_soportadas": [
+    "USD",
+    "EUR",
+    "MXN"
+  ],
+  "refresh_minutos": 60,
+  "ambiente": "desarrollo",
+  "aplicacion": "TasaCorp API",
+  "moneda_base": "PEN",
+  "perfil_activo": "dev",
+  "comision_porcentaje": 0.0,
+  "api_key_source": "application.properties",
+  "proveedor": "MockProvider",
+  "proveedor_url": "http://localhost:8080/mock",
+  "limite_transaccional": 999999,
+  "cache_habilitado": false
+}
+
+✓ PASS - YAML permite estructuras jerárquicas más complejas
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 7: Tasas desde Configuración YAML
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Ver tasas de cambio configuradas en YAML
+💱 Tasas configuradas:
+   - USD: 3.75 (desde YAML)
+   - EUR: 4.10 (desde YAML)
+   - MXN: 0.22 (desde YAML)
+
+Consultando tasa de USD...
+
+Response (HTTP 200):
+{
+  "moneda_origen": "PEN",
+  "moneda_destino": "USD",
+  "tasa_cambio": 3.75,
+  "comision_porcentaje": 0.0,
+  "proveedor": "MockProvider",
+  "ambiente": "desarrollo"
+}
+
+✓ PASS - Las tasas vienen del application.yaml
+
+
+╔════════════════════════════════════════════════════════════════╗
+║                    📊 RESUMEN DE PRUEBAS                       ║
+╚════════════════════════════════════════════════════════════════╝
+
+  Total de tests:      6
+  ✓ Tests Exitosos:  6
+  ✗ Tests Fallidos:  0
+
+╔════════════════════════════════════════════════════════════════╗
+║                   🎯 TESTS EJECUTADOS                          ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ PRUEBA 1: Configuración base leída correctamente
+✅ PRUEBA 2: Inyección con @ConfigProperty y @ConfigMapping
+✅ PRUEBA 3: Configuración afecta el comportamiento (comisiones)
+✅ PRUEBA 4: Explicación de variables de entorno
+✅ PRUEBA 5: System Properties como máxima prioridad
+✅ PRUEBA 6: Diferencias entre Properties y YAML
+✅ PRUEBA 7: Tasas configuradas en YAML
+
+╔════════════════════════════════════════════════════════════════╗
+║              🎓 CONCEPTOS CLAVE DEMOSTRADOS                    ║
+╚════════════════════════════════════════════════════════════════╝
+
+📄 application.properties:  Configuración simple y directa
+📝 application.yaml:        Configuración jerárquica compleja
+💉 @ConfigProperty:         Inyección de valores individuales
+🎯 @ConfigMapping:          Mapeo de objetos complejos
+🏆 Prioridades:             System Props > ENV > YAML > Properties
+
+╔════════════════════════════════════════════════════════════════╗
+║                    🧪 PRUEBAS MANUALES                         ║
+╚════════════════════════════════════════════════════════════════╝
+
+Para probar VARIABLES DE ENTORNO:
+1. Detén la aplicación (Ctrl+C)
+2. Ejecuta: TASACORP_COMMISSION_RATE=9.99 ./mvnw quarkus:dev
+3. Prueba: curl http://localhost:8080/api/tasas/config
+4. Verás comision_porcentaje: 9.99 (sobrescrito)
+
+Para probar SYSTEM PROPERTIES:
+1. Detén la aplicación (Ctrl+C)
+2. Ejecuta: ./mvnw quarkus:dev -Dtasacorp.commission.rate=15.0
+3. Prueba: curl http://localhost:8080/api/tasas/config
+4. Verás comision_porcentaje: 15.0 (máxima prioridad)
+
+╔════════════════════════════════════════════════════════════════╗
+║                    📁 ARCHIVO DE LOG                           ║
+╚════════════════════════════════════════════════════════════════╝
+
+📝 Todas las pruebas han sido guardadas en:
+   test-part1-config-2025-11-20_09-25-46.txt
+
+💡 Puedes revisar el log completo en cualquier momento para:
+   • Verificar las respuestas HTTP completas
+   • Analizar las configuraciones cargadas
+   • Compartir los resultados con tu instructor
+   • Documentar el comportamiento del sistema de configuración
+
+🎉 ¡Pruebas de la Parte 1 completadas exitosamente!
+Continúa con: test-part2-profiles.sh
+

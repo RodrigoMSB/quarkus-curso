@@ -1,0 +1,165 @@
+╔════════════════════════════════════════════════════════════════╗
+║              🟢 PRUEBAS - PERFIL DEV                           ║
+║              Desarrollo: Sin restricciones                     ║
+╚════════════════════════════════════════════════════════════════╝
+
+📅 Fecha: 20/11/2025 09:26:16
+🌐 API Base: http://localhost:8080
+📄 Resultados: test-dev-2025-11-20_09-26-16.txt
+🔧 Perfil: DEV (desarrollo)
+
+⚠️  IMPORTANTE: El servidor debe estar corriendo en perfil dev
+   Comando: ./mvnw quarkus:dev
+
+Características del perfil DEV:
+  ✓ Comisión: 0.0% (gratis para desarrollo)
+  ✓ Límite transaccional: 999,999 (ilimitado)
+  ✓ Cache: Desactivado
+  ✓ Auditoría: Desactivada
+  ✓ Proveedor: MockProvider
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 1: Configuración del Perfil DEV
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que la aplicación está en perfil DEV
+📍 Endpoint: GET /api/tasas/config
+✅ Esperado: perfil_activo=dev, comision=0.0%, limite=999,999
+
+Ejecutando consulta de configuración...
+
+Response (HTTP 200):
+{
+  "auditoria_habilitada": false,
+  "monedas_soportadas": [
+    "USD",
+    "EUR",
+    "MXN"
+  ],
+  "refresh_minutos": 60,
+  "ambiente": "desarrollo",
+  "aplicacion": "TasaCorp API",
+  "moneda_base": "PEN",
+  "perfil_activo": "dev",
+  "comision_porcentaje": 0.0,
+  "api_key_source": "application.properties",
+  "proveedor": "MockProvider",
+  "proveedor_url": "http://localhost:8080/mock",
+  "limite_transaccional": 999999,
+  "cache_habilitado": false
+}
+
+✓ PASS - Configuración DEV obtenida correctamente
+
+💡 Resultado esperado:
+   perfil_activo: 'dev'
+   comision_porcentaje: 0.0
+   limite_transaccional: 999999
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 2: Conversión SIN Comisión
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que DEV NO cobra comisión
+📍 Endpoint: GET /api/tasas/convertir/USD?monto=1000
+💰 Operación: Convertir 1,000 PEN a USD
+✅ Esperado: comision: 0.0
+
+Ejecutando conversión...
+
+Response (HTTP 200):
+{
+  "monto_origen": 1000.0,
+  "moneda_origen": "PEN",
+  "monto_convertido": 3750.0,
+  "moneda_destino": "USD",
+  "tasa_aplicada": 3.75,
+  "comision": 0.0,
+  "monto_total": 3750.0,
+  "proveedor": "MockProvider",
+  "limite_transaccional": 999999,
+  "dentro_limite": true
+}
+
+✓ PASS - Conversión realizada correctamente
+ℹ️  En perfil DEV no se cobra comisión (desarrollo rápido)
+
+💡 Resultado esperado:
+   La comisión debe ser 0.0 (sin costo en desarrollo)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRUEBA 3: Límite Ilimitado
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 Objetivo: Verificar que DEV acepta montos muy altos
+📍 Endpoint: GET /api/tasas/convertir/USD?monto=100000
+💰 Operación: Convertir 100,000 PEN a USD (monto alto)
+✅ Esperado: dentro_limite: true
+
+Ejecutando conversión con monto alto...
+
+Response (HTTP 200):
+{
+  "monto_origen": 100000.0,
+  "moneda_origen": "PEN",
+  "monto_convertido": 375000.0,
+  "moneda_destino": "USD",
+  "tasa_aplicada": 3.75,
+  "comision": 0.0,
+  "monto_total": 375000.0,
+  "proveedor": "MockProvider",
+  "limite_transaccional": 999999,
+  "dentro_limite": true
+}
+
+✓ PASS - Monto alto aceptado (límite ilimitado en DEV)
+ℹ️  El perfil DEV tiene límite de 999,999 (prácticamente ilimitado)
+
+💡 Resultado esperado:
+   dentro_limite: true (DEV acepta montos muy altos)
+
+╔════════════════════════════════════════════════════════════════╗
+║                    📊 RESUMEN DE PRUEBAS                       ║
+╚════════════════════════════════════════════════════════════════╝
+
+  Total de tests:      3
+  ✓ Tests Exitosos:  3
+  ✗ Tests Fallidos:  0
+
+╔════════════════════════════════════════════════════════════════╗
+║                   🎯 TESTS EJECUTADOS                          ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ PRUEBA 1: Configuración del perfil DEV verificada
+✅ PRUEBA 2: Conversión sin comisión (0.0%)
+✅ PRUEBA 3: Límite ilimitado verificado (999,999)
+
+╔════════════════════════════════════════════════════════════════╗
+║              🎓 CARACTERÍSTICAS DEL PERFIL DEV                 ║
+╚════════════════════════════════════════════════════════════════╝
+
+🔧 Optimizado para:       Desarrollo rápido sin restricciones
+💸 Comisión:              0.0% (gratis)
+🚦 Límite:                999,999 (ilimitado)
+📦 Cache:                 Desactivado (cambios inmediatos)
+📝 Auditoría:             Desactivada (logs limpios)
+🔌 Proveedor:             MockProvider (sin API externa)
+🔐 Vault:                 Desactivado
+
+╔════════════════════════════════════════════════════════════════╗
+║                    📁 ARCHIVO DE LOG                           ║
+╚════════════════════════════════════════════════════════════════╝
+
+📝 Todas las pruebas han sido guardadas en:
+   test-dev-2025-11-20_09-26-16.txt
+
+💡 Puedes revisar el log completo en cualquier momento para:
+   • Verificar las respuestas HTTP completas
+   • Analizar la configuración del perfil DEV
+   • Compartir los resultados con tu instructor
+   • Documentar el comportamiento del sistema
+
+🎉 ¡Pruebas del perfil DEV completadas exitosamente!
+Continúa con: test-part2-test.sh (perfil TEST)
+

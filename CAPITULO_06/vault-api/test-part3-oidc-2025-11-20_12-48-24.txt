@@ -1,0 +1,91 @@
+╔════════════════════════════════════════════════════════════════╗
+║     🔐 PRUEBAS DE SEGURIDAD - PARTE 3: OIDC + KEYCLOAK       ║
+╔════════════════════════════════════════════════════════════════╗
+
+📅 Fecha: 20/11/2025 12:48:24
+🌐 API Base: http://localhost:8080
+📄 Resultados: test-part3-oidc-2025-11-20_12-48-24.txt
+🔐 Seguridad: OIDC (OpenID Connect) + Keycloak
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 0: Verificar Conectividad con Keycloak
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Confirmar que Keycloak está accesible
+📍 URL: http://localhost:8180
+
+Verificando conexión...
+
+✓ PASS - Keycloak está corriendo correctamente
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 1: Obtener Access Token desde Keycloak (Cliente Básico)
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Autenticarse con Keycloak y obtener un Access Token OIDC
+📍 Endpoint: POST http://localhost:8180/realms/vaultcorp/protocol/openid-connect/token
+👤 Usuario: client001 (rol: customer)
+🔑 Grant Type: password (Resource Owner Password Credentials)
+✅ Resultado Esperado: Access Token válido emitido por Keycloak
+
+Ejecutando login en Keycloak...
+
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJIdjdLa0VhYVNSYnJtSG5HUDRZN3paTlFCRXlBSHVzdUZrdWRCTTJZb0hvIn0.eyJleHAiOjE3NjM2NTQwMTMsImlhdCI6MTc2MzY1MzcxMywianRpIjoiYzZjOTFiOTctYzZmMi00ZjJjLWJmMGItZTVjYzcxZTBiM2M4IiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy92YXVsdGNvcnAiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiMTI0NDYxYzUtNjBlOC00YTE4LTk4Y2YtOTQ3YzY3MjMxYWY1IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidmF1bHQtYXBpIiwic2Vzc2lvbl9zdGF0ZSI6IjRkOTY3OTdlLTY2NTEtNDVmYy05ZjNhLTE3YTM2ODAzODExNyIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDo4MDgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJkZWZhdWx0LXJvbGVzLXZhdWx0Y29ycCIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iLCJjdXN0b21lciJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsInNpZCI6IjRkOTY3OTdlLTY2NTEtNDVmYy05ZjNhLTE3YTM2ODAzODExNyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiQ2FybG9zIEfDs21leiIsInByZWZlcnJlZF91c2VybmFtZSI6ImNsaWVudDAwMSIsImdpdmVuX25hbWUiOiJDYXJsb3MiLCJmYW1pbHlfbmFtZSI6IkfDs21leiIsImVtYWlsIjoiY2xpZW50ZTFAZW1wcmVzYS5jb20ifQ.CL0GkPkgsBX5KIyNoXDsk3V8w3sOssEmZ6KQcHx73VNz5bI4UPgyoAzpQVkJ5eIEU8BdS0T2-XnsLSKGnRsChbZTPSO0-7pFi2sm0AJ_H-qeo0zGMq6_oh0luPqfKih8Inh4uZIqYaKq5u5x50CtOXjVC-N4eyqQMJLYvuC7AYxt9LBJHUW564VTUK9KpVbVEIRqnqf0nRjxNEie08LCMAAorwWopo8jAsdwsJcRyNqtIvc4jLXZv9UR8F0kyM7_YHp-3Vly5Cr24fn024U9vJuBh94itiuR7WdTYuMITFopRHyfaxvchgAnMYF6CXC-lda10wGQldsreq6L7TAedA",
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjMDVjNmNlNy05MzdhLTRkNzQtYmFhOC04NDM4NzAwODM1MDcifQ.eyJleHAiOjE3NjM2NTU1MTMsImlhdCI6MTc2MzY1MzcxMywianRpIjoiNzI5M2EwZWQtNDM2Ny00M2RkLTk1YWQtZDMxNWZkZTBhMzEzIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy92YXVsdGNvcnAiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjgxODAvcmVhbG1zL3ZhdWx0Y29ycCIsInN1YiI6IjEyNDQ2MWM1LTYwZTgtNGExOC05OGNmLTk0N2M2NzIzMWFmNSIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJ2YXVsdC1hcGkiLCJzZXNzaW9uX3N0YXRlIjoiNGQ5Njc5N2UtNjY1MS00NWZjLTlmM2EtMTdhMzY4MDM4MTE3Iiwic2NvcGUiOiJlbWFpbCBwcm9maWxlIiwic2lkIjoiNGQ5Njc5N2UtNjY1MS00NWZjLTlmM2EtMTdhMzY4MDM4MTE3In0.n5wcuF1zfqsICWS2EYT8Lb-Nc621aP7Q0fibdK5Pqv4",
+  "token_type": "Bearer",
+  "not-before-policy": 0,
+  "session_state": "4d96797e-6651-45fc-9f3a-17a368038117",
+  "scope": "email profile"
+}
+
+✓ PASS - Keycloak emitió el token correctamente
+ℹ️  Este token está firmado por Keycloak, no por nuestra aplicación
+📌 Token obtenido (primeros 50 caracteres): eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6IC...
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 2: Intento de Acceso sin Token OIDC
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que los endpoints OIDC rechazan peticiones sin token
+📍 Endpoint: GET /api/external/secrets/profile
+🔒 Seguridad: @RolesAllowed + OIDC
+❌ Resultado Esperado: HTTP 401 Unauthorized
+
+Ejecutando sin Authorization header...
+
+Response (HTTP 401):
+(Sin contenido - esperado para 401)
+
+✓ PASS - El endpoint está protegido correctamente (401)
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 3: Acceso al Perfil con Token OIDC de Keycloak
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Acceder a un endpoint usando token emitido por Keycloak
+📍 Endpoint: GET /api/external/secrets/profile
+👤 Usuario: client001 (customer)
+✅ Resultado Esperado: HTTP 200 OK + datos del perfil
+
+Ejecutando con token OIDC...
+
+
+✗ FAIL - HTTP 401 (Esperado: 200)
+
+═══════════════════════════════════════════════════════════════
+📋 PRUEBA 4: Cliente Básico puede ver Secretos Públicos
+═══════════════════════════════════════════════════════════════
+
+🎯 Objetivo: Verificar que clientes básicos pueden ver secretos PUBLIC
+📍 Endpoint: GET /api/external/secrets/public
+👤 Usuario: client001 (customer)
+✅ Resultado Esperado: HTTP 200 OK + secretos con level=PUBLIC
+
+Accediendo a secretos públicos...
+
+
+✗ FAIL - HTTP 401 (Esperado: 200)
+
