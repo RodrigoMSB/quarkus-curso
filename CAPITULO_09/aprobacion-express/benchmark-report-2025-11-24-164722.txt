@@ -1,0 +1,144 @@
+================================================================================
+BENCHMARK: JVM vs NATIVE IMAGE
+Sistema de Pre-Aprobación Crediticia Express
+================================================================================
+
+Fecha de ejecución: 2025-11-24 16:47:22
+Sistema operativo: Darwin
+Arquitectura: arm64
+Generado por: benchmark.sh (versión corregida)
+
+================================================================================
+
+
+============================================================================
+🚀 BENCHMARK JVM vs NATIVE IMAGE
+============================================================================
+
+
+============================================================================
+🔨 FASE 1: COMPILACIÓN JVM
+============================================================================
+
+
+>>> 1.1 - Limpiando proyecto
+
+[OK] Proyecto limpio
+
+>>> 1.2 - Compilando en modo JVM
+
+[INFO] Ejecutando: ./mvnw package -DskipTests
+[OK] Compilación JVM completada en 8 segundos
+[INFO] Tamaño del artefacto JVM: 50 MB
+
+============================================================================
+🔥 FASE 2: PRUEBAS JVM
+============================================================================
+
+
+>>> 2.1 - Midiendo tiempo de arranque JVM
+
+[INFO] Iniciando aplicación JVM...
+[INFO] PID del proceso JVM: 43564
+[OK] Arranque JVM: 2156 ms
+
+>>> 2.2 - Midiendo uso de memoria JVM
+
+[INFO] Memoria JVM (RSS): 247 MB
+
+>>> 2.3 - Midiendo throughput JVM
+
+[INFO] Throughput JVM: 50 req/s
+
+>>> 2.4 - Deteniendo aplicación JVM
+
+[OK] Aplicación JVM detenida
+
+============================================================================
+🔨 FASE 3: COMPILACIÓN NATIVE
+============================================================================
+
+[WARN] ⚠️  Esta fase tomará 7-10 minutos
+[INFO] La compilación Native es lenta pero el resultado vale la pena
+
+>>> 3.1 - Limpiando proyecto
+
+[OK] Proyecto limpio
+
+>>> 3.2 - Compilando en modo Native
+
+[INFO] Ejecutando: ./mvnw package -Pnative -DskipTests
+[INFO] Log en: /tmp/build-native-2025-11-24-164722.log
+[WARN] ⏱️ Por favor espera... esto toma tiempo
+[OK] Compilación Native completada en 83 segundos (1m 23s)
+[INFO] Tamaño del ejecutable Native: 91 MB
+
+============================================================================
+🔥 FASE 4: PRUEBAS NATIVE
+============================================================================
+
+
+>>> 4.1 - Midiendo tiempo de arranque Native
+
+[INFO] Iniciando aplicación Native...
+[INFO] PID del proceso Native: 44087
+[OK] Arranque Native: 2076 ms
+
+>>> 4.2 - Midiendo uso de memoria Native
+
+[INFO] Memoria Native (RSS): 68 MB
+
+>>> 4.3 - Midiendo throughput Native
+
+[INFO] Throughput Native: 50 req/s
+
+>>> 4.4 - Deteniendo aplicación Native
+
+[OK] Aplicación Native detenida
+
+============================================================================
+📊 FASE 5: COMPARATIVA FINAL
+============================================================================
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                        RESULTADOS DEL BENCHMARK                            ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║ MÉTRICA                     │ JVM MODE           │ NATIVE MODE        ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║ Tiempo de compilación       │ 8s                 │ 83s                ║
+║ Tiempo de arranque          │ 2156 ms             │ 2076 ms            ║
+║ Uso de memoria (RSS)        │ 247 MB              │ 68 MB             ║
+║ Throughput                  │ 50 req/s           │ 50 req/s          ║
+║ Tamaño del artefacto        │ 50 MB              │ 91 MB             ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+>>> ANÁLISIS BASADO EN LOS DATOS MEDIDOS
+
+
+ANÁLISIS BASADO EN LOS DATOS MEDIDOS
+====================================
+
+1. COMPILACIÓN: JVM 8s vs Native 83s (10x)
+2. ARRANQUE: JVM 2156 ms vs Native 2076 ms (1x más rápido)
+3. MEMORIA: Ahorro de 72% con Native
+4. THROUGHPUT: Diferencia de 0%
+
+================================================================================
+FIN DEL BENCHMARK
+================================================================================
+
+Archivo generado: benchmark-report-2025-11-24-164722.txt
+Fecha: 2025-11-24 16:49:17
+
+Logs de compilación:
+- JVM: /tmp/build-jvm-2025-11-24-164722.log
+- Native: /tmp/build-native-2025-11-24-164722.log
+
+================================================================================
+[OK] Reporte completo guardado en: benchmark-report-2025-11-24-164722.txt
+[INFO] Logs de compilación disponibles en:
+[INFO]   - JVM: /tmp/build-jvm-2025-11-24-164722.log
+[INFO]   - Native: /tmp/build-native-2025-11-24-164722.log
+[OK] 🚀 ¡Benchmark completado exitosamente!

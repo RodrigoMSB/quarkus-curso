@@ -1,0 +1,142 @@
+================================================================================
+BENCHMARK: JVM vs NATIVE IMAGE
+Sistema de Pre-Aprobación Crediticia Express
+================================================================================
+
+Fecha de ejecución: 2025-11-24 16:56:30
+Sistema operativo: Darwin
+Arquitectura: arm64
+Requests de prueba: 500
+Generado por: benchmark.sh v2.0
+
+================================================================================
+
+
+============================================================================
+🚀 BENCHMARK JVM vs NATIVE IMAGE
+============================================================================
+
+
+============================================================================
+🔨 FASE 1: COMPILACIÓN JVM
+============================================================================
+
+
+>>> 1.1 - Limpiando proyecto
+
+[OK] Proyecto limpio
+
+>>> 1.2 - Compilando en modo JVM
+
+[INFO] Ejecutando: ./mvnw package -DskipTests
+[OK] Compilación JVM completada en 9 segundos
+[INFO] Tamaño del artefacto JVM: 50 MB
+
+============================================================================
+🔥 FASE 2: PRUEBAS JVM
+============================================================================
+
+
+>>> 2.1 - Midiendo tiempo de arranque JVM (desde logs de Quarkus)
+
+[INFO] Iniciando aplicación JVM...
+[INFO] PID del proceso JVM: 45148
+[OK] Arranque JVM (real): 1477 ms
+[INFO] Log: 16:56:43 INFO  [io.quarkus] (main) aprobacion-express 1.0.0 on JVM (powered by Quarkus 3.28.5) started in 1.477s. Listening on: http://0.0.0.0:8080
+
+>>> 2.2 - Midiendo uso de memoria JVM
+
+[INFO] Memoria JVM (RSS): 308 MB
+
+>>> 2.3 - Midiendo throughput JVM (500 requests)
+
+[OK] Throughput JVM: 49 req/s
+
+>>> 2.4 - Deteniendo aplicación JVM
+
+[OK] Aplicación JVM detenida
+
+============================================================================
+🔨 FASE 3: COMPILACIÓN NATIVE
+============================================================================
+
+[WARN] ⚠️  Esta fase tomará 7-10 minutos
+[INFO] La compilación Native es lenta pero el resultado vale la pena
+
+>>> 3.1 - Limpiando proyecto
+
+[OK] Proyecto limpio
+
+>>> 3.2 - Compilando en modo Native
+
+[INFO] Ejecutando: ./mvnw package -Pnative -DskipTests
+[INFO] Log en: /tmp/build-native-2025-11-24-165630.log
+[WARN] ⏱️ Por favor espera... esto toma tiempo
+[OK] Compilación Native completada en 84 segundos (1m 24s)
+[INFO] Tamaño del ejecutable Native: 91 MB
+
+============================================================================
+🔥 FASE 4: PRUEBAS NATIVE
+============================================================================
+
+
+>>> 4.1 - Midiendo tiempo de arranque Native (desde logs de Quarkus)
+
+[INFO] Iniciando aplicación Native...
+[INFO] PID del proceso Native: 46063
+[OK] Arranque Native (real): 115 ms
+[INFO] Log: 16:58:27 INFO  [io.quarkus] (main) aprobacion-express 1.0.0 native (powered by Quarkus 3.28.5) started in 0.115s. Listening on: http://0.0.0.0:8080
+
+>>> 4.2 - Midiendo uso de memoria Native
+
+[INFO] Memoria Native (RSS): 68 MB
+
+>>> 4.3 - Midiendo throughput Native (500 requests)
+
+[OK] Throughput Native: 64 req/s
+
+>>> 4.4 - Deteniendo aplicación Native
+
+[OK] Aplicación Native detenida
+
+============================================================================
+📊 FASE 5: COMPARATIVA FINAL
+============================================================================
+
+
+RESULTADOS DEL BENCHMARK (500 requests)
+====================================================
+
+Tiempo de compilación:    JVM 9s    |  Native 84s
+Tiempo de arranque:       JVM 1477 ms  |  Native 115 ms
+Uso de memoria (RSS):     JVM 308 MB     |  Native 68 MB
+Throughput:               JVM 49 req/s    |  Native 64 req/s
+Tamaño del artefacto:     JVM 50 MB     |  Native 91 MB
+
+
+>>> ANÁLISIS BASADO EN LOS DATOS MEDIDOS
+
+
+ANÁLISIS
+========
+
+Ratios calculados:
+- Compilación: Native toma 9x más tiempo
+- Arranque: Native es 12x más rápido
+- Memoria: Native usa 77% menos
+- Throughput: Diferencia de 30%
+
+Cálculo de ahorro (50 pods):
+- JVM: 15400 MB
+- Native: 3400 MB
+
+================================================================================
+FIN DEL BENCHMARK - 2025-11-24 16:58:40
+================================================================================
+[OK] Reporte guardado en: benchmark-report-2025-11-24-165630.txt
+[INFO] Logs disponibles:
+[INFO]   - Build JVM: /tmp/build-jvm-2025-11-24-165630.log
+[INFO]   - Build Native: /tmp/build-native-2025-11-24-165630.log
+[INFO]   - Run JVM: /tmp/jvm-run-2025-11-24-165630.log
+[INFO]   - Run Native: /tmp/native-run-2025-11-24-165630.log
+[OK] 🚀 ¡Benchmark completado exitosamente!

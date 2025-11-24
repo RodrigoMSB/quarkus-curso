@@ -1,0 +1,422 @@
+================================================================================
+REPORTE DE PRUEBAS FUNCIONALES
+Sistema de Pre-Aprobación Crediticia Express
+================================================================================
+
+Fecha de ejecución: 2025-11-24 14:40:20
+Microservicio: http://localhost:8080
+Generado por: test-aprobacion.sh
+Sistema operativo: Darwin
+
+Este reporte contiene los resultados de la batería completa de pruebas
+funcionales del sistema de pre-aprobación crediticia, incluyendo:
+- Health checks y métricas
+- Casos de aprobación (clientes con buen perfil)
+- Casos de rechazo (lista negra, deuda alta, validaciones)
+- Operaciones CRUD (consultas, listados)
+
+================================================================================
+
+
+============================================================================
+🚀 PRUEBAS FUNCIONALES - SISTEMA DE PRE-APROBACIÓN CREDITICIA
+============================================================================
+
+
+PRUEBAS INCLUIDAS:
+   1. Health Checks (liveness y readiness)
+   2. Métricas Prometheus
+   3. Estadísticas del sistema
+   4. Creación de solicitudes (casos variados)
+   5. Consulta de solicitudes
+   6. Listado con paginación
+   7. Validaciones de negocio
+
+CASOS DE PRUEBA:
+   ✅ Cliente perfil excelente → APROBADO
+   ✅ Cliente con garantía → APROBADO
+   ❌ Cliente en lista negra → RECHAZADO
+   ❌ Cliente con deuda muy alta → RECHAZADO
+   ❌ Validaciones de entrada → ERROR 400
+
+ℹ Verificando que el servicio esté disponible...
+✓ Servicio disponible!
+
+============================================================================
+🚀 PRUEBA 1: HEALTH CHECKS
+============================================================================
+
+
+>>> 1.1 - Liveness Probe (¿Está vivo?)
+
+ℹ Verificando endpoint: http://localhost:8080/q/health/live
+Respuesta:
+{
+  "status": "UP",
+  "checks": []
+}
+✓ TEST #1: Health check - Liveness
+
+>>> 1.2 - Readiness Probe (¿Está listo?)
+
+ℹ Verificando endpoint: http://localhost:8080/q/health/ready
+Respuesta:
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "Database connections health check",
+      "status": "UP",
+      "data": {
+        "<default>": "UP"
+      }
+    }
+  ]
+}
+✓ TEST #2: Health check - Readiness
+
+============================================================================
+📊 PRUEBA 2: MÉTRICAS PROMETHEUS
+============================================================================
+
+
+>>> 2.1 - Endpoint de métricas
+
+ℹ Obteniendo métricas de: http://localhost:8080/q/metrics
+Primeras 20 líneas de métricas:
+# TYPE http_server_requests_seconds summary
+# HELP http_server_requests_seconds HTTP server request processing time
+http_server_requests_seconds_count{method="GET",outcome="CLIENT_ERROR",status="404",uri="/api/preaprobacion/{id}"} 1.0
+http_server_requests_seconds_sum{method="GET",outcome="CLIENT_ERROR",status="404",uri="/api/preaprobacion/{id}"} 0.015809042
+http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",uri="/api/preaprobacion/estadisticas"} 1.0
+http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri="/api/preaprobacion/estadisticas"} 0.381464291
+http_server_requests_seconds_count{method="POST",outcome="CLIENT_ERROR",status="400",uri="/api/preaprobacion/evaluar"} 2.0
+http_server_requests_seconds_sum{method="POST",outcome="CLIENT_ERROR",status="400",uri="/api/preaprobacion/evaluar"} 0.009895208
+http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",uri="/api/preaprobacion/listar"} 1.0
+http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri="/api/preaprobacion/listar"} 0.024089917
+http_server_requests_seconds_count{method="POST",outcome="SUCCESS",status="200",uri="/api/preaprobacion/evaluar"} 4.0
+http_server_requests_seconds_sum{method="POST",outcome="SUCCESS",status="200",uri="/api/preaprobacion/evaluar"} 0.717593833
+# TYPE http_server_requests_seconds_max gauge
+# HELP http_server_requests_seconds_max HTTP server request processing time
+http_server_requests_seconds_max{method="GET",outcome="CLIENT_ERROR",status="404",uri="/api/preaprobacion/{id}"} 0.0
+http_server_requests_seconds_max{method="GET",outcome="SUCCESS",status="200",uri="/api/preaprobacion/estadisticas"} 0.0
+http_server_requests_seconds_max{method="POST",outcome="CLIENT_ERROR",status="400",uri="/api/preaprobacion/evaluar"} 0.0
+http_server_requests_seconds_max{method="GET",outcome="SUCCESS",status="200",uri="/api/preaprobacion/listar"} 0.0
+http_server_requests_seconds_max{method="POST",outcome="SUCCESS",status="200",uri="/api/preaprobacion/evaluar"} 0.0
+# TYPE jvm_memory_used_bytes gauge
+...
+(Total:      280 líneas)
+✓ TEST #3: Métricas Prometheus disponibles
+
+============================================================================
+📊 PRUEBA 3: ESTADÍSTICAS DEL SISTEMA
+============================================================================
+
+
+>>> 3.1 - Consultar estadísticas generales
+
+ℹ Obteniendo estadísticas de: http://localhost:8080/api/preaprobacion/estadisticas
+Estadísticas:
+{
+  "tasaAprobacion": 57.14,
+  "totalSolicitudes": 22,
+  "enEvaluacion": 0,
+  "pendientes": 1,
+  "rechazadas": 9,
+  "aprobadas": 12
+}
+✓ TEST #4: Consultar estadísticas del sistema
+
+============================================================================
+✅ PRUEBA 4: SOLICITUD APROBADA - CLIENTE PERFIL EXCELENTE
+============================================================================
+
+
+>>> 4.1 - Crear solicitud (Cliente con excelente perfil crediticio)
+
+ℹ Enviando solicitud (DNI: 70001234)...
+
+ℹ Resultado de la evaluación:
+{
+  "solicitudId": 65,
+  "aprobado": true,
+  "scoreCalculado": 795,
+  "montoMaximoAprobado": 50000.00,
+  "tasaInteres": 9.50,
+  "plazoMaximoMeses": 84,
+  "motivosRechazo": [],
+  "recomendaciones": [],
+  "tiempoEvaluacionMs": 81,
+  "fechaEvaluacion": "2025-11-24T14:43:10.136438",
+  "nivelRiesgo": "BAJO"
+}
+✓ Solicitud APROBADA como se esperaba
+✓ TEST #5: Cliente perfil excelente aprobado
+
+============================================================================
+✅ PRUEBA 5: SOLICITUD APROBADA - CLIENTE CON GARANTÍA
+============================================================================
+
+
+>>> 5.1 - Crear solicitud (Cliente con garantía)
+
+ℹ Enviando solicitud (DNI: 70005678 con garantía)...
+
+ℹ Resultado de la evaluación:
+{
+  "solicitudId": 66,
+  "aprobado": true,
+  "scoreCalculado": 761,
+  "montoMaximoAprobado": 30000.00,
+  "tasaInteres": 9.50,
+  "plazoMaximoMeses": 84,
+  "motivosRechazo": [],
+  "recomendaciones": [],
+  "tiempoEvaluacionMs": 157,
+  "fechaEvaluacion": "2025-11-24T14:43:39.116281",
+  "nivelRiesgo": "BAJO"
+}
+✓ Solicitud APROBADA como se esperaba
+✓ TEST #6: Cliente con garantía aprobado
+
+============================================================================
+❌ PRUEBA 6: SOLICITUD RECHAZADA - CLIENTE EN LISTA NEGRA
+============================================================================
+
+
+>>> 6.1 - Crear solicitud (Cliente en lista negra del bureau)
+
+ℹ Enviando solicitud (DNI: 12345678 está en lista negra)...
+
+ℹ Resultado de la evaluación:
+{
+  "solicitudId": 67,
+  "aprobado": false,
+  "scoreCalculado": 537,
+  "motivosRechazo": [
+    "Cliente figura en lista negra del bureau crediticio"
+  ],
+  "recomendaciones": [],
+  "tiempoEvaluacionMs": 152,
+  "fechaEvaluacion": "2025-11-24T14:43:56.404419",
+  "nivelRiesgo": "CRITICO"
+}
+✓ Solicitud RECHAZADA como se esperaba
+ℹ Motivo: Cliente en lista negra del bureau
+✓ TEST #7: Cliente lista negra rechazado
+
+============================================================================
+❌ PRUEBA 7: SOLICITUD RECHAZADA - RATIO DEUDA/INGRESO ALTO
+============================================================================
+
+
+>>> 7.1 - Crear solicitud (Cliente con deuda muy alta)
+
+ℹ Enviando solicitud (deuda 5x mayor que ingreso)...
+
+ℹ Resultado de la evaluación:
+{
+  "solicitudId": 68,
+  "aprobado": false,
+  "scoreCalculado": 643,
+  "motivosRechazo": [
+    "Ratio deuda/ingreso demasiado alto (máximo aceptable: 40%)"
+  ],
+  "recomendaciones": [
+    "Reduzca su nivel de endeudamiento actual antes de solicitar nuevo crédito"
+  ],
+  "tiempoEvaluacionMs": 116,
+  "fechaEvaluacion": "2025-11-24T14:44:23.717247",
+  "nivelRiesgo": "ALTO"
+}
+✓ Solicitud RECHAZADA como se esperaba
+✓ TEST #8: Cliente deuda alta rechazado
+
+============================================================================
+⚠️ PRUEBA 8: VALIDACIONES DE ENTRADA
+============================================================================
+
+
+>>> 8.1 - Solicitud con datos inválidos (ingreso negativo)
+
+ℹ Enviando solicitud con ingreso negativo (debe ser rechazada)...
+✓ Validación funcionó correctamente (HTTP 400)
+✓ TEST #9: Validación de ingreso negativo
+
+>>> 8.2 - Solicitud con edad menor a 18 años
+
+ℹ Enviando solicitud con edad = 17 años (debe ser rechazada)...
+✓ Validación funcionó correctamente (HTTP 400)
+✓ TEST #10: Validación de edad mínima
+
+============================================================================
+ℹ️ PRUEBA 9: CONSULTA DE SOLICITUDES
+============================================================================
+
+
+>>> 9.1 - Consultar solicitud por ID
+
+⚠ No se pudo obtener ID de solicitud, omitiendo prueba
+
+>>> 9.2 - Consultar solicitud inexistente
+
+ℹ Consultando solicitud ID: 999999...
+✓ Respuesta correcta para solicitud inexistente (HTTP 404)
+✓ TEST #11: Consultar solicitud inexistente
+
+============================================================================
+📊 PRUEBA 10: LISTADO DE SOLICITUDES
+============================================================================
+
+
+>>> 10.1 - Listar todas las solicitudes (página 0, tamaño 5)
+
+ℹ Obteniendo lista...
+Resultado:
+{
+  "total": 26,
+  "size": 5,
+  "totalPages": 6,
+  "page": 0,
+  "solicitudes": [
+    {
+      "id": 1,
+      "numeroDocumento": "45678901",
+      "tipoDocumento": "DNI",
+      "nombreCompleto": "María Elena Fernández Torres",
+      "ingresoMensual": 8500.00,
+      "montoSolicitado": 50000.00,
+      "deudaActual": 5000.00,
+      "antiguedadLaboralAnios": 12,
+      "edad": 38,
+      "tieneGarantia": true,
+      "tipoGarantia": "HIPOTECARIA",
+      "fechaSolicitud": "2025-10-20T10:30:00",
+      "estado": "APROBADO",
+      "scoreCalculado": 820,
+      "montoAprobado": 50000.00,
+      "tasaInteres": 10.00,
+      "plazoMaximoMeses": 84,
+      "tiempoEvaluacionMs": 145,
+      "fechaEvaluacion": "2025-10-20T10:30:00"
+    },
+    {
+      "id": 2,
+      "numeroDocumento": "56789012",
+      "tipoDocumento": "DNI",
+      "nombreCompleto": "Carlos Alberto Mendoza Ríos",
+      "ingresoMensual": 5000.00,
+      "montoSolicitado": 30000.00,
+      "deudaActual": 8000.00,
+      "antiguedadLaboralAnios": 6,
+      "edad": 42,
+      "tieneGarantia": true,
+      "tipoGarantia": "VEHICULAR",
+      "fechaSolicitud": "2025-10-21T14:15:00",
+      "estado": "APROBADO",
+      "scoreCalculado": 685,
+      "montoAprobado": 30000.00,
+      "tasaInteres": 12.50,
+      "plazoMaximoMeses": 60,
+      "tiempoEvaluacionMs": 152,
+      "fechaEvaluacion": "2025-10-21T14:15:00"
+    },
+    {
+      "id": 3,
+      "numeroDocumento": "22222222",
+      "tipoDocumento": "DNI",
+      "nombreCompleto": "Pedro José Ramírez Gómez",
+      "ingresoMensual": 3500.00,
+      "montoSolicitado": 15000.00,
+      "deudaActual": 7000.00,
+      "antiguedadLaboralAnios": 3,
+      "edad": 35,
+      "tieneGarantia": false,
+      "tipoGarantia": null,
+      "fechaSolicitud": "2025-10-22T09:45:00",
+      "estado": "APROBADO",
+      "scoreCalculado": 625,
+      "montoAprobado": 15000.00,
+      "tasaInteres": 15.00,
+      "plazoMaximoMeses": 36,
+      "tiempoEvaluacionMs": 178,
+      "fechaEvaluacion": "2025-10-22T09:45:00"
+    },
+    {
+      "id": 4,
+      "numeroDocumento": "67890123",
+      "tipoDocumento": "DNI",
+      "nombreCompleto": "Ana Patricia Silva Montes",
+      "ingresoMensual": 2500.00,
+      "montoSolicitado": 20000.00,
+      "deudaActual": 12000.00,
+      "antiguedadLaboralAnios": 2,
+      "edad": 28,
+      "tieneGarantia": false,
+      "tipoGarantia": null,
+      "fechaSolicitud": "2025-10-22T11:20:00",
+      "estado": "RECHAZADO",
+      "scoreCalculado": 485,
+      "montoAprobado": null,
+      "tasaInteres": null,
+      "plazoMaximoMeses": null,
+      "tiempoEvaluacionMs": 163,
+      "fechaEvaluacion": "2025-10-22T11:20:00"
+    },
+    {
+      "id": 5,
+      "numeroDocumento": "12345678",
+      "tipoDocumento": "DNI",
+      "nombreCompleto": "Roberto Carlos Delgado Pérez",
+      "ingresoMensual": 4000.00,
+      "montoSolicitado": 25000.00,
+      "deudaActual": 3000.00,
+      "antiguedadLaboralAnios": 5,
+      "edad": 40,
+      "tieneGarantia": true,
+      "tipoGarantia": "PRENDARIA",
+      "fechaSolicitud": "2025-10-22T16:00:00",
+      "estado": "RECHAZADO",
+      "scoreCalculado": 320,
+      "montoAprobado": null,
+      "tasaInteres": null,
+      "plazoMaximoMeses": null,
+      "tiempoEvaluacionMs": 141,
+      "fechaEvaluacion": "2025-10-22T16:00:00"
+    }
+  ]
+}
+ℹ Total de solicitudes en BD: 26
+✓ TEST #12: Listar solicitudes con paginación
+
+============================================================================
+📊 RESUMEN DE PRUEBAS
+============================================================================
+
+
+╔════════════════════════════════════════════════════════════════╗
+║                    RESULTADOS FINALES                          ║
+╠════════════════════════════════════════════════════════════════╣
+║ Total de pruebas:    12                                        ║
+║ Pruebas exitosas:    12                                        ║
+║ Pruebas fallidas:    0                                        ║
+╚════════════════════════════════════════════════════════════════╝
+
+✓ ¡TODAS LAS PRUEBAS PASARON EXITOSAMENTE! 🚀
+
+CONCLUSIÓN: Sistema funcionando correctamente. Todas las pruebas pasadas.
+
+================================================================================
+FIN DEL REPORTE
+================================================================================
+
+Archivo generado: test-report-2025-11-24-144020.txt
+Fecha: 2025-11-24 14:45:16
+
+Para más información, consulta:
+- README.md: Guía de usuario
+- TEORIA.md: Conceptos técnicos
+- INSTRUCTOR.md: Guía del profesor
+
+================================================================================
+✓ Reporte guardado en: test-report-2025-11-24-144020.txt
