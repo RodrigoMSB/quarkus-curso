@@ -115,7 +115,7 @@ Este ejercicio implementa un **sistema de e-commerce completo** usando microserv
 | Tecnología | Versión | Uso |
 |------------|---------|-----|
 | **Java** | 21 | Lenguaje de programación |
-| **Quarkus** | 3.28.5 | Framework de microservicios |
+| **Quarkus** | 3.15+ | Framework de microservicios |
 | **PostgreSQL** | 15 | Base de datos relacional |
 | **Redis** | 7 | Cache en memoria |
 | **Docker** | Latest | Contenedores para infraestructura |
@@ -163,21 +163,19 @@ Antes de comenzar, asegúrate de tener instalado:
   
   # Linux
   sudo apt-get install jq
+  
+  # Windows (Git Bash con Chocolatey)
+  choco install jq
   ```
 
 ---
 
 ## 📦 Instalación
 
-### Paso 1: Clonar o descargar el proyecto
+### Paso 1: Navegar a la carpeta del proyecto
 
 ```bash
-# Si tienes el proyecto en un repositorio:
-git clone <URL_DEL_REPOSITORIO>
-cd "CAPITULO 10"
-
-# O navega a la carpeta del proyecto
-cd /ruta/a/tu/proyecto/CAPITULO\ 10
+cd 01-caching-redis-y-saga
 ```
 
 ### Paso 2: Verificar la estructura del proyecto
@@ -188,7 +186,7 @@ ls -la
 
 Deberías ver:
 ```
-CAPITULO 10/
+01-caching-redis-y-saga/
 ├── docker-compose.yml
 ├── init-databases.sh
 ├── pom.xml
@@ -208,7 +206,7 @@ CAPITULO 10/
 ### Paso 3: Compilar todos los servicios
 
 ```bash
-# Desde la raíz del proyecto (CAPITULO 10)
+# Desde la raíz del proyecto
 mvn clean package -DskipTests
 ```
 
@@ -231,12 +229,23 @@ mvn clean package -DskipTests
 docker-compose up -d
 ```
 
-Esto levanta:
-- **Redis** en puerto `6379`
-- **PostgreSQL** en puerto `5433` con 3 bases de datos:
-  - `orders_db`
-  - `inventory_db`
-  - `payment_db`
+Esto levanta automáticamente:
+
+| Contenedor | Puerto | Descripción |
+|------------|--------|-------------|
+| **redis-cache** | 6379 | Cache en memoria |
+| **postgres-db** | 5433 | PostgreSQL con 3 bases de datos |
+
+**¿Qué ocurre internamente?**
+
+1. Docker descarga las imágenes `postgres:15-alpine` y `redis:7-alpine`
+2. PostgreSQL detecta el archivo `init-databases.sh` montado en `/docker-entrypoint-initdb.d/`
+3. PostgreSQL ejecuta automáticamente ese script y crea las 3 bases de datos:
+   - `orders_db` (para Order Service)
+   - `inventory_db` (para Inventory Service)
+   - `payment_db` (para Payment Service)
+
+> 💡 **Nota:** El script `init-databases.sh` solo se ejecuta la primera vez que se crea el contenedor. Si ya existía, no se vuelve a ejecutar.
 
 **Verificar que estén corriendo:**
 ```bash
@@ -252,30 +261,16 @@ xxxxx          redis:7-alpine         Up X minutes   0.0.0.0:6379->6379/tcp
 
 ⚠️ **Si no aparecen:** Ejecuta `docker-compose logs` para ver errores
 
----
-
-### Paso 2: Insertar datos de prueba en la base de datos
-
+**Verificar que las bases de datos se crearon:**
 ```bash
-# Insertar productos en inventory_db
-docker exec -it postgres-db psql -U postgres -d inventory_db -c "
-INSERT INTO products (productcode, name, stock, reservedstock, price, created_at, updated_at) 
-VALUES 
-  ('LAPTOP-001', 'Laptop HP Pavilion 15', 50, 0, 899.99, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('MOUSE-001', 'Mouse Logitech MX Master', 100, 0, 99.99, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('KEYBOARD-001', 'Teclado Mecánico', 80, 0, 79.99, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT DO NOTHING;
-"
+docker exec -it postgres-db psql -U postgres -c "\l"
 ```
 
-**Salida esperada:**
-```
-INSERT 0 3
-```
+Deberías ver `orders_db`, `inventory_db` y `payment_db` en la lista.
 
 ---
 
-### Paso 3: Iniciar los 3 microservicios
+### Paso 2: Iniciar los 3 microservicios
 
 **Necesitas 3 terminales separadas:**
 
@@ -289,6 +284,8 @@ mvn quarkus:dev
 ```
 Listening on: http://localhost:8081
 ```
+
+> 💡 Al arrancar, Hibernate crea las tablas y Quarkus ejecuta `import.sql` para insertar los productos de prueba automáticamente.
 
 #### Terminal 2 - Payment Service (Puerto 8082)
 ```bash
@@ -314,7 +311,7 @@ Listening on: http://localhost:8080
 
 ---
 
-### Paso 4: Verificar que todo esté funcionando
+### Paso 3: Verificar que todo esté funcionando
 
 En una **cuarta terminal**, ejecuta:
 
@@ -344,7 +341,7 @@ curl http://localhost:8082/health
 Este script prueba TODO el sistema de forma automática:
 
 ```bash
-# Desde la raíz del proyecto (CAPITULO 10)
+# Desde la raíz del proyecto
 chmod +x test-saga.sh
 ./test-saga.sh
 ```
@@ -376,7 +373,27 @@ Reporte guardado en: test-saga-report-YYYY-MM-DD-HHMMSS.txt
 
 ### Opción 2: Pruebas Manuales con cURL
 
-#### Prueba 1: Crear una orden EXITOSA
+#### Prueba 1: Verificar productos disponibles
+
+```bash
+curl http://localhost:8081/api/inventory/products | jq
+```
+
+**Salida esperada:**
+```json
+[
+  {
+    "productCode": "LAPTOP-001",
+    "name": "Laptop HP Pavilion 15",
+    "stock": 50,
+    "availableStock": 50,
+    "price": 899.99
+  },
+  ...
+]
+```
+
+#### Prueba 2: Crear una orden EXITOSA
 
 ```bash
 curl -X POST http://localhost:8080/api/orders \
@@ -403,19 +420,19 @@ curl -X POST http://localhost:8080/api/orders \
 }
 ```
 
-#### Prueba 2: Consultar una orden (Cache)
+#### Prueba 3: Consultar una orden (Cache)
 
 ```bash
-# Primera consulta (Cache MISS - lenta)
-time curl -s http://localhost:8080/api/orders/a1b2c3d4-...
+# Primera consulta (Cache MISS - más lenta)
+time curl -s http://localhost:8080/api/orders/<ORDER_ID>
 
 # Segunda consulta (Cache HIT - más rápida)
-time curl -s http://localhost:8080/api/orders/a1b2c3d4-...
+time curl -s http://localhost:8080/api/orders/<ORDER_ID>
 ```
 
 La segunda consulta debería ser más rápida (cache funcionando).
 
-#### Prueba 3: Orden con stock INSUFICIENTE (Compensación)
+#### Prueba 4: Orden con stock INSUFICIENTE (Compensación)
 
 ```bash
 curl -X POST http://localhost:8080/api/orders \
@@ -455,14 +472,13 @@ curl -X POST http://localhost:8080/api/orders \
 ## 📁 Estructura del Proyecto
 
 ```
-CAPITULO 10/
+01-caching-redis-y-saga/
 │
 ├── 📄 README.md                    # Este archivo
 ├── 📄 TEORIA.md                    # Conceptos teóricos (SAGA, Redis)
-├── 📄 instructor.md                # Guía para el profesor
 │
 ├── 🐳 docker-compose.yml           # Redis + PostgreSQL
-├── 🔧 init-databases.sh            # Script de inicialización de BDs
+├── 🔧 init-databases.sh            # Script que PostgreSQL ejecuta al iniciar
 ├── 📦 pom.xml                      # Parent POM (multi-módulo)
 │
 ├── 🧪 test-saga.sh                 # Script de pruebas automatizadas
@@ -475,8 +491,8 @@ CAPITULO 10/
 │       │   ├── Order.java
 │       │   └── OrderItem.java
 │       ├── dto/
-│       │   ├── OrderRequestDTO.java
-│       │   └── OrderResponseDTO.java
+│       │   ├── CreateOrderRequest.java
+│       │   └── OrderResponse.java
 │       ├── saga/
 │       │   └── OrderSagaOrchestrator.java    # ⭐ Lógica del SAGA
 │       ├── client/
@@ -493,11 +509,14 @@ CAPITULO 10/
 │       ├── entity/
 │       │   └── Product.java
 │       ├── dto/
-│       │   └── ReservationRequestDTO.java
+│       │   ├── ReservationRequest.java
+│       │   └── ReservationResponse.java
 │       ├── service/
 │       │   └── InventoryService.java
-│       └── resource/
-│           └── InventoryResource.java
+│       ├── resource/
+│       │   └── InventoryResource.java
+│       └── resources/
+│           └── import.sql              # ⭐ Datos iniciales de productos
 │
 └── 📂 payment-service/             # Servicio de Pagos
     ├── pom.xml
@@ -505,7 +524,8 @@ CAPITULO 10/
         ├── entity/
         │   └── Payment.java
         ├── dto/
-        │   └── PaymentRequestDTO.java
+        │   ├── PaymentRequest.java
+        │   └── PaymentResponse.java
         ├── service/
         │   └── PaymentService.java
         └── resource/
@@ -596,39 +616,66 @@ Connection refused: localhost:5433
 **Solución:**
 ```bash
 # Ver logs de PostgreSQL
-docker-compose logs postgres-db
+docker-compose logs postgres
 
 # Reiniciar contenedor
-docker-compose restart postgres-db
+docker-compose restart postgres
 
 # Esperar 10 segundos y reintentar
 ```
 
 ---
 
-### Problema 4: No hay productos en la base de datos
+### Problema 4: Contenedor ya existe con el mismo nombre
+
+**Error:**
+```
+Conflict. The container name "/postgres-db" is already in use
+```
+
+**Solución:**
+```bash
+# Detener y eliminar contenedores existentes
+docker stop postgres-db redis-cache 2>/dev/null
+docker rm postgres-db redis-cache 2>/dev/null
+
+# Levantar de nuevo
+docker-compose up -d
+```
+
+O limpiar todo (incluye volúmenes):
+```bash
+docker-compose down -v
+docker-compose up -d
+```
+
+---
+
+### Problema 5: No hay productos en la base de datos
 
 **Error:**
 ```
 Producto no encontrado
 ```
 
+**Causa:** El `import.sql` no se ejecutó o el servicio se detuvo antes de cargar.
+
 **Solución:**
-```bash
-# Volver a insertar productos
-docker exec -it postgres-db psql -U postgres -d inventory_db -c "
-INSERT INTO products (productcode, name, stock, reservedstock, price, created_at, updated_at) 
-VALUES 
-  ('LAPTOP-001', 'Laptop HP Pavilion 15', 50, 0, 899.99, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('MOUSE-001', 'Mouse Logitech MX Master', 100, 0, 99.99, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('KEYBOARD-001', 'Teclado Mecánico', 80, 0, 79.99, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT DO NOTHING;
-"
-```
+
+1. **Reiniciar inventory-service** - El archivo `import.sql` se ejecuta cada vez que arranca:
+   ```bash
+   # En la terminal del inventory-service, presiona Ctrl+C y vuelve a ejecutar:
+   mvn quarkus:dev
+   ```
+
+2. **Verificar que los productos existen:**
+   ```bash
+   curl http://localhost:8081/api/inventory/products | jq
+   ```
 
 ---
 
-### Problema 5: Redis Cache no funciona
+### Problema 6: Redis Cache no funciona
 
 **Síntomas:**
 - Todas las consultas tienen la misma latencia
@@ -652,7 +699,7 @@ docker exec -it redis-cache redis-cli
 
 ---
 
-### Problema 6: Compilación falla
+### Problema 7: Compilación falla
 
 **Error:**
 ```
@@ -683,7 +730,7 @@ Ctrl + C
 ### Detener Docker
 
 ```bash
-# Detener contenedores
+# Detener contenedores (mantiene datos)
 docker-compose down
 
 # Detener y eliminar volúmenes (borra datos)
@@ -702,7 +749,6 @@ mvn clean
 ## 📚 Archivos Adicionales
 
 - **TEORIA.md**: Explicación profunda del patrón SAGA, Redis Cache, consistencia eventual, etc.
-- **instructor.md**: Guía para el profesor con soluciones, puntos de evaluación, y extensiones del ejercicio.
 
 ---
 
@@ -716,7 +762,6 @@ Después de completar este ejercicio, habrás implementado:
 ✅ **Redis Cache** para optimizar consultas  
 ✅ **Comunicación REST** entre microservicios  
 ✅ **Manejo de consistencia eventual**  
-✅ **Circuit Breaker** y tolerancia a fallos  
 ✅ **Health checks** y monitoreo básico  
 
 ---
@@ -737,7 +782,7 @@ Si tienes problemas:
 
 Una vez que domines este ejercicio, puedes:
 
-1. **Agregar Grafana/Kibana** para monitoreo avanzado (Capítulo 10 - Parte 3)
+1. **Agregar Grafana/Kibana** para monitoreo avanzado
 2. **Implementar Event Sourcing** como alternativa a SAGA
 3. **Agregar autenticación JWT** entre servicios
 4. **Implementar Circuit Breaker** con Resilience4j

@@ -4,6 +4,7 @@ INSTRUCTOR.md
 
 # Resultados de pruebas
 resultados-*.txt
+benchmark-*.txt
 
 # Archivos temporales
 *.log

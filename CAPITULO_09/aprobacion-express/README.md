@@ -3,12 +3,12 @@
 ## 📋 Tabla de Contenidos
 
 1. [Descripción del Proyecto](#descripción-del-proyecto)
-2. [Pre-requisitos CRÍTICOS](#pre-requisitos-críticos)
-3. [Setup Inicial - PASO A PASO](#setup-inicial---paso-a-paso)
+2. [Requisitos](#requisitos)
+3. [Inicio Rápido](#inicio-rápido)
 4. [Ejecución de Tests Funcionales](#ejecución-de-tests-funcionales)
 5. [Ejecución del Benchmark JVM vs Native](#ejecución-del-benchmark-jvm-vs-native)
-6. [Troubleshooting - PROBLEMAS COMUNES](#troubleshooting---problemas-comunes)
-7. [Conceptos Clave para la Clase](#conceptos-clave-para-la-clase)
+6. [Troubleshooting](#troubleshooting)
+7. [Conceptos Clave](#conceptos-clave)
 
 ---
 
@@ -17,659 +17,441 @@
 Sistema bancario de pre-aprobación crediticia que evalúa solicitudes en menos de 200ms.
 
 **Tecnologías:**
-- Quarkus 3.28.5
+- Quarkus 3.15+
 - PostgreSQL 16
 - Hibernate ORM + Panache
 - REST + Jackson
 - Micrometer (métricas)
 - SmallRye Health
+- GraalVM Native (compilación en Docker)
 
 **Scripts incluidos:**
-- `test-aprobacion.sh` - 13 pruebas funcionales (2-3 min)
-- `benchmark.sh` - Comparación JVM vs Native (15-20 min)
+- `test-aprobacion.sh` - 11 pruebas funcionales (~5 min)
+- `benchmark.sh` - Comparación JVM vs Native (~15 min)
 
 ---
 
-## ⚠️ Pre-requisitos CRÍTICOS
+## ⚠️ Requisitos
 
-### 1. Software Necesario
+### Lo Único que Necesitas: Docker Desktop
 
 ```bash
-# Verificar versiones
-java --version    # Java 17 o superior
-mvn --version     # Maven 3.8+
-docker --version  # Docker Desktop
-curl --version    # Para pruebas HTTP
+# Verificar Docker
+docker --version    # Docker 20+
+docker info         # Debe estar corriendo
 ```
 
-### 2. PostgreSQL - IMPORTANTE ⚠️
+**No necesitas instalar:**
+- ❌ Java (Docker lo incluye)
+- ❌ Maven (Docker lo incluye)
+- ❌ GraalVM (Docker lo incluye)
+- ❌ PostgreSQL (Docker lo levanta)
 
-**PROBLEMA COMÚN:** Si tienes PostgreSQL instalado localmente en tu Mac (con Homebrew), puede causar conflictos de puerto.
+### Verificar Puertos Libres
 
-**Verificar si tienes PostgreSQL local:**
 ```bash
-brew services list | grep postgresql
-ps aux | grep postgres | grep -v grep
-```
+# Mac/Linux
+lsof -i :5432  # Debe estar vacío
+lsof -i :8080  # Debe estar vacío
 
-**Si está corriendo, DETENLO antes de continuar:**
-```bash
-# Detener PostgreSQL local temporalmente
+# Si PostgreSQL local está corriendo, detenerlo:
 brew services stop postgresql@16
-# O cualquier versión que tengas
 brew services stop postgresql
 ```
 
-**¿Por qué?** Porque tanto PostgreSQL local como Docker intentan usar el puerto 5432, causando conflictos.
+### Windows (Git Bash)
 
-### 3. Puertos Requeridos
-
-- **5432** - PostgreSQL (Docker)
-- **8080** - Aplicación Quarkus
-
-**Verificar que estén libres:**
-```bash
-lsof -i :5432  # Debe estar vacío
-lsof -i :8080  # Debe estar vacío
-```
+- Instalar [Docker Desktop para Windows](https://www.docker.com/products/docker-desktop/)
+- Usar Git Bash como terminal
+- Si hay errores de sintaxis en scripts:
+  ```bash
+  sed -i 's/\r$//' test-aprobacion.sh
+  sed -i 's/\r$//' benchmark.sh
+  ```
 
 ---
 
-## 🚀 Setup Inicial - PASO A PASO
+## 🚀 Inicio Rápido
 
-### PASO 1: Clonar y configurar el proyecto
+### Opción A: Todo Automático (Recomendado)
 
 ```bash
-# Navegar al proyecto
+# 1. Ir al proyecto
 cd ~/QUARKUS/"CAPITULO 9"/aprobacion-express
 
-# Verificar estructura
-ls -la
-# Debes ver: src/, pom.xml, test-aprobacion.sh, benchmark.sh
+# 2. Ejecutar pruebas (levanta PostgreSQL + Quarkus automáticamente)
+chmod +x test-aprobacion.sh
+./test-aprobacion.sh --docker
 ```
 
-### PASO 2: Configurar PostgreSQL con Docker
+**Eso es todo.** El script hace todo:
+1. ✅ Levanta PostgreSQL (docker-compose)
+2. ✅ Construye imagen Docker de Quarkus
+3. ✅ Ejecuta 11 pruebas funcionales
+4. ✅ Muestra resultados
+5. ✅ Limpia todo al terminar
 
-**Crear docker-compose.yml:**
+### Opción B: Modo Desarrollo (con Java local)
+
+Si tienes Java 17+ y Maven instalados:
 
 ```bash
-cat > docker-compose.yml << 'DOCKER'
-services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: banco-postgres
-    environment:
-      POSTGRES_DB: banco_credito
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+# 1. Ir al proyecto
+cd ~/QUARKUS/"CAPITULO 9"/aprobacion-express
 
-volumes:
-  postgres_data:
-DOCKER
-```
-
-**Levantar PostgreSQL:**
-
-```bash
-# Iniciar PostgreSQL
-docker-compose up -d
-
-# Esperar a que esté listo (IMPORTANTE)
-sleep 10
-
-# Verificar que está corriendo
-docker ps | grep postgres
-# Debes ver: Up X seconds (healthy)
-
-# Verificar que el usuario existe
-docker exec banco-postgres psql -U postgres -c "SELECT version();"
-# Debe mostrar: PostgreSQL 16.x
-```
-
-**⚠️ SI FALLA con "role postgres does not exist":**
-
-```bash
-# Borrar volumen y recrear
-docker-compose down -v
-sleep 2
-docker-compose up -d
-sleep 10
-docker exec banco-postgres psql -U postgres -c "SELECT version();"
-```
-
-### PASO 3: Verificar application.properties
-
-**CRÍTICO:** El archivo `src/main/resources/application.properties` debe tener estas líneas:
-
-```properties
-quarkus.datasource.db-kind=postgresql
-quarkus.datasource.username=postgres
-quarkus.datasource.password=postgres123
-quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/banco_credito
-```
-
-**Verificar rápidamente:**
-```bash
-grep "quarkus.datasource.username" src/main/resources/application.properties
-# Debe mostrar: quarkus.datasource.username=postgres
+# 2. Ejecutar pruebas (JVM local, más rápido)
+chmod +x test-aprobacion.sh
+./test-aprobacion.sh
 ```
 
 ---
 
 ## 🧪 Ejecución de Tests Funcionales
 
-### Opción A: Con el script automatizado (RECOMENDADO para clase)
+### Comando Principal
 
 ```bash
-# Terminal 1: Iniciar aplicación
-./mvnw quarkus:dev
+# Con Docker (recomendado para Windows)
+./test-aprobacion.sh --docker
 
-# Espera hasta ver:
-# Listening on: http://0.0.0.0:8080
-
-# Terminal 2: Ejecutar tests
-chmod +x test-aprobacion.sh
+# Con JVM local (más rápido, requiere Java + Maven)
 ./test-aprobacion.sh
+
+# Mantener PostgreSQL corriendo al terminar
+./test-aprobacion.sh --keep-db
+./test-aprobacion.sh --docker --keep-db
 ```
 
-**Tiempo estimado:** 2-3 minutos
+### ⏱️ Tiempo Estimado
 
-**Qué hace:**
-1. ✅ Verifica health checks (liveness, readiness)
-2. ✅ Prueba métricas Prometheus
-3. ✅ Crea solicitudes aprobadas y rechazadas
-4. ✅ Valida reglas de negocio
-5. ✅ Genera reporte en .txt
+| Modo | Tiempo |
+|------|--------|
+| JVM local | ~3-4 min |
+| Docker | ~5-6 min |
 
-**Resultado esperado:**
+### Pruebas Incluidas (11 tests)
+
+| # | Prueba | Esperado |
+|---|--------|----------|
+| 1 | Health check - Liveness | 200 OK |
+| 2 | Health check - Readiness | 200 OK |
+| 3 | Estadísticas del sistema | 200 OK |
+| 4 | Cliente perfil excelente | APROBADO |
+| 5 | Cliente con garantía | APROBADO |
+| 6 | Cliente lista negra | RECHAZADO |
+| 7 | Cliente deuda alta | RECHAZADO |
+| 8 | Validación ingreso negativo | 400 Error |
+| 9 | Validación edad mínima | 400 Error |
+| 10 | Consultar solicitud inexistente | 404 Not Found |
+| 11 | Listar solicitudes | 200 OK |
+
+### Resultado Esperado
+
 ```
-╔════════════════════════════════════════════════════════════════╗
-║                    RESULTADOS FINALES                          ║
-╠════════════════════════════════════════════════════════════════╣
-║ Total de pruebas:    13                                        ║
-║ Pruebas exitosas:    13                                        ║
-║ Pruebas fallidas:    0                                         ║
-╚════════════════════════════════════════════════════════════════╝
++--------------------------------------------------------------+
+|                    RESULTADOS FINALES                        |
++--------------------------------------------------------------+
+| Total de pruebas:    11                                      |
+| Pruebas exitosas:    11                                      |
+| Pruebas fallidas:    0                                       |
++--------------------------------------------------------------+
 
-✓ ¡TODAS LAS PRUEBAS PASARON EXITOSAMENTE! 🚀
+[OK] TODAS LAS PRUEBAS PASARON EXITOSAMENTE!
 ```
 
-### Opción B: Manual (para debugging)
+### Archivos Generados
 
 ```bash
-# Terminal 1: Iniciar aplicación
-./mvnw quarkus:dev
-
-# Terminal 2: Probar endpoints manualmente
-curl http://localhost:8080/q/health/ready
-curl http://localhost:8080/api/preaprobacion/estadisticas
+test-report-2025-11-24-HHMMSS.txt    # Reporte detallado
 ```
-
-**⚠️ NOTA IMPORTANTE:** Observa que las URLs usan el prefijo `/q/` - esto es específico de Quarkus.
 
 ---
 
 ## 📊 Ejecución del Benchmark JVM vs Native
 
-### Pre-requisitos para el Benchmark
+### ¿Qué Hace el Benchmark?
 
-**IMPORTANTE:** El benchmark requiere GraalVM para compilar Native.
+Compara **JVM vs Native**, ambos en Docker:
 
-#### Instalar GraalVM con SDKMAN (macOS/Linux)
+1. Levanta PostgreSQL automáticamente
+2. Construye imagen JVM (`Dockerfile.jvm`)
+3. Mide: arranque, memoria, throughput
+4. Construye imagen Native (`Dockerfile.native`) - **GraalVM incluido**
+5. Mide: arranque, memoria, throughput
+6. Muestra tabla comparativa
 
-```bash
-# 1. Instalar SDKMAN
-curl -s "https://get.sdkman.io" | bash
-source "$HOME/.sdkman/bin/sdkman-init.sh"
+**No necesitas instalar GraalVM.** Docker lo incluye en la imagen de build.
 
-# 2. Verificar instalación
-sdk version
-
-# 3. Instalar GraalVM 21
-sdk install java 21.0.1-graalce
-
-# Cuando pregunte "set as default": responde "n" (no)
-
-# 4. Activar GraalVM en la terminal actual
-sdk use java 21.0.1-graalce
-
-# 5. Verificar instalación
-java -version
-# Debe decir: "GraalVM CE 21.0.1"
-
-native-image --version
-# Debe mostrar: "native-image 21.0.1"
-```
-
-### Ejecutar el Benchmark
+### Comando
 
 ```bash
-# 1. Asegurarse que PostgreSQL esté corriendo
-docker ps | grep postgres
-
-# 2. Si tienes PostgreSQL local, detenerlo
-brew services stop postgresql@16
-
-# 3. Dar permisos al script
+# Dar permisos (solo la primera vez)
 chmod +x benchmark.sh
 
-# 4. Ejecutar benchmark completo
+# Ejecutar con 500 requests (por defecto)
 ./benchmark.sh
+
+# Ejecutar con más requests
+./benchmark.sh 1000
 ```
 
-**Tiempo estimado:** 15-20 minutos
+### ⏱️ Tiempo Estimado
 
-**Fases del benchmark:**
-1. **Fase 1:** Compilación JVM (~10 segundos)
-2. **Fase 2:** Pruebas JVM (~2 minutos)
-3. **Fase 3:** Compilación Native (~8-10 minutos) ⏳ LA MÁS LENTA
-4. **Fase 4:** Pruebas Native (~2 minutos)
-5. **Fase 5:** Comparativa final (instantáneo)
+| Fase | Tiempo |
+|------|--------|
+| Build JVM | ~1-2 min |
+| Pruebas JVM | ~1 min |
+| **Build Native** | **5-10 min** (GraalVM compila dentro de Docker) |
+| Pruebas Native | ~1 min |
+| **Total** | **~10-15 min** |
 
-**Durante la compilación Native es NORMAL que:**
-- CPU llegue al 100%
-- Ventilador suene fuerte
+### Durante la Compilación Native es NORMAL que:
+- El proceso tarde varios minutos
 - Parezca "pegado" en algunos pasos
 - **NO INTERRUMPIR**
 
-**Resultado esperado:**
+### Resultado Esperado
 
 ```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                     RESULTADOS DEL BENCHMARK                                 ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║ MÉTRICA                     │      JVM MODE       │    NATIVE MODE            ║
-╠═════════════════════════════╪═════════════════════╪═══════════════════════════╣
-║ Tiempo de compilación       │  7-10s              │  87-96s                   ║
-║ Tiempo de arranque          │  2-3s               │  2-3s                     ║
-║ Uso de memoria (RSS)        │  245-275 MB         │  68 MB                    ║
-║ Throughput                  │  33 req/s           │  50-100 req/s             ║
-║ Tamaño del artefacto        │  JAR + JVM          │  91 MB                    ║
-╚══════════════════════════════════════════════════════════════════════════════╝
++------------------------------------------------------------------------------+
+|                        RESULTADOS DEL BENCHMARK                              |
+|                        (500 requests)                                        |
++------------------------------------------------------------------------------+
+| METRICA                     | JVM (Docker)       | NATIVE (Docker)    |
++------------------------------------------------------------------------------+
+| Tiempo de build             |                37s |               199s |
+| Tiempo de arranque          |            1808 ms |             127 ms |
+| Uso de memoria              |             238 MB |              17 MB |
+| Throughput                  |           50 req/s |           71 req/s |
+| Tamano imagen               |             705 MB |             430 MB |
++------------------------------------------------------------------------------+
+
+ANALISIS:
+1. BUILD: Native 5x mas lento (pero solo una vez en CI/CD)
+2. ARRANQUE: Native 14x MAS RAPIDO
+3. MEMORIA: Native usa 92% MENOS
+4. THROUGHPUT: Rendimiento similar
+
+   *** NATIVE CLARAMENTE SUPERIOR para produccion ***
+
+AHORRO (50 microservicios):
+   JVM: 11900 MB (~11 GB)
+   Native: 850 MB (~0 GB)
+   Ahorro: ~10 GB
 ```
 
-**Interpretación:**
-- ✅ Native usa **60-75% menos memoria**
-- ✅ Native tiene **50-200% más throughput**
-- ✅ JVM compila **10-13x más rápido**
-- ✅ Arranque similar en apps pequeñas (Native gana en apps grandes)
-
----
-
-## 🐛 Troubleshooting - PROBLEMAS COMUNES
-
-### ⚠️ PROBLEMA CRÍTICO: URLs de Quarkus
-
-**Quarkus expone los health checks y métricas con prefijo `/q/`:**
-
-| ❌ URL INCORRECTA | ✅ URL CORRECTA |
-|-------------------|-----------------|
-| `/health/ready` | `/q/health/ready` |
-| `/health/live` | `/q/health/live` |
-| `/metrics` | `/q/metrics` |
-| `/health` | `/q/health` |
-
-**Si tus scripts fallan con 404, verifica las URLs:**
+### Archivos Generados
 
 ```bash
-# Verificar URLs en test-aprobacion.sh
-grep "health\|metrics" test-aprobacion.sh
-
-# Deben mostrar /q/ en las rutas:
-# ${BASE_URL}/q/health/ready
-# ${BASE_URL}/q/metrics
+benchmark-report-2025-11-24-HHMMSS.txt    # Reporte completo
 ```
 
 ---
 
-### Problema 1: "role postgres does not exist"
+## 🐛 Troubleshooting
 
-**Síntoma:**
-```
-FATAL: role "postgres" does not exist
-```
+### Error: "Docker no esta corriendo"
 
-**Causa:** El volumen de Docker tiene datos viejos o el contenedor no se inicializó correctamente.
-
-**Solución:**
 ```bash
-# Borrar volumen y recrear desde cero
-docker-compose down -v
-sleep 2
-docker-compose up -d
-sleep 10
-docker exec banco-postgres psql -U postgres -c "SELECT version();"
+# Solución: Iniciar Docker Desktop
+# Windows: Buscar "Docker Desktop" en menú inicio
+# Mac: Abrir Docker Desktop desde Applications
+
+# Verificar
+docker info
 ```
 
----
+### Error en Windows: "syntax error near unexpected token"
 
-### Problema 2: Conflicto de puerto 5432
-
-**Síntoma:**
-```
-Error: port is already allocated
-```
-
-**Causa:** PostgreSQL local está corriendo.
-
-**Solución:**
 ```bash
-# Detener PostgreSQL local
+# El archivo tiene finales de línea Windows (CRLF)
+# Solución: Convertir a Unix (LF)
+sed -i 's/\r$//' benchmark.sh
+sed -i 's/\r$//' test-aprobacion.sh
+```
+
+### Error: "port 5432 already in use"
+
+```bash
+# PostgreSQL local está corriendo
+# Mac:
 brew services stop postgresql@16
 brew services stop postgresql
 
-# Verificar que el puerto esté libre
-lsof -i :5432
-# No debe mostrar nada
-
-# Reiniciar Docker
-docker-compose down
-docker-compose up -d
+# Verificar
+lsof -i :5432  # Debe estar vacío
 ```
 
----
+### Error: "port 8080 already in use"
 
-### Problema 3: "Failed to connect to localhost port 8080" o "404 Not Found"
-
-**Síntoma:**
-```
-curl: (7) Failed to connect to localhost port 8080
-# O
-404 - Resource Not Found
-```
-
-**Causas posibles:**
-1. La aplicación no está corriendo
-2. Estás usando URLs sin el prefijo `/q/`
-
-**Solución:**
 ```bash
-# 1. Verificar que la app esté corriendo
+# Algo está usando el puerto
+# Mac/Linux:
 lsof -i :8080
-# Debe mostrar el proceso Java
+kill -9 <PID>
 
-# 2. Usar la URL CORRECTA con /q/
-curl http://localhost:8080/q/health/ready
-
-# 3. Si los scripts fallan, verificar que usen /q/ en las URLs
-grep "/health\|/metrics" test-aprobacion.sh
-# Debe mostrar: /q/health/ready, /q/metrics
+# Windows (PowerShell):
+netstat -ano | findstr :8080
+taskkill /F /PID <PID>
 ```
 
----
+### Error: "PostgreSQL no responde"
 
-### Problema 4: "exec format error" en Native
-
-**Síntoma:**
-```
-zsh: exec format error: ./target/aprobacion-express-1.0.0-runner
-```
-
-**Causa:** El ejecutable Native se compiló para Linux (con Docker) pero estás en macOS.
-
-**Solución:**
 ```bash
-# Instalar GraalVM localmente (ver sección anterior)
-sdk install java 21.0.1-graalce
-sdk use java 21.0.1-graalce
+# Verificar contenedor
+docker ps | grep postgres
 
-# Recompilar sin Docker
-./mvnw clean package -Pnative -DskipTests
+# Ver logs
+docker logs banco-postgres
+
+# Reiniciar
+docker-compose down -v
+docker-compose up -d
+sleep 10
 ```
 
----
+### Build Native muy lento (>15 min)
 
-### Problema 5: Test script no encuentra el servicio
-
-**Síntoma:**
-```
-El servicio no está disponible en http://localhost:8080
-```
-
-**Causa:** Olvidaste iniciar la aplicación antes de ejecutar el test.
-
-**Solución:**
 ```bash
-# Terminal 1: Iniciar aplicación
-./mvnw quarkus:dev
-
-# Esperar a que arranque (ver mensaje "Listening on")
-
-# Terminal 2: Ejecutar tests (DESPUÉS de que arranque)
-./test-aprobacion.sh
+# Normal en primera ejecución (descarga imágenes grandes)
+# Verificar recursos de Docker Desktop:
+# Settings → Resources → Memory: mínimo 4GB
+# Settings → Resources → CPUs: mínimo 2
 ```
 
----
+### Error: "Dockerfile.native not found"
 
-### Problema 6: Benchmark falla en JVM
-
-**Síntoma:**
-Benchmark se queda esperando en "Esperando que el servicio esté listo..."
-
-**Causa:** El JAR tiene configuraciones viejas empaquetadas o las URLs son incorrectas.
-
-**Solución:**
 ```bash
-# Limpiar completamente
-rm -rf target/
-rm -rf ~/.m2/repository/pe/banco/
+# Verificar que existan los Dockerfiles
+ls -la src/main/docker/
 
-# Recompilar desde cero
-./mvnw clean package -DskipTests
-
-# Probar que funciona
-java -jar target/quarkus-app/quarkus-run.jar
-
-# Si arranca OK, detenerlo (Ctrl+C) y ejecutar benchmark
-./benchmark.sh
+# Deben existir:
+# - Dockerfile.jvm (multi-stage)
+# - Dockerfile.native (multi-stage con GraalVM)
 ```
 
 ---
 
-## 🎓 Conceptos Clave para la Clase
+## 🎓 Conceptos Clave
 
-### 1. Dev Services vs JAR Empaquetado
+### 1. ¿Por qué Docker para Todo?
 
-**⚠️ CONCEPTO CRÍTICO para entender por qué a veces funciona y a veces no:**
+| Antes | Ahora |
+|-------|-------|
+| Instalar Java 17 | ❌ Docker lo incluye |
+| Instalar Maven | ❌ Docker lo incluye |
+| Instalar GraalVM + native-image | ❌ Docker lo incluye |
+| Instalar PostgreSQL | ❌ Docker lo incluye |
+| Configurar JAVA_HOME, PATH | ❌ No necesario |
 
-#### Con `./mvnw quarkus:dev` (Modo Desarrollo)
+**Ventaja:** Funciona igual en Mac, Windows y Linux.
 
-```
-┌─────────────────────────────────────────┐
-│  ./mvnw quarkus:dev                     │
-│                                         │
-│  Dev Services (AUTOMÁTICO):             │
-│  - Detecta que necesitas PostgreSQL    │
-│  - IGNORA application.properties        │
-│  - Levanta PostgreSQL en Docker         │
-│  - Configura todo automáticamente       │
-│  - Lo destruye al terminar              │
-│                                         │
-│  ✅ SIEMPRE FUNCIONA                    │
-│  ✅ NO necesitas docker-compose         │
-│  ✅ NO importa qué usuario/password     │
-└─────────────────────────────────────────┘
-```
-
-#### Con `java -jar` (JAR Empaquetado)
+### 2. Dockerfiles Multi-Stage
 
 ```
-┌─────────────────────────────────────────┐
-│  java -jar app.jar                      │
-│                                         │
-│  Sin Dev Services:                      │
-│  - Lee application.properties           │
-│  - Se conecta a la URL configurada      │
-│  - NECESITA que PostgreSQL exista       │
-│  - FALLA si no hay BD                   │
-│                                         │
-│  ❌ Requiere PostgreSQL externo         │
-│  ✅ Usar docker-compose                 │
-│  ⚠️  Credenciales deben coincidir       │
-└─────────────────────────────────────────┘
+Dockerfile.jvm:
+┌─────────────────────────────────┐
+│ STAGE 1: maven + JDK           │ → Compila con Maven
+│ STAGE 2: JRE Alpine            │ → Solo runtime + JAR
+└─────────────────────────────────┘
+Resultado: ~400 MB, arranque ~2s
+
+Dockerfile.native:
+┌─────────────────────────────────┐
+│ STAGE 1: GraalVM Mandrel       │ → Compila a binario nativo
+│ STAGE 2: UBI Minimal           │ → Solo binario
+└─────────────────────────────────┘
+Resultado: ~165 MB, arranque ~0.1s
 ```
-
-**Por eso:**
-- `test-aprobacion.sh` funciona siempre (usa `quarkus:dev`)
-- `benchmark.sh` requiere docker-compose (usa `java -jar`)
-
-### 2. ¿Por qué usar docker-compose?
-
-**Analogía:** Imagina que necesitas una impresora:
-
-- **Dev Services** = Impresora que aparece mágicamente cuando la necesitas y desaparece al terminar
-- **docker-compose** = Impresora que instalas una vez y la usas cuando quieras
-
-**Casos de uso:**
-- Desarrollo rápido → Dev Services ✅
-- Benchmarks, CI/CD, producción → docker-compose ✅
 
 ### 3. JVM vs Native - ¿Cuándo usar cada uno?
 
 | Criterio | JVM | Native |
 |----------|-----|--------|
-| **Desarrollo local** | ✅ Recomendado | ❌ Compilación lenta |
-| **Arranque rápido** | ❌ 2-3 segundos | ✅ <1 segundo |
-| **Memoria** | ❌ 200-300 MB | ✅ 50-80 MB |
-| **Cloud/Contenedores** | ⚠️ Costoso | ✅ Ahorro significativo |
-| **Serverless (Lambda)** | ❌ No viable | ✅ Ideal |
+| **Desarrollo local** | ✅ Hot reload | ❌ Compilación lenta |
+| **Arranque** | ❌ 2-3 segundos | ✅ <0.2 segundos |
+| **Memoria** | ❌ 200-300 MB | ✅ 15-50 MB |
+| **Cloud/K8s** | ⚠️ Costoso | ✅ Ahorro 70-90% |
+| **Serverless** | ❌ Cold start malo | ✅ Ideal |
 | **Debugging** | ✅ Completo | ⚠️ Limitado |
 
 ### 4. Endpoints de Quarkus
 
-**IMPORTANTE:** Quarkus usa el prefijo `/q/` para endpoints de framework:
-
 ```bash
-# Health checks
-curl http://localhost:8080/q/health          # Estado general
-curl http://localhost:8080/q/health/live     # Liveness probe
-curl http://localhost:8080/q/health/ready    # Readiness probe
+# Health checks (prefijo /q/)
+curl http://localhost:8080/q/health/ready
+curl http://localhost:8080/q/health/live
 
 # Métricas
-curl http://localhost:8080/q/metrics         # Prometheus metrics
+curl http://localhost:8080/q/metrics
 
-# Dev UI (solo en modo dev)
-http://localhost:8080/q/dev                  # Dev UI
-```
-
-**Tus endpoints de negocio NO usan `/q/`:**
-```bash
+# Tu API (sin /q/)
 curl http://localhost:8080/api/preaprobacion/estadisticas
-```
-
----
-
-## 📚 Para Después de la Clase
-
-### Reactivar PostgreSQL Local
-
-Después del benchmark, si necesitas tu PostgreSQL local de nuevo:
-
-```bash
-# Detener Docker
-docker-compose down
-
-# Reiniciar PostgreSQL local
-brew services start postgresql@16
-```
-
-### Desinstalar GraalVM (si quieres)
-
-```bash
-# Ver versiones instaladas
-sdk list java
-
-# Desinstalar GraalVM
-sdk uninstall java 21.0.1-graalce
-
-# Volver a tu Java normal
-sdk default java
-```
-
-### Limpiar Todo
-
-```bash
-# Detener y eliminar contenedores + volúmenes
-docker-compose down -v
-
-# Limpiar builds de Maven
-./mvnw clean
-
-# Eliminar logs temporales
-rm /tmp/build-*.log
-rm /tmp/*-run.log
 ```
 
 ---
 
 ## 🎯 Checklist Pre-Clase
 
-Antes de tu clase, verifica:
-
-- [ ] PostgreSQL local detenido: `brew services stop postgresql@16`
-- [ ] Docker Desktop corriendo
-- [ ] Puerto 5432 libre: `lsof -i :5432` (vacío)
-- [ ] Puerto 8080 libre: `lsof -i :8080` (vacío)
-- [ ] PostgreSQL Docker levantado: `docker-compose up -d`
-- [ ] Usuario postgres existe: `docker exec banco-postgres psql -U postgres -c "SELECT 1;"`
-- [ ] Scripts con permisos: `chmod +x test-aprobacion.sh benchmark.sh`
-- [ ] GraalVM activado (si harás benchmark): `sdk use java 21.0.1-graalce`
-- [ ] Test funciona: `./test-aprobacion.sh` debe dar 13/13 ✅
-- [ ] URLs correctas en scripts: `grep "/q/health" test-aprobacion.sh`
-
----
-
-## 🆘 Si Algo Sale Mal en Clase
-
-**PLAN B - Alternativa Segura:**
-
-Si el benchmark da problemas:
-
-1. **Ejecuta solo test-aprobacion.sh** (99% confiable)
-2. **Muestra resultados pre-generados del benchmark** (los que tienes guardados)
-3. **Explica teoría con slides** en lugar de demo en vivo
-
-**Comandos de Emergencia:**
-
-```bash
-# Resetear TODO
-docker-compose down -v
-docker-compose up -d
-sleep 10
-./mvnw clean
-pkill -f quarkus
-
-# Verificar estado
-docker ps
-lsof -i :5432
-lsof -i :8080
+```
+□ Docker Desktop corriendo: docker info
+□ Puertos libres: lsof -i :5432 && lsof -i :8080
+□ PostgreSQL local detenido (si aplica)
+□ Scripts con permisos: chmod +x *.sh
+□ Test funciona: ./test-aprobacion.sh --docker
+□ (Opcional) Benchmark probado: ./benchmark.sh 500
 ```
 
 ---
 
-## Recursos
+## 📚 Archivos del Proyecto
+
+```
+aprobacion-express/
+├── docker-compose.yml              # PostgreSQL
+├── src/main/docker/
+│   ├── Dockerfile.jvm              # Build JVM (multi-stage)
+│   └── Dockerfile.native           # Build Native (GraalVM incluido)
+├── benchmark.sh                    # Comparativa JVM vs Native
+├── test-aprobacion.sh              # Pruebas funcionales
+├── README.md                       # Esta guía
+├── TEORIA.md                       # Conceptos teóricos
+├── INSTRUCTOR.md                   # Guía del profesor
+└── GUIA-SCRIPTS-DOCKER.md          # Guía detallada de scripts
+```
+
+---
+
+## 🆘 Si Algo Sale Mal
+
+**Plan B - Alternativa Segura:**
+
+```bash
+# 1. Resetear TODO
+docker-compose down -v
+docker system prune -f
+
+# 2. Reintentar
+docker-compose up -d
+sleep 10
+./test-aprobacion.sh --docker
+```
+
+**Si el benchmark falla:**
+1. Ejecuta solo `test-aprobacion.sh` (más confiable)
+2. Muestra resultados pre-generados del benchmark
+3. Explica teoría con slides
+
+---
+
+## 📞 Recursos
 
 - **Documentación Quarkus:** https://quarkus.io/guides/
 - **GraalVM:** https://www.graalvm.org
-
-
----
-
-## 📄 Licencia
-
-[Tu licencia aquí]
+- **Docker:** https://docs.docker.com
 
 ---
 
-**Última actualización:** 2025-10-23  
-**Versión:** 1.0.1  
-**Autor:** NETEC
+**Última actualización:** 2025-11-24  
+**Versión:** 2.0.0  
+**Compatibilidad:** macOS, Windows (Git Bash), Linux

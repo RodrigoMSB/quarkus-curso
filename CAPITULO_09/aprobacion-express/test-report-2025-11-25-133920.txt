@@ -1,0 +1,35 @@
+================================================================================
+REPORTE DE PRUEBAS FUNCIONALES
+Sistema de Pre-Aprobacion Crediticia Express
+================================================================================
+
+Fecha de ejecucion: 2025-11-25 13:39:20
+Sistema operativo: macOS
+Modo Quarkus: JVM Local
+Microservicio: http://localhost:8080
+Version: test-aprobacion.sh v2.2
+
+================================================================================
+
+
+============================================================================
+PRUEBAS FUNCIONALES - SISTEMA DE PRE-APROBACION CREDITICIA
+============================================================================
+
+
+============================================================================
+FASE 0: ARRANQUE DE INFRAESTRUCTURA
+============================================================================
+
+
+>>> Verificando requisitos
+
+[ERROR] Docker no esta corriendo. Inicia Docker Desktop.
+[WARN] Limpiando recursos...
+
+>>> Deteniendo Quarkus
+
+
+>>> Deteniendo PostgreSQL
+
+[OK] PostgreSQL detenido

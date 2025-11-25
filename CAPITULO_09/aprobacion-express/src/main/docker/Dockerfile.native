@@ -1,29 +1,20 @@
-####
-# This Dockerfile is used in order to build a container that runs the Quarkus application in native (no JVM) mode.
-#
-# Before building the container image run:
-#
-# ./mvnw package -Dnative
-#
-# Then, build the image with:
-#
-# docker build -f src/main/docker/Dockerfile.native -t quarkus/aprobacion-express .
-#
-# Then run the container using:
-#
-# docker run -i --rm -p 8080:8080 quarkus/aprobacion-express
-#
-# The ` registry.access.redhat.com/ubi9/ubi-minimal:9.6` base image is based on UBI 9.
-# To use UBI 8, switch to `quay.io/ubi8/ubi-minimal:8.10`.
-###
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6
-WORKDIR /work/
-RUN chown 1001 /work \
-    && chmod "g+rwX" /work \
-    && chown 1001:root /work
-COPY --chown=1001:root --chmod=0755 target/*-runner /work/application
+# STAGE 1: NATIVE BUILD
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+WORKDIR /app
+COPY --chown=quarkus:quarkus pom.xml .
+COPY --chown=quarkus:quarkus mvnw .
+COPY --chown=quarkus:quarkus .mvn .mvn
+RUN ./mvnw dependency:go-offline -B
+COPY --chown=quarkus:quarkus src ./src
+RUN ./mvnw package -Pnative -DskipTests -B
 
+# STAGE 2: RUNTIME
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5
+WORKDIR /work
+RUN microdnf install -y tzdata && microdnf clean all
+RUN useradd -r -u 1001 -g 0 quarkus
+COPY --from=build --chown=quarkus:root /app/target/*-runner /work/application
+RUN chmod 775 /work/application
+USER quarkus
 EXPOSE 8080
-USER 1001
-
 ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0"]

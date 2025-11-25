@@ -3,7 +3,7 @@
 # ============================================================================
 # SCRIPT DE PRUEBAS FUNCIONALES - SISTEMA E-COMMERCE CON SAGA Y REDIS
 # ============================================================================
-# COMPATIBLE CON: Windows (Git Bash/WSL), macOS, Linux
+# COMPATIBLE CON: Windows (Git Bash), macOS, Linux
 #
 # Este script prueba el patrón SAGA, Redis Cache y los 3 microservicios
 # y genera un reporte detallado en formato .txt
@@ -32,7 +32,7 @@ ORDER_SERVICE="http://localhost:8080"
 INVENTORY_SERVICE="http://localhost:8081"
 PAYMENT_SERVICE="http://localhost:8082"
 
-# Colores para output
+# Colores para output (compatibles con Git Bash)
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -42,17 +42,15 @@ CYAN='\033[0;36m'
 WHITE='\033[1;37m'
 NC='\033[0m'
 
-# Emojis
-CHECK="✅"
-CROSS="❌"
-INFO="ℹ️"
-ROCKET="🚀"
-PACKAGE="📦"
-MONEY="💳"
-CACHE="⚡"
-WARNING="⚠️"
-FIRE="🔥"
-CHART="📊"
+# Emojis (se muestran en terminales con soporte UTF-8)
+CHECK="[OK]"
+CROSS="[FAIL]"
+INFO="[i]"
+ROCKET=">>>"
+PACKAGE="[P]"
+CACHE="[C]"
+WARNING="[!]"
+CHART="[R]"
 
 # Contadores
 TESTS_PASSED=0
@@ -64,6 +62,23 @@ TIMESTAMP=$(date +"%Y-%m-%d-%H%M%S")
 REPORT_FILE="test-saga-report-${TIMESTAMP}.txt"
 
 # ----------------------------------------------------------------------------
+# DETECCIÓN DE SISTEMA OPERATIVO
+# ----------------------------------------------------------------------------
+
+detect_os() {
+    case "$OSTYPE" in
+        linux*)   echo "linux" ;;
+        darwin*)  echo "macos" ;;
+        msys*)    echo "windows" ;;
+        cygwin*)  echo "windows" ;;
+        mingw*)   echo "windows" ;;
+        *)        echo "unknown" ;;
+    esac
+}
+
+CURRENT_OS=$(detect_os)
+
+# ----------------------------------------------------------------------------
 # FUNCIONES AUXILIARES
 # ----------------------------------------------------------------------------
 
@@ -71,20 +86,54 @@ REPORT_FILE="test-saga-report-${TIMESTAMP}.txt"
 pause() {
     echo ""
     log_file ""
-    read -p "Presiona ENTER para continuar..."
+    read -r -p "Presiona ENTER para continuar..."
     echo ""
     log_file ""
 }
 
-# Función para medir tiempo (portable macOS/Linux)
+# Función para medir tiempo en milisegundos
+# COMPATIBLE CON: macOS, Linux, Windows Git Bash
 get_time_ms() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS
-        python3 -c 'import time; print(int(time.time() * 1000))'
-    else
-        # Linux
-        date +%s%3N
+    local ms=""
+    
+    # Método 1: GNU date (Linux nativo)
+    if [[ "$CURRENT_OS" == "linux" ]]; then
+        ms=$(date +%s%3N 2>/dev/null)
+        if [[ "$ms" =~ ^[0-9]{13,}$ ]]; then
+            echo "$ms"
+            return
+        fi
     fi
+    
+    # Método 2: perl con Time::HiRes (macOS viene con perl)
+    if command -v perl &> /dev/null; then
+        ms=$(perl -MTime::HiRes=time -e 'printf "%.0f\n", time * 1000' 2>/dev/null)
+        if [[ "$ms" =~ ^[0-9]+$ ]]; then
+            echo "$ms"
+            return
+        fi
+    fi
+    
+    # Método 3: python3 
+    if command -v python3 &> /dev/null; then
+        ms=$(python3 -c 'import time; print(int(time.time() * 1000))' 2>/dev/null)
+        if [[ "$ms" =~ ^[0-9]+$ ]]; then
+            echo "$ms"
+            return
+        fi
+    fi
+    
+    # Método 4: python (algunos sistemas solo tienen python)
+    if command -v python &> /dev/null; then
+        ms=$(python -c 'import time; print(int(time.time() * 1000))' 2>/dev/null)
+        if [[ "$ms" =~ ^[0-9]+$ ]]; then
+            echo "$ms"
+            return
+        fi
+    fi
+    
+    # Fallback: segundos * 1000 (menos preciso pero siempre funciona)
+    echo $(($(date +%s) * 1000))
 }
 
 # ----------------------------------------------------------------------------
@@ -92,24 +141,24 @@ get_time_ms() {
 # ----------------------------------------------------------------------------
 
 # Función para hacer request GET
-# FUNCIONA EN: Windows (Git Bash), macOS, Linux
 do_curl_get() {
     local url=$1
     curl -s -w "\n---HTTP_CODE---\n%{http_code}" "$url" 2>/dev/null
 }
 
 # Función para hacer request POST con JSON
-# FUNCIONA EN: Windows (Git Bash), macOS, Linux
 # Usa archivo temporal + printf para evitar problemas con echo en Windows
 do_curl_post() {
     local url=$1
     local json_data=$2
     
     if [ -n "$json_data" ]; then
-        local temp_file=$(mktemp)
+        local temp_file
+        temp_file=$(mktemp)
         printf '%s' "$json_data" > "$temp_file"
         
-        local response=$(curl -s -w "\n---HTTP_CODE---\n%{http_code}" \
+        local response
+        response=$(curl -s -w "\n---HTTP_CODE---\n%{http_code}" \
             -X POST \
             -H "Content-Type: application/json" \
             --data-binary "@$temp_file" \
@@ -166,34 +215,52 @@ print_section() {
 
 print_success() {
     echo -e "${GREEN}${CHECK} $1${NC}"
-    log_file "✓ $1"
+    log_file "[OK] $1"
 }
 
 print_error() {
     echo -e "${RED}${CROSS} $1${NC}"
-    log_file "✗ $1"
+    log_file "[FAIL] $1"
 }
 
 print_info() {
     echo -e "${BLUE}${INFO} $1${NC}"
-    log_file "ℹ $1"
+    log_file "[i] $1"
 }
 
 print_warning() {
     echo -e "${YELLOW}${WARNING} $1${NC}"
-    log_file "⚠ $1"
+    log_file "[!] $1"
 }
 
+# Función para formatear JSON (con fallbacks)
 format_json() {
+    local input="$1"
+    
+    # Intentar jq primero (mejor formato)
     if command -v jq &> /dev/null; then
-        echo "$1" | jq '.' 2>/dev/null || echo "$1"
-    elif command -v python3 &> /dev/null; then
-        echo "$1" | python3 -m json.tool 2>/dev/null || echo "$1"
-    elif command -v python &> /dev/null; then
-        echo "$1" | python -m json.tool 2>/dev/null || echo "$1"
-    else
-        echo "$1"
+        echo "$input" | jq '.' 2>/dev/null && return
     fi
+    
+    # Intentar python3
+    if command -v python3 &> /dev/null; then
+        echo "$input" | python3 -m json.tool 2>/dev/null && return
+    fi
+    
+    # Intentar python
+    if command -v python &> /dev/null; then
+        echo "$input" | python -m json.tool 2>/dev/null && return
+    fi
+    
+    # Sin formato disponible, mostrar tal cual
+    echo "$input"
+}
+
+# Función para contar ocurrencias (compatible cross-platform)
+count_occurrences() {
+    local text="$1"
+    local pattern="$2"
+    echo "$text" | grep -o "$pattern" | wc -l | tr -d ' '
 }
 
 run_test() {
@@ -220,27 +287,27 @@ run_test() {
 cat > "$REPORT_FILE" << HEADER
 ================================================================================
 REPORTE DE PRUEBAS FUNCIONALES
-Sistema E-Commerce con Patrón SAGA y Redis Cache
+Sistema E-Commerce con Patron SAGA y Redis Cache
 ================================================================================
 
-Fecha de ejecución: $(date +"%Y-%m-%d %H:%M:%S")
+Fecha de ejecucion: $(date +"%Y-%m-%d %H:%M:%S")
+Sistema operativo: ${CURRENT_OS}
 Servicios bajo prueba:
   - Order Service:     ${ORDER_SERVICE}
   - Inventory Service: ${INVENTORY_SERVICE}
   - Payment Service:   ${PAYMENT_SERVICE}
 
 Generado por: test-saga.sh
-Sistema operativo: $(uname -s 2>/dev/null || echo "Windows")
 
 Este reporte contiene los resultados de las pruebas funcionales del sistema
-de microservicios con patrón SAGA para transacciones distribuidas y Redis
+de microservicios con patron SAGA para transacciones distribuidas y Redis
 para caching, incluyendo:
   - Health checks de los 3 microservicios
-  - Verificación de productos disponibles
-  - SAGA exitosa (Reservar → Pagar → Confirmar)
-  - Redis Cache (medición de latencia y mejora de rendimiento)
-  - SAGA con compensación (Stock insuficiente)
-  - Verificación de rollback
+  - Verificacion de productos disponibles
+  - SAGA exitosa (Reservar -> Pagar -> Confirmar)
+  - Redis Cache (medicion de latencia y mejora de rendimiento)
+  - SAGA con compensacion (Stock insuficiente)
+  - Verificacion de rollback
 
 ================================================================================
 
@@ -248,24 +315,28 @@ HEADER
 
 print_header "${ROCKET} PRUEBAS FUNCIONALES - SAGA CON REDIS"
 
+echo ""
+echo "Sistema operativo detectado: ${CURRENT_OS}"
+echo ""
+
 cat << 'INTRO' | tee -a "$REPORT_FILE"
 
 PRUEBAS INCLUIDAS:
    1. Health Checks de los 3 servicios
-   2. Verificación de productos disponibles
+   2. Verificacion de productos disponibles
    3. SAGA exitosa (orden con stock suficiente)
-   4. Redis Cache - Medición de rendimiento
+   4. Redis Cache - Medicion de rendimiento
       - Cache MISS (primera consulta desde PostgreSQL)
       - Cache HIT (consultas subsecuentes desde Redis)
-      - Comparación de latencias
-   5. SAGA con compensación (stock insuficiente)
-   6. Verificación de rollback del inventario
+      - Comparacion de latencias
+   5. SAGA con compensacion (stock insuficiente)
+   6. Verificacion de rollback del inventario
 
 CASOS DE PRUEBA:
-   ✅ Orden con stock disponible → SAGA COMPLETA → Status: COMPLETED
-   ✅ Cache Redis → Verificar mejora de rendimiento
-   ❌ Orden con stock insuficiente → COMPENSACIÓN SAGA → Status: FAILED
-   ✅ Inventario liberado después de compensación
+   [OK] Orden con stock disponible -> SAGA COMPLETA -> Status: COMPLETED
+   [OK] Cache Redis -> Verificar mejora de rendimiento
+   [FAIL] Orden con stock insuficiente -> COMPENSACION SAGA -> Status: FAILED
+   [OK] Inventario liberado despues de compensacion
 
 INTRO
 
@@ -319,7 +390,7 @@ http_code=$(extract_code "$response")
 body=$(extract_body "$response")
 
 if [ "$http_code" == "200" ]; then
-    product_count=$(echo "$body" | grep -o "productCode" | wc -l)
+    product_count=$(count_occurrences "$body" "productCode")
     print_success "Productos encontrados: ${product_count}"
     
     log_file "Primeros 3 productos:"
@@ -330,7 +401,7 @@ fi
 
 run_test "Listar productos" "200" "$http_code"
 
-print_section "2.2 - Consultar producto específico (LAPTOP-001)"
+print_section "2.2 - Consultar producto especifico (LAPTOP-001)"
 response=$(do_curl_get "${INVENTORY_SERVICE}/api/inventory/products/LAPTOP-001")
 http_code=$(extract_code "$response")
 body=$(extract_body "$response")
@@ -357,7 +428,7 @@ print_header "${CHECK} PRUEBA 3: SAGA EXITOSA - CREAR ORDEN"
 
 print_section "3.1 - Crear orden con stock suficiente"
 
-# JSON en UNA SOLA LÍNEA (importante para cross-platform)
+# JSON en UNA SOLA LINEA (importante para cross-platform)
 orden_exitosa='{"userId":"test-user-saga-001","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":1},{"productCode":"MOUSE-001","quantity":2}]}'
 
 print_info "Enviando solicitud de orden..."
@@ -372,8 +443,8 @@ log_file ""
 log_file "Response:"
 format_json "$body" | tee -a "$REPORT_FILE"
 
-orden_id=$(echo "$body" | grep -o '"orderId":"[^"]*"' | head -1 | grep -o '"[a-zA-Z0-9\-]*"' | tail -1 | tr -d '"')
-orden_status=$(echo "$body" | grep -o '"status":"[^"]*"' | head -1 | grep -o '"[A-Z]*"' | tail -1 | tr -d '"')
+orden_id=$(echo "$body" | grep -o '"orderId":"[^"]*"' | head -1 | cut -d'"' -f4)
+orden_status=$(echo "$body" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
 total=$(echo "$body" | grep -o '"totalAmount":[0-9.]*' | grep -o '[0-9.]*')
 
 if [ "$orden_status" == "COMPLETED" ]; then
@@ -384,12 +455,12 @@ if [ "$orden_status" == "COMPLETED" ]; then
     
     log_file ""
     log_file "SAGA EJECUTADA:"
-    log_file "  1. ✓ Inventario reservado (LAPTOP-001 × 1, MOUSE-001 × 2)"
-    log_file "  2. ✓ Pago procesado (\$${total})"
-    log_file "  3. ✓ Reserva confirmada"
-    log_file "  4. ✓ Orden guardada en BD"
+    log_file "  1. [OK] Inventario reservado (LAPTOP-001 x 1, MOUSE-001 x 2)"
+    log_file "  2. [OK] Pago procesado (\$${total})"
+    log_file "  3. [OK] Reserva confirmada"
+    log_file "  4. [OK] Orden guardada en BD"
 else
-    print_error "SAGA FALLÓ (Status: ${orden_status})"
+    print_error "SAGA FALLO (Status: ${orden_status})"
 fi
 
 run_test "Crear orden exitosa (SAGA completa)" "201" "$http_code"
@@ -423,34 +494,34 @@ if [ -n "$orden_id" ] && [ "$orden_id" != "null" ] && [ "$orden_id" != "" ]; the
     
     run_test "Primera consulta orden (Cache MISS)" "200" "$http_code"
     
-    print_section "4.2 - Verificar que se guardó en Redis"
+    print_section "4.2 - Verificar que se guardo en Redis"
     sleep 1
     
     print_info "Buscando clave en Redis..."
     
-    # Buscar todas las claves relacionadas con la orden
+    # Intentar verificar Redis (puede fallar si docker no esta accesible)
     redis_keys=$(docker exec redis-cache redis-cli --scan --pattern "*${orden_id}*" 2>/dev/null)
     
     if [ -n "$redis_keys" ]; then
-        print_success "¡Clave encontrada en Redis Cache!"
-        echo "$redis_keys" | while read key; do
+        print_success "Clave encontrada en Redis Cache!"
+        echo "$redis_keys" | while read -r key; do
             print_info "  Clave: ${key}"
             log_file "Redis Cache: KEY ${key} EXISTE"
             
             # Obtener TTL
             ttl=$(docker exec redis-cache redis-cli TTL "$key" 2>/dev/null)
-            if [ "$ttl" -gt 0 ]; then
+            if [ -n "$ttl" ] && [ "$ttl" -gt 0 ] 2>/dev/null; then
                 print_info "  TTL: ${ttl} segundos"
                 log_file "  TTL: ${ttl} segundos"
             fi
         done
     else
-        # Buscar con otro patrón común
+        # Buscar con otro patron comun
         redis_keys=$(docker exec redis-cache redis-cli --scan --pattern "order*" 2>/dev/null | head -5)
         
         if [ -n "$redis_keys" ]; then
-            print_warning "No se encontró clave exacta, pero hay claves 'order*' en Redis:"
-            echo "$redis_keys" | while read key; do
+            print_warning "No se encontro clave exacta, pero hay claves 'order*' en Redis:"
+            echo "$redis_keys" | while read -r key; do
                 print_info "  ${key}"
             done
             log_file "Redis Cache: Claves 'order*' encontradas"
@@ -463,7 +534,7 @@ if [ -n "$orden_id" ] && [ "$orden_id" != "null" ] && [ "$orden_id" != "" ]; the
     
     print_section "4.3 - Segunda consulta (Cache HIT esperado)"
     print_info "Consultando orden ${orden_id} nuevamente..."
-    print_info "Esta consulta debería venir desde Redis (más rápida)..."
+    print_info "Esta consulta deberia venir desde Redis (mas rapida)..."
     
     start_time=$(get_time_ms)
     response=$(do_curl_get "${ORDER_SERVICE}/api/orders/${orden_id}")
@@ -477,23 +548,23 @@ if [ -n "$orden_id" ] && [ "$orden_id" != "null" ] && [ "$orden_id" != "" ]; the
     # Calcular mejora
     if [ "$latency_1" -gt 0 ] && [ "$latency_2" -lt "$latency_1" ]; then
         improvement=$((100 - (latency_2 * 100 / latency_1)))
-        print_success "✨ ¡Cache funcionando! Mejora de rendimiento: ${improvement}%"
-        print_success "La segunda consulta fue ${improvement}% más rápida"
+        print_success "Cache funcionando! Mejora de rendimiento: ${improvement}%"
+        print_success "La segunda consulta fue ${improvement}% mas rapida"
         log_file "Mejora de rendimiento: ${improvement}%"
-        log_file "Comparación: ${latency_1}ms (BD) → ${latency_2}ms (Cache)"
+        log_file "Comparacion: ${latency_1}ms (BD) -> ${latency_2}ms (Cache)"
     elif [ "$latency_2" -eq "$latency_1" ]; then
-        print_info "Latencias idénticas - sistema bajo o cache con overhead similar"
-        log_file "Comparación: ${latency_1}ms → ${latency_2}ms (sin mejora visible)"
+        print_info "Latencias identicas - sistema bajo carga o cache con overhead similar"
+        log_file "Comparacion: ${latency_1}ms -> ${latency_2}ms (sin mejora visible)"
     else
         diff=$((latency_2 - latency_1))
-        print_warning "Segunda consulta ${diff}ms más lenta (puede ser ruido de red)"
-        log_file "Comparación: ${latency_1}ms → ${latency_2}ms (sin mejora)"
+        print_warning "Segunda consulta ${diff}ms mas lenta (puede ser ruido de red)"
+        log_file "Comparacion: ${latency_1}ms -> ${latency_2}ms (sin mejora)"
     fi
     
     run_test "Segunda consulta orden (Cache HIT)" "200" "$http_code"
     
     print_section "4.4 - Tercera consulta (validar cache persistente)"
-    print_info "Consultando una vez más para confirmar cache..."
+    print_info "Consultando una vez mas para confirmar cache..."
     
     start_time=$(get_time_ms)
     response=$(do_curl_get "${ORDER_SERVICE}/api/orders/${orden_id}")
@@ -505,53 +576,53 @@ if [ -n "$orden_id" ] && [ "$orden_id" != "null" ] && [ "$orden_id" != "" ]; the
     log_file "Latencia tercera consulta: ${latency_3}ms"
     
     print_info ""
-    print_info "📊 Comparación de las 3 consultas:"
-    print_info "  1ª consulta (Cache MISS):        ${latency_1}ms  ← Desde PostgreSQL"
-    print_info "  2ª consulta (Cache HIT):         ${latency_2}ms  ← Desde Redis"
-    print_info "  3ª consulta (Cache persistente): ${latency_3}ms  ← Desde Redis"
+    print_info "Comparacion de las 3 consultas:"
+    print_info "  1a consulta (Cache MISS):        ${latency_1}ms  <- Desde PostgreSQL"
+    print_info "  2a consulta (Cache HIT):         ${latency_2}ms  <- Desde Redis"
+    print_info "  3a consulta (Cache persistente): ${latency_3}ms  <- Desde Redis"
     
     log_file ""
     log_file "RESUMEN CACHE:"
-    log_file "  1ª: ${latency_1}ms (MISS - PostgreSQL)"
-    log_file "  2ª: ${latency_2}ms (HIT - Redis)"
-    log_file "  3ª: ${latency_3}ms (HIT - Redis)"
+    log_file "  1a: ${latency_1}ms (MISS - PostgreSQL)"
+    log_file "  2a: ${latency_2}ms (HIT - Redis)"
+    log_file "  3a: ${latency_3}ms (HIT - Redis)"
     
-    # Verificación final
+    # Verificacion final
     avg_cache=$(( (latency_2 + latency_3) / 2 ))
     if [ "$avg_cache" -lt "$latency_1" ]; then
         improvement_final=$(( 100 - (avg_cache * 100 / latency_1) ))
         print_success ""
-        print_success "✅ CACHE CONFIRMADO: Promedio ${avg_cache}ms vs ${latency_1}ms inicial"
+        print_success "CACHE CONFIRMADO: Promedio ${avg_cache}ms vs ${latency_1}ms inicial"
         print_success "   Mejora total: ${improvement_final}%"
         log_file ""
-        log_file "CONCLUSIÓN CACHE: Funcionando correctamente (${improvement_final}% mejora)"
+        log_file "CONCLUSION CACHE: Funcionando correctamente (${improvement_final}% mejora)"
     else
-        print_info "Cache presente pero mejora no significativa (sistema muy rápido)"
-        log_file "CONCLUSIÓN CACHE: Presente pero sin mejora medible"
+        print_info "Cache presente pero mejora no significativa (sistema muy rapido)"
+        log_file "CONCLUSION CACHE: Presente pero sin mejora medible"
     fi
     
     run_test "Tercera consulta orden (Cache persistente)" "200" "$http_code"
     
 else
     print_warning "No se pudo obtener orden_id, omitiendo pruebas de cache"
-    log_file "ADVERTENCIA: No se pudo probar Redis Cache (orden_id vacío)"
+    log_file "ADVERTENCIA: No se pudo probar Redis Cache (orden_id vacio)"
 fi
 
 pause
 
 # ----------------------------------------------------------------------------
-# PRUEBA 5: SAGA CON COMPENSACIÓN
+# PRUEBA 5: SAGA CON COMPENSACION
 # ----------------------------------------------------------------------------
 
-print_header "${CROSS} PRUEBA 5: SAGA CON COMPENSACIÓN - STOCK INSUFICIENTE"
+print_header "${CROSS} PRUEBA 5: SAGA CON COMPENSACION - STOCK INSUFICIENTE"
 
 print_section "5.1 - Crear orden con stock INSUFICIENTE"
 
-# JSON en UNA SOLA LÍNEA (importante para cross-platform)
+# JSON en UNA SOLA LINEA (importante para cross-platform)
 orden_fallida='{"userId":"test-user-saga-002","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":10000}]}'
 
 print_info "Enviando solicitud con cantidad imposible (10000 unidades)..."
-print_info "Esto debería disparar la compensación SAGA..."
+print_info "Esto deberia disparar la compensacion SAGA..."
 log_file "Request:"
 log_file "$orden_fallida"
 
@@ -563,23 +634,23 @@ log_file ""
 log_file "Response:"
 format_json "$body" | tee -a "$REPORT_FILE"
 
-orden_status_fail=$(echo "$body" | grep -o '"status":"[^"]*"' | head -1 | grep -o '"[A-Z]*"' | tail -1 | tr -d '"')
+orden_status_fail=$(echo "$body" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
 
 if [ "$orden_status_fail" == "FAILED" ]; then
-    print_success "COMPENSACIÓN SAGA EJECUTADA CORRECTAMENTE!"
+    print_success "COMPENSACION SAGA EJECUTADA CORRECTAMENTE!"
     print_info "Status: ${orden_status_fail}"
-    print_info "El sistema detectó stock insuficiente y ejecutó rollback"
+    print_info "El sistema detecto stock insuficiente y ejecuto rollback"
     
     log_file ""
-    log_file "COMPENSACIÓN EJECUTADA:"
-    log_file "  1. ✗ Inventario rechazó reserva (stock insuficiente)"
-    log_file "  2. ↩️  Rollback iniciado automáticamente"
-    log_file "  3. ✓ Orden marcada como FAILED"
+    log_file "COMPENSACION EJECUTADA:"
+    log_file "  1. [X] Inventario rechazo reserva (stock insuficiente)"
+    log_file "  2. [<-] Rollback iniciado automaticamente"
+    log_file "  3. [OK] Orden marcada como FAILED"
 else
-    print_error "COMPENSACIÓN SAGA FALLÓ (Status: ${orden_status_fail})"
+    print_error "COMPENSACION SAGA FALLO (Status: ${orden_status_fail})"
 fi
 
-run_test "Orden fallida con compensación SAGA" "400" "$http_code"
+run_test "Orden fallida con compensacion SAGA" "400" "$http_code"
 
 print_section "5.2 - Verificar que el inventario NO fue afectado"
 print_info "Consultando producto LAPTOP-001..."
@@ -597,14 +668,14 @@ if [ "$http_code" == "200" ]; then
     print_info "Stock disponible: ${available_after}"
     
     log_file ""
-    log_file "Inventario después de compensación:"
+    log_file "Inventario despues de compensacion:"
     format_json "$body" | tee -a "$REPORT_FILE"
     
     if [ "$reserved_after" == "0" ] || [ -z "$reserved_after" ]; then
-        print_success "✓ Inventario correctamente liberado (reservedStock = 0)"
-        print_success "✓ Rollback completo"
+        print_success "Inventario correctamente liberado (reservedStock = 0)"
+        print_success "Rollback completo"
     else
-        print_error "✗ Inventario NO liberado correctamente (reservedStock = ${reserved_after})"
+        print_error "Inventario NO liberado correctamente (reservedStock = ${reserved_after})"
     fi
 fi
 
@@ -618,31 +689,43 @@ pause
 
 print_header "${CHART} RESUMEN DE PRUEBAS"
 
-SUMMARY="
-╔════════════════════════════════════════════════════════════════╗
-║                    RESULTADOS FINALES                          ║
-╠════════════════════════════════════════════════════════════════╣
-║ Total de pruebas:    ${TESTS_TOTAL}                                        ║
-║ Pruebas exitosas:    ${TESTS_PASSED}                                        ║
-║ Pruebas fallidas:    ${TESTS_FAILED}                                        ║
-╚════════════════════════════════════════════════════════════════╝
-"
+# Formato del resumen compatible con todas las terminales
+echo ""
+echo "+================================================================+"
+echo "|                    RESULTADOS FINALES                          |"
+echo "+================================================================+"
+printf "| Total de pruebas:    %-39s |\n" "$TESTS_TOTAL"
+printf "| Pruebas exitosas:    %-39s |\n" "$TESTS_PASSED"
+printf "| Pruebas fallidas:    %-39s |\n" "$TESTS_FAILED"
+echo "+================================================================+"
+echo ""
 
-echo "$SUMMARY" | tee -a "$REPORT_FILE"
+# Guardar en archivo
+cat >> "$REPORT_FILE" << SUMMARY
+
++================================================================+
+|                    RESULTADOS FINALES                          |
++================================================================+
+| Total de pruebas:    ${TESTS_TOTAL}
+| Pruebas exitosas:    ${TESTS_PASSED}
+| Pruebas fallidas:    ${TESTS_FAILED}
++================================================================+
+
+SUMMARY
 
 if [ $TESTS_FAILED -eq 0 ]; then
-    print_success "¡TODAS LAS PRUEBAS PASARON EXITOSAMENTE! ${ROCKET}"
+    print_success "TODAS LAS PRUEBAS PASARON EXITOSAMENTE!"
     log_file ""
-    log_file "CONCLUSIÓN: Sistema funcionando correctamente."
-    log_file "  - Patrón SAGA funcionando con orquestación y compensación"
+    log_file "CONCLUSION: Sistema funcionando correctamente."
+    log_file "  - Patron SAGA funcionando con orquestacion y compensacion"
     log_file "  - Redis Cache mejorando rendimiento"
-    log_file "  - Los 3 microservicios comunicándose correctamente"
-    log_file "  - Rollback automático en caso de fallo"
+    log_file "  - Los 3 microservicios comunicandose correctamente"
+    log_file "  - Rollback automatico en caso de fallo"
     exit_code=0
 else
     print_error "Algunas pruebas fallaron. Revisa los logs arriba."
     log_file ""
-    log_file "CONCLUSIÓN: Sistema con fallas. Revisar pruebas fallidas."
+    log_file "CONCLUSION: Sistema con fallas. Revisar pruebas fallidas."
     exit_code=1
 fi
 
@@ -655,16 +738,15 @@ FIN DEL REPORTE
 
 Archivo generado: $REPORT_FILE
 Fecha: $(date +"%Y-%m-%d %H:%M:%S")
+Sistema: ${CURRENT_OS}
 
-Para más información, consulta:
-- README.md: Guía de usuario
-- TEORIA.md: Conceptos técnicos sobre SAGA y Redis
-- instructor.md: Guía del profesor
+Para mas informacion, consulta:
+- README.md: Guia de usuario
+- TEORIA.md: Conceptos tecnicos sobre SAGA y Redis
 
-Capítulo 10: Patrones y herramientas avanzadas para microservicios
-- Implementación de caching con Redis
-- Patrón SAGA para transacciones distribuidas
-- Monitoreo con Grafana y Kibana (próxima sección)
+Capitulo 10: Patrones y herramientas avanzadas para microservicios
+- Implementacion de caching con Redis
+- Patron SAGA para transacciones distribuidas
 
 ================================================================================
 FOOTER

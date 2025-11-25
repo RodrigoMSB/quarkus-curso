@@ -32,7 +32,7 @@ COPY --chown=quarkus:quarkus src ./src
 # Compilar en modo NATIVO con GraalVM
 # Este proceso toma varios minutos pero genera un binario optimizado
 RUN ./mvnw package -Pnative -DskipTests -B \
-    && echo "✅ Compilación NATIVE exitosa" \
+    && echo "Compilacion NATIVE exitosa" \
     && ls -lh target/
 
 # ----------------------------------------------------------------------------
@@ -43,7 +43,7 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5
 # Metadata
 LABEL maintainer="pe.banco"
 LABEL version="1.0.0"
-LABEL description="Microservicio de Pre-Aprobación Crediticia - Modo NATIVE"
+LABEL description="Microservicio de Pre-Aprobacion Crediticia - Modo NATIVE"
 
 # Variables de entorno
 ENV LANGUAGE='es_PE.UTF-8' \
@@ -78,7 +78,7 @@ EXPOSE 8080
 
 # Health check optimizado para native (arranca más rápido)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health/ready || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/q/health/ready || exit 1
 
 # Comando de inicio del binario nativo
 ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0"]
@@ -87,12 +87,12 @@ ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0"]
 # INSTRUCCIONES DE USO:
 # ============================================================================
 # Build (toma 5-10 minutos):
-#   docker build -f Dockerfile.native -t aprobacion-express:native .
+#   docker build -f src/main/docker/Dockerfile.native -t aprobacion-express:native .
 #
 # Run:
 #   docker run -p 8080:8080 aprobacion-express:native
 #
-# Tamaño esperado: ~165MB (2.5x más pequeño que JVM)
-# Tiempo de arranque: ~0.05 segundos (50x más rápido que JVM)
-# Memoria RSS: ~35MB (5x menos que JVM)
+# Tamaño esperado: ~165MB
+# Tiempo de arranque: ~0.05 segundos
+# Memoria RSS: ~35MB
 # ============================================================================

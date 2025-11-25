@@ -7,13 +7,14 @@
 1. [Arquitectura de Quarkus](#arquitectura-de-quarkus)
 2. [JVM vs Native: Análisis Profundo](#jvm-vs-native-análisis-profundo)
 3. [GraalVM y Compilación Native](#graalvm-y-compilación-native)
-4. [Dev Services: Magia de Desarrollo](#dev-services-magia-de-desarrollo)
-5. [Hibernate ORM y Panache](#hibernate-orm-y-panache)
-6. [Métricas y Observabilidad](#métricas-y-observabilidad)
-7. [REST y Serialización JSON](#rest-y-serialización-json)
-8. [Transacciones y Gestión de Base de Datos](#transacciones-y-gestión-de-base-de-datos)
-9. [Perfiles de Configuración](#perfiles-de-configuración)
-10. [Conceptos Avanzados](#conceptos-avanzados)
+4. [Dockerfiles Multi-Stage](#dockerfiles-multi-stage)
+5. [Dev Services vs Docker-Compose](#dev-services-vs-docker-compose)
+6. [Hibernate ORM y Panache](#hibernate-orm-y-panache)
+7. [Métricas y Observabilidad](#métricas-y-observabilidad)
+8. [REST y Serialización JSON](#rest-y-serialización-json)
+9. [Transacciones y Gestión de Base de Datos](#transacciones-y-gestión-de-base-de-datos)
+10. [Perfiles de Configuración](#perfiles-de-configuración)
+11. [Conceptos Avanzados](#conceptos-avanzados)
 
 ---
 
@@ -124,7 +125,7 @@ Características:
 │  │ SubstrateVM (GC Minimalista)                    │    │
 │  └────────────────────────────────────────────────┘    │
 ├─────────────────────────────────────────────────────────┤
-│  SISTEMA OPERATIVO (específico: macOS ARM64)            │
+│  SISTEMA OPERATIVO (específico: Linux x86_64)           │
 └─────────────────────────────────────────────────────────┘
 
 Características:
@@ -136,47 +137,65 @@ Características:
 ❌ Debugging limitado
 ```
 
-### Comparación Detallada
+### Comparación Detallada (Resultados Reales del Benchmark)
 
-| Aspecto | JVM | Native | Ganador |
-|---------|-----|--------|---------|
+Los siguientes datos provienen del benchmark ejecutado con `./benchmark.sh 500`:
+
+| Aspecto | JVM (Docker) | Native (Docker) | Ganador |
+|---------|--------------|-----------------|---------|
+| **BUILD** |
+| Tiempo de compilación | ~4 segundos | ~199 segundos (3m 19s) | 🏆 JVM (50x más rápido) |
+| Tamaño imagen Docker | 705 MB | 430 MB | 🏆 Native (39% menor) |
 | **ARRANQUE** |
-| Tiempo de inicio | 2-5 segundos | 0.05-0.2 segundos | 🏆 Native (20-40x) |
-| ¿Por qué? | Inicializa JVM, carga clases, warmup | Todo precompilado | - |
+| Tiempo de inicio | 1811 ms | 127 ms | 🏆 Native (14x más rápido) |
+| ¿Por qué? | Inicializa JVM, carga clases | Todo precompilado | - |
 | **MEMORIA** |
-| RSS en arranque | 150-300 MB | 30-80 MB | 🏆 Native (60-70% menos) |
-| Heap size | Configurable (Xmx) | Fijo, optimizado | - |
-| Metaspace | 50-100 MB | No existe | 🏆 Native |
+| RSS en ejecución | 238 MB | 17 MB | 🏆 Native (92% menos) |
 | **RENDIMIENTO** |
-| Throughput inicial | Bajo (warming up) | Alto desde inicio | 🏆 Native |
-| Throughput pico | Muy alto (JIT optimiza) | Alto estable | 🏆 JVM |
-| Latencia | Variable (GC pauses) | Predecible | 🏆 Native |
-| **DESARROLLO** |
-| Tiempo compilación | 5-10 segundos | 1-2 minutos | 🏆 JVM (12-24x) |
-| Hot reload | Sí (quarkus:dev) | No | 🏆 JVM |
-| Debugging | Completo | Limitado | 🏆 JVM |
-| **DESPLIEGUE** |
-| Tamaño artefacto | JAR: 10-50 MB + JVM | 60-100 MB standalone | 🏆 Native* |
-| Portabilidad | Total (cualquier OS) | Por SO/arquitectura | 🏆 JVM |
-| Dependencias | Requiere JVM instalado | Ninguna | 🏆 Native |
+| Throughput (500 req) | 50 req/s | 71 req/s | 🏆 Native (42% mejor) |
 
-*Native es "más grande" pero incluye TODO. JVM parece pequeño pero requiere JRE adicional.
+### Análisis del Benchmark
+
+```
++------------------------------------------------------------------------------+
+|                        RESULTADOS DEL BENCHMARK                              |
+|                        (500 requests)                                        |
++------------------------------------------------------------------------------+
+| METRICA                     | JVM (Docker)       | NATIVE (Docker)          |
++------------------------------------------------------------------------------+
+| Tiempo de build             |                 4s |                     199s |
+| Tiempo de arranque          |            1811 ms |                   127 ms |
+| Uso de memoria              |             238 MB |                    17 MB |
+| Throughput                  |           50 req/s |                 71 req/s |
+| Tamano imagen               |             705 MB |                   430 MB |
++------------------------------------------------------------------------------+
+
+ANALISIS:
+1. BUILD: Native 50x mas lento (pero solo una vez en CI/CD)
+2. ARRANQUE: Native 14x MAS RAPIDO
+3. MEMORIA: Native usa 92% MENOS
+4. THROUGHPUT: Native 42% mejor en pruebas cortas
+
+AHORRO EN PRODUCCION (50 microservicios):
+   JVM:    50 × 238 MB = 11,900 MB (~12 GB)
+   Native: 50 × 17 MB  =    850 MB (~1 GB)
+   Ahorro: ~10 GB de RAM
+```
 
 ### ¿Cuándo usar cada modo?
 
 #### Usar JVM cuando:
 
 ```
-✅ Desarrollo local (iteración rápida)
-✅ Aplicaciones long-running (servidores 24/7)
+✅ Desarrollo local (iteración rápida, hot reload)
 ✅ Necesitas debugging avanzado
 ✅ El equipo no conoce limitaciones de Native
 ✅ Usas reflection/serialización dinámica intensiva
 ✅ No hay restricciones de memoria
-✅ Despliegue en servidores tradicionales
+✅ Aplicaciones long-running con warmup completo
 ```
 
-**Ejemplo:** Sistema bancario core que corre 24/7 en data center con recursos abundantes.
+**Ejemplo:** Desarrollo local con `./mvnw quarkus:dev` para iteración rápida.
 
 #### Usar Native cuando:
 
@@ -190,7 +209,7 @@ Características:
 ✅ Contenedores efímeros
 ```
 
-**Ejemplo:** API de pre-aprobación crediticia que escala según demanda.
+**Ejemplo:** API de pre-aprobación crediticia desplegada en Kubernetes que escala según demanda.
 
 ---
 
@@ -303,7 +322,7 @@ OPTIMIZED BYTECODE
 │ TIEMPO: 5-10% del total                  │
 └──────────────────────────────────────────┘
     ↓
-EJECUTABLE NATIVO (aprobacion-express-runner)
+EJECUTABLE NATIVO (binario Linux x86_64)
 ```
 
 ### Optimizaciones de Native Image
@@ -376,13 +395,182 @@ Native (Closed World):
 
 ---
 
-## 🪄 Dev Services: Magia de Desarrollo
+## 🐳 Dockerfiles Multi-Stage
+
+### ¿Por qué Docker para Compilación Native?
+
+**Problema tradicional:**
+- Instalar GraalVM localmente es complejo
+- Windows requiere Visual Studio Build Tools (~8 GB)
+- macOS ARM64 genera binarios incompatibles con Linux
+- Cada desarrollador tiene ambiente diferente
+
+**Solución: Dockerfiles Multi-Stage**
+- GraalVM viene incluido en la imagen de build
+- Compilación reproducible en cualquier máquina
+- Solo necesitas Docker Desktop
+
+### Arquitectura Multi-Stage
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  DOCKERFILE MULTI-STAGE                                  │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  STAGE 1: BUILD (imagen grande, temporal)               │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │  FROM maven:3.9.9-eclipse-temurin-21-alpine       │ │
+│  │  - Contiene Maven + JDK completo                  │ │
+│  │  - Compila el proyecto                            │ │
+│  │  - Genera artefactos                              │ │
+│  │  - SE DESCARTA al final                           │ │
+│  └───────────────────────────────────────────────────┘ │
+│                         ↓                                │
+│  STAGE 2: RUNTIME (imagen pequeña, final)               │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │  FROM eclipse-temurin:21-jre-alpine               │ │
+│  │  - Solo JRE (no JDK completo)                     │ │
+│  │  - Copia artefactos del Stage 1                   │ │
+│  │  - Usuario no-root (seguridad)                    │ │
+│  │  - Health check configurado                       │ │
+│  │  - ESTA ES LA IMAGEN FINAL                        │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Dockerfile.jvm (Multi-Stage)
+
+```dockerfile
+# ============================================================
+# STAGE 1: BUILD
+# ============================================================
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
+
+WORKDIR /build
+COPY pom.xml .
+COPY src ./src
+
+# Compilar proyecto
+RUN mvn package -DskipTests -Dquarkus.package.jar.type=fast-jar
+
+# ============================================================
+# STAGE 2: RUNTIME
+# ============================================================
+FROM eclipse-temurin:21-jre-alpine
+
+# Usuario no-root (seguridad)
+RUN addgroup -S quarkus && adduser -S quarkus -G quarkus
+USER quarkus
+
+WORKDIR /app
+
+# Copiar artefactos del stage de build
+COPY --from=build /build/target/quarkus-app/ ./
+
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+  CMD wget -q --spider http://localhost:8080/q/health/ready || exit 1
+
+ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]
+```
+
+**Resultado:** Imagen de ~705 MB con JRE optimizado.
+
+### Dockerfile.native (Multi-Stage con GraalVM)
+
+```dockerfile
+# ============================================================
+# STAGE 1: BUILD NATIVE (GraalVM incluido)
+# ============================================================
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+
+USER root
+WORKDIR /build
+
+COPY pom.xml .
+COPY src ./src
+
+# Compilar a binario nativo (5-10 minutos)
+RUN mvn package -DskipTests -Pnative \
+    -Dquarkus.native.container-build=false
+
+# ============================================================
+# STAGE 2: RUNTIME (imagen mínima)
+# ============================================================
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5
+
+# Usuario no-root
+RUN microdnf install -y shadow-utils && \
+    groupadd -r quarkus && useradd -r -g quarkus quarkus && \
+    microdnf clean all
+
+USER quarkus
+WORKDIR /app
+
+# Copiar solo el binario nativo
+COPY --from=build /build/target/*-runner /app/application
+
+EXPOSE 8080
+
+# Health check optimizado (arranque rápido)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
+  CMD wget -q --spider http://localhost:8080/q/health/ready || exit 1
+
+ENTRYPOINT ["./application"]
+```
+
+**Resultado:** Imagen de ~430 MB con binario nativo standalone.
+
+### Comparación de Imágenes
+
+| Característica | Dockerfile.jvm | Dockerfile.native |
+|----------------|----------------|-------------------|
+| **Base build** | Maven + JDK 21 | GraalVM Mandrel |
+| **Base runtime** | JRE Alpine | UBI Minimal |
+| **Tiempo build** | ~4 segundos | ~199 segundos |
+| **Tamaño imagen** | 705 MB | 430 MB |
+| **Arranque** | 1811 ms | 127 ms |
+| **Memoria** | 238 MB | 17 MB |
+| **Requiere GraalVM local** | ❌ No | ❌ No |
+
+### Ventajas del Enfoque Multi-Stage
+
+```
+✅ No necesitas instalar GraalVM localmente
+✅ No necesitas Visual Studio en Windows
+✅ Funciona igual en Mac, Windows y Linux
+✅ Compilación reproducible (mismo resultado siempre)
+✅ Solo necesitas Docker Desktop
+✅ CI/CD simplificado (mismos Dockerfiles)
+✅ Imágenes finales pequeñas (no incluyen herramientas de build)
+```
+
+### Ejecución del Benchmark con Docker
+
+```bash
+# El script benchmark.sh usa ambos Dockerfiles
+./benchmark.sh 500
+
+# Internamente ejecuta:
+# 1. docker build -f Dockerfile.jvm -t app-jvm .
+# 2. docker run app-jvm (pruebas)
+# 3. docker build -f Dockerfile.native -t app-native .
+# 4. docker run app-native (pruebas)
+# 5. Comparación de resultados
+```
+
+---
+
+## 🪄 Dev Services vs Docker-Compose
 
 ### ¿Qué son Dev Services?
 
 **Dev Services** es una característica de Quarkus que levanta automáticamente dependencias externas (bases de datos, message brokers, etc.) durante el desarrollo.
 
-### Cómo Funciona
+### Cómo Funciona Dev Services
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -421,50 +609,104 @@ Native (Closed World):
 │                                                          │
 │  [1] Recibe URL dinámica: jdbc:postgresql://localhost:32768/default │
 │  [2] Configura datasource automáticamente               │
-│  [3] Ejecuta migraciones (Flyway/Liquibase si existe)   │
+│  [3] Ejecuta import.sql si existe                       │
 │  [4] Arranca aplicación                                  │
 │  [5] ¡Listo para desarrollar! ✅                        │
 └──────────────────────────────────────────────────────────┘
 ```
 
-### Dev Services Soportados
+### Dev Services vs docker-compose: Cuándo Usar Cada Uno
 
-| Servicio | Extensión | Imagen Docker |
-|----------|-----------|---------------|
-| PostgreSQL | `quarkus-jdbc-postgresql` | `postgres:16` |
-| MySQL | `quarkus-jdbc-mysql` | `mysql:8` |
-| MongoDB | `quarkus-mongodb-client` | `mongo:7` |
-| Redis | `quarkus-redis-client` | `redis:7` |
-| Kafka | `quarkus-kafka-client` | `redpanda` |
-| Keycloak | `quarkus-oidc` | `keycloak` |
-| Vault | `quarkus-vault` | `hashicorp/vault` |
+| Escenario | Dev Services | docker-compose |
+|-----------|--------------|----------------|
+| **Desarrollo rápido** | ✅ Ideal | ⚠️ Overkill |
+| **Prototipado** | ✅ Ideal | ⚠️ Overkill |
+| **Benchmarks** | ❌ No control | ✅ Ideal |
+| **Tests automatizados** | ⚠️ Posible | ✅ Mejor control |
+| **Scripts de prueba** | ❌ Puerto aleatorio | ✅ Puerto fijo |
+| **CI/CD** | ⚠️ Posible | ✅ Reproducible |
+| **Datos persistentes** | ❌ Efímero | ✅ Volúmenes |
+| **Configuración custom** | ⚠️ Limitado | ✅ Total control |
 
-### Ventajas de Dev Services
-
-```
-✅ Sin configuración manual
-✅ Ambiente aislado (no contamina tu sistema)
-✅ Versiones consistentes (toda el equipo usa mismo PostgreSQL)
-✅ Setup en segundos
-✅ Se destruye al terminar (no deja basura)
-✅ Ideal para CI/CD
-```
-
-### Cuándo NO usar Dev Services
+### Nuestro Enfoque en Este Proyecto
 
 ```
-❌ En producción (no existe en producción)
-❌ Para benchmarks (necesitas control preciso)
-❌ Tests de integración específicos
-❌ Cuando necesitas datos persistentes entre ejecuciones
+┌─────────────────────────────────────────────────────────┐
+│  DESARROLLO INTERACTIVO                                  │
+│  ./mvnw quarkus:dev                                      │
+│                                                          │
+│  → Usa Dev Services (PostgreSQL automático)             │
+│  → Hot reload activado                                   │
+│  → Puerto PostgreSQL aleatorio (no importa)             │
+│  → Datos efímeros (se pierden al cerrar)                │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  SCRIPTS AUTOMATIZADOS                                   │
+│  ./test-aprobacion.sh                                    │
+│  ./benchmark.sh                                          │
+│                                                          │
+│  → Usa docker-compose (PostgreSQL controlado)           │
+│  → Puerto fijo: 5432                                     │
+│  → Credenciales conocidas: postgres/postgres123         │
+│  → Base de datos: banco_credito                         │
+│  → Datos persistentes en volumen                        │
+└─────────────────────────────────────────────────────────┘
 ```
 
-**Para estos casos:** usa `docker-compose.yml` o servicios reales.
+### docker-compose.yml del Proyecto
 
-### Configuración de Dev Services (Opcional)
+```yaml
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: banco-postgres
+    environment:
+      POSTGRES_DB: banco_credito
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+```
+
+### Flujo Completo de los Scripts
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ./test-aprobacion.sh --docker                          │
+├─────────────────────────────────────────────────────────┤
+│  1. docker-compose up -d                                │
+│     → Levanta PostgreSQL en puerto 5432                 │
+│                                                          │
+│  2. docker build -f Dockerfile.jvm -t app-jvm .         │
+│     → Construye imagen JVM                              │
+│                                                          │
+│  3. docker run -p 8080:8080 app-jvm                     │
+│     → Ejecuta Quarkus en contenedor                     │
+│     → Se conecta a PostgreSQL via host.docker.internal │
+│                                                          │
+│  4. curl http://localhost:8080/api/...                  │
+│     → Ejecuta 11 pruebas funcionales                    │
+│                                                          │
+│  5. docker stop / docker-compose down                   │
+│     → Limpia todo al terminar                           │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Configuración de Dev Services (Referencia)
 
 ```properties
-# Desactivar Dev Services
+# Desactivar Dev Services (si usas docker-compose)
 %dev.quarkus.datasource.devservices.enabled=false
 
 # Personalizar imagen
@@ -476,16 +718,6 @@ Native (Closed World):
 # Inicializar con script
 %dev.quarkus.datasource.devservices.init-script-path=init-db.sql
 ```
-
-### Dev Services vs docker-compose
-
-| Característica | Dev Services | docker-compose |
-|----------------|--------------|----------------|
-| **Setup** | Automático | Manual (crear YAML) |
-| **Activación** | Solo en modo dev | Explícito (`docker-compose up`) |
-| **Persistencia** | Efímero | Persistente (volúmenes) |
-| **Control** | Limitado | Total |
-| **Uso típico** | Desarrollo rápido | Benchmarks, tests, local "production-like" |
 
 ---
 
@@ -642,9 +874,6 @@ SolicitudCredito.streamAll()
 // Count
 long total = SolicitudCredito.count("estado", PENDIENTE);
 
-// Exists
-boolean existe = SolicitudCredito.count("numeroDocumento", "12345678") > 0;
-
 // Delete bulk
 long deleted = SolicitudCredito.delete("estado = ?1 and fechaSolicitud < ?2", 
     RECHAZADO, LocalDateTime.now().minusYears(1));
@@ -689,59 +918,6 @@ long deleted = SolicitudCredito.delete("estado = ?1 and fechaSolicitud < ?2",
 │  - Alertas                                             │
 │  - Gráficas en tiempo real                            │
 └────────────────────────────────────────────────────────┘
-```
-
-### Métricas Expuestas
-
-#### 1. Métricas JVM
-
-```
-# Memoria
-jvm_memory_used_bytes{area="heap"} 245234688
-jvm_memory_max_bytes{area="heap"} 536870912
-jvm_memory_committed_bytes{area="heap"} 268435456
-
-# Garbage Collection
-jvm_gc_memory_promoted_bytes_total 1048576
-jvm_gc_pause_seconds_count{action="end of minor GC"} 42
-jvm_gc_pause_seconds_sum{action="end of minor GC"} 0.156
-
-# Threads
-jvm_threads_live_threads 25
-jvm_threads_daemon_threads 20
-jvm_threads_peak_threads 28
-
-# Classes
-jvm_classes_loaded_classes 8745
-jvm_classes_unloaded_classes_total 12
-```
-
-#### 2. Métricas HTTP
-
-```
-# Requests totales
-http_server_requests_total{method="GET",uri="/api/preaprobacion/estadisticas",status="200"} 1547
-
-# Duración de requests
-http_server_requests_seconds_count{method="POST",uri="/api/preaprobacion/evaluar"} 234
-http_server_requests_seconds_sum{method="POST",uri="/api/preaprobacion/evaluar"} 45.67
-
-# Requests activos
-http_server_active_requests{method="POST",uri="/api/preaprobacion/evaluar"} 3
-```
-
-#### 3. Métricas de Base de Datos
-
-```
-# Conexiones del pool
-hikaricp_connections_active{pool="default"} 5
-hikaricp_connections_idle{pool="default"} 5
-hikaricp_connections_max{pool="default"} 10
-hikaricp_connections_min{pool="default"} 2
-
-# Tiempos de espera
-hikaricp_connections_acquire_seconds_count 1234
-hikaricp_connections_acquire_seconds_sum 12.34
 ```
 
 ### Health Checks
@@ -834,25 +1010,6 @@ CLIENTE → Request HTTP
 Response HTTP → CLIENTE
 ```
 
-### Configuración de Jackson
-
-```java
-// Personalizar serialización
-@JsonInclude(JsonInclude.Include.NON_NULL) // Omitir nulls
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // snake_case
-public class ResultadoDTO {
-    
-    @JsonProperty("solicitud_id") // Nombre custom
-    private Long solicitudId;
-    
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime fechaEvaluacion;
-    
-    @JsonIgnore // No serializar
-    private String infoInterna;
-}
-```
-
 ---
 
 ## 💾 Transacciones y Gestión de Base de Datos
@@ -893,26 +1050,6 @@ public class PreAprobacionService {
     }
 }
 ```
-
-### Niveles de Aislamiento
-
-```java
-@Transactional(
-    isolation = TransactionIsolation.READ_COMMITTED,
-    timeout = 30,
-    rollbackOn = {BusinessException.class}
-)
-public void metodoTransaccional() {
-    // ...
-}
-```
-
-| Nivel | Descripción | Uso |
-|-------|-------------|-----|
-| `READ_UNCOMMITTED` | Lee cambios no commiteados | Raramente usado |
-| `READ_COMMITTED` | Solo lee commiteado (default) | Mayoría de casos |
-| `REPEATABLE_READ` | Lecturas consistentes | Reportes |
-| `SERIALIZABLE` | Máximo aislamiento | Operaciones críticas |
 
 ### Gestión del Schema
 
@@ -979,36 +1116,10 @@ quarkus.datasource.db-kind=postgresql
 # Test (automático con test)
 ./mvnw test
 
-# Producción (JAR)
+# Producción (JAR o Docker)
 java -jar app.jar
-# o forzar:
-java -Dquarkus.profile=prod -jar app.jar
-
-# Native
-./app-runner
-# o forzar:
-./app-runner -Dquarkus.profile=prod
-```
-
-### Variables de Entorno
-
-```properties
-# Sintaxis: ${ENV_VAR:valor_por_defecto}
-%prod.quarkus.datasource.username=${DB_USERNAME:postgres}
-%prod.quarkus.datasource.password=${DB_PASSWORD:postgres123}
-%prod.quarkus.datasource.jdbc.url=${DB_URL:jdbc:postgresql://localhost:5432/banco_credito}
-```
-
-**En producción:**
-```bash
-# Kubernetes ConfigMap/Secret
-apiVersion: v1
-kind: Secret
-metadata:
-  name: db-credentials
-data:
-  DB_USERNAME: cG9zdGdyZXM=
-  DB_PASSWORD: c3VwZXJzZWNyZXQ=
+# o
+docker run -e DB_PASSWORD=secret app-native
 ```
 
 ---
@@ -1043,13 +1154,13 @@ QUARKUS (Build-time optimizations):
 └────────────────────────────────────────┘
                 ↓
 ┌────────────────────────────────────────┐
-│  RUNTIME (java -jar)                   │
+│  RUNTIME (docker run)                  │
 │  1. Carga artifact pre-procesado       │  ⏱️ 0.1 seg
 │  2. ¡Listo!                            │
 └────────────────────────────────────────┘
 ```
 
-**Resultado:** Arranque 20-30x más rápido.
+**Resultado:** Arranque 14x más rápido (1811ms → 127ms).
 
 ### 2. Augmentation (Procesamiento en Build)
 
@@ -1089,52 +1200,12 @@ Quarkus **genera código** en build-time, eliminando reflection en runtime.
 
 | Aspecto | HotSpot (JVM) | SubstrateVM (Native) |
 |---------|---------------|----------------------|
-| **Garbage Collector** | G1GC, ZGC, Shenandah | Serial GC (simple) |
+| **Garbage Collector** | G1GC, ZGC, Shenandoah | Serial GC (simple) |
 | **JIT Compiler** | C1 + C2 (tiered) | No (AOT) |
 | **Class Loading** | Dinámico | Estático |
 | **Reflection** | Runtime completo | Build-time limitado |
 | **Memory Layout** | Heap complejo | Heap simple |
 | **Optimizaciones** | Runtime (adaptativo) | Build-time (estático) |
-
-### 4. Reactive vs Imperative
-
-```java
-// IMPERATIVO (Blocking I/O)
-@GET
-@Path("/{id}")
-public Cliente buscar(@PathParam("id") Long id) {
-    Cliente cliente = repository.findById(id); // BLOQUEA thread
-    Cliente detalles = externalAPI.getDetalles(cliente); // BLOQUEA thread
-    return detalles;
-}
-
-// REACTIVO (Non-blocking I/O)
-@GET
-@Path("/{id}")
-public Uni<Cliente> buscar(@PathParam("id") Long id) {
-    return repository.findById(id) // No bloquea
-        .flatMap(cliente -> externalAPI.getDetalles(cliente)) // No bloquea
-        .onFailure().recoverWithItem(ClienteDefault.instance());
-}
-```
-
-**Cuándo usar cada uno:**
-- **Imperativo:** CRUD simple, bajo concurrencia
-- **Reactivo:** Alto throughput, muchos requests concurrentes, I/O intensivo
-
-### 5. Continuous Testing
-
-```bash
-# Modo dev con tests continuos
-./mvnw quarkus:dev
-
-# En la consola interactiva:
-# Presiona 'r' → Re-ejecuta tests
-# Presiona 't' → Ejecuta test específico
-# Cambias código → Tests se ejecutan automáticamente
-```
-
-**Ventaja:** Feedback inmediato mientras desarrollas.
 
 ---
 
@@ -1161,7 +1232,8 @@ public Uni<Cliente> buscar(@PathParam("id") Long id) {
 
 Este documento cubre los conceptos teóricos profundos del sistema. Para:
 - **Instrucciones de ejecución:** Ver `README.md`
+- **Guía del instructor:** Ver `INSTRUCTOR.md`
+- **Uso de scripts:** Ver `GUIA-SCRIPTS-DOCKER.md`
 
-
-**Última actualización:** 2025-10-23  
-**Versión:** 1.0.0
+**Última actualización:** 2025-11-24  
+**Versión:** 2.0.0
