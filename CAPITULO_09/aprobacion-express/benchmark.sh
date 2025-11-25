@@ -465,11 +465,11 @@ print_success "Maven disponible: ${MVN_CMD}"
 print_header "FASE 1: BUILD JVM (Docker)"
 
 print_section "1.1 - Compilando con Maven (modo JVM)"
-print_info "${MVN_CMD} clean package -DskipTests -Dquarkus.package.jar.type=uber-jar"
+print_info "${MVN_CMD} clean package -DskipTests"
 
 START_BUILD_JVM=$(date +%s)
 
-if $MVN_CMD clean package -DskipTests -Dquarkus.package.jar.type=uber-jar > "$BUILD_JVM_LOG" 2>&1; then
+if $MVN_CMD clean package -DskipTests > "$BUILD_JVM_LOG" 2>&1; then
     END_BUILD_JVM=$(date +%s)
     BUILD_TIME_JVM=$((END_BUILD_JVM - START_BUILD_JVM))
     print_success "Build JVM completado: ${BUILD_TIME_JVM}s"
