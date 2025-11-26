@@ -233,6 +233,12 @@ extract_startup_time() {
                     
                     dec_part=${dec_part:0:3}
                     
+                    # Eliminar ceros a la izquierda para evitar interpretacion octal
+                    dec_part=$(echo "$dec_part" | sed 's/^0*//')
+                    if [ -z "$dec_part" ]; then
+                        dec_part="0"
+                    fi
+                    
                     local ms
                     ms=$((int_part * 1000 + dec_part))
                     
