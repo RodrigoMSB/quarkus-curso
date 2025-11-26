@@ -1,0 +1,380 @@
+================================================================================
+REPORTE DE PRUEBAS - MONITOREO CON GRAFANA Y KIBANA
+Sistema E-Commerce con Observabilidad Completa
+================================================================================
+
+CONCEPTOS CLAVE DE OBSERVABILIDAD
+=================================
+
+La OBSERVABILIDAD es la capacidad de entender el estado interno de un sistema
+a partir de sus salidas externas. Se basa en tres pilares:
+
+  1. METRICAS (Prometheus + Grafana)
+     - Valores numericos que cambian en el tiempo
+     - Ejemplos: CPU, memoria, requests/segundo, latencia
+     - Analogia: El tablero de un auto (velocimetro, temperatura, combustible)
+
+  2. LOGS (Elasticsearch + Kibana)
+     - Registros de eventos con timestamp
+     - Ejemplos: errores, transacciones, acciones de usuario
+     - Analogia: La caja negra de un avion
+
+  3. TRACES (Distribuidos)
+     - Seguimiento de una request a traves de multiples servicios
+     - Analogia: Rastrear un paquete de correo por todas las estaciones
+
+PROMETHEUS
+----------
+Prometheus es un sistema de monitoreo que:
+- SCRAPE: Recolecta metricas cada 15 segundos (pull model)
+- ALMACENA: Guarda series temporales en su base de datos
+- CONSULTA: Usa PromQL para queries (similar a SQL para metricas)
+
+Endpoint de metricas en Quarkus: /q/metrics
+
+GRAFANA
+-------
+Grafana es una herramienta de visualizacion que:
+- Se conecta a Prometheus como fuente de datos
+- Permite crear dashboards con graficos
+- Soporta alertas basadas en umbrales
+
+ELASTICSEARCH + KIBANA (ELK Stack)
+----------------------------------
+- Elasticsearch: Motor de busqueda que almacena logs
+- Logstash: Procesa y transforma logs
+- Kibana: Interfaz web para explorar logs
+- Filebeat: Recolecta logs de contenedores Docker
+
+REDIS CACHE
+-----------
+Redis es una base de datos en memoria usada como cache:
+
+- CACHE MISS: El dato NO esta en cache, se busca en la BD (lento)
+- CACHE HIT: El dato SI esta en cache, se retorna directo (rapido)
+
+Analogia del Cache:
+  Imagina una biblioteca. El cache es tu escritorio con los libros
+  que usas frecuentemente. Si el libro esta en tu escritorio (HIT),
+  lo tomas inmediatamente. Si no esta (MISS), debes ir a las estanterias
+  (base de datos) a buscarlo, lo cual toma mas tiempo.
+
+TTL (Time To Live):
+  Tiempo que un dato permanece en cache antes de expirar.
+  Ejemplo: TTL=300 significa que el dato expira en 5 minutos.
+
+================================================================================
+
+Fecha de ejecucion: 2025-11-25 14:44:52
+Sistema operativo: macos
+
+Servicios bajo prueba:
+  - Order Service:     http://localhost:8080
+  - Inventory Service: http://localhost:8081
+  - Payment Service:   http://localhost:8082
+
+Stack de Monitoreo:
+  - Prometheus: http://localhost:9090
+  - Grafana:    http://localhost:3000
+  - Kibana:     http://localhost:5601
+
+================================================================================
+
+
+============================================================================
+PRUEBAS DE MONITOREO - GRAFANA Y KIBANA
+============================================================================
+
+PRUEBAS A EJECUTAR:
+  1. Health Checks de los 3 microservicios
+  2. Verificar stack de monitoreo
+  3. Verificar endpoints de metricas
+  4. Redis Cache (HIT vs MISS)
+  5. SAGA exitoso
+  6. SAGA con compensacion
+  7. Verificar metricas en Prometheus
+  8. Resumen
+
+
+
+
+============================================================================
+PRUEBA 1: HEALTH CHECKS DE MICROSERVICIOS
+============================================================================
+
+
+CONCEPTO: HEALTH CHECKS
+Un Health Check indica si un servicio esta funcionando.
+Quarkus expone /health con LIVENESS y READINESS checks.
+
+
+>>> 1.1 - Health Check: Order Service (8080)
+
+[FAIL] Order Service no responde (HTTP 000)
+[FAIL] TEST #1: Order Service Health (esperado: 200, obtenido: 000)
+
+>>> 1.2 - Health Check: Inventory Service (8081)
+
+[FAIL] Inventory Service no responde (HTTP 000)
+[FAIL] TEST #2: Inventory Service Health (esperado: 200, obtenido: 000)
+
+>>> 1.3 - Health Check: Payment Service (8082)
+
+[FAIL] Payment Service no responde (HTTP 000)
+[FAIL] TEST #3: Payment Service Health (esperado: 200, obtenido: 000)
+
+
+
+============================================================================
+PRUEBA 2: VERIFICAR STACK DE MONITOREO
+============================================================================
+
+
+CONCEPTO: STACK DE OBSERVABILIDAD
+Prometheus recolecta metricas, Grafana las visualiza.
+Elasticsearch almacena logs, Kibana permite explorarlos.
+
+
+>>> 2.1 - Verificar Prometheus
+
+[OK] Prometheus esta corriendo en http://localhost:9090
+[i] Abre http://localhost:9090 en tu navegador para ver metricas
+[OK] TEST #4: Prometheus Health
+
+>>> 2.2 - Verificar Grafana
+
+[OK] Grafana esta corriendo en http://localhost:3000
+[i] Login: admin / admin
+[OK] TEST #5: Grafana Health
+
+>>> 2.3 - Verificar Elasticsearch
+
+[OK] Elasticsearch esta corriendo en http://localhost:9200
+[!] Cluster status: YELLOW (funcional, sin replicas)
+Elasticsearch cluster status: yellow
+[OK] TEST #6: Elasticsearch Health
+
+>>> 2.4 - Verificar Kibana
+
+[OK] Kibana esta corriendo en http://localhost:5601
+[i] Abre http://localhost:5601 para explorar logs
+[OK] TEST #7: Kibana Health
+
+>>> 2.5 - Verificar Redis
+
+[OK] Redis esta corriendo y responde PONG
+[OK] TEST #8: Redis PING/PONG
+
+
+
+============================================================================
+PRUEBA 3: VERIFICAR ENDPOINTS DE METRICAS
+============================================================================
+
+
+CONCEPTO: METRICAS DE PROMETHEUS
+Quarkus expone metricas en /q/metrics.
+Tipos: Counter, Gauge, Histogram, Summary.
+
+
+>>> 3.1 - Metricas de Order Service
+
+[FAIL] No se pueden obtener metricas (HTTP 000)
+[FAIL] TEST #9: Order Service Metrics (esperado: 200, obtenido: 000)
+
+>>> 3.2 - Metricas de Inventory Service
+
+[FAIL] No se pueden obtener metricas (HTTP 000)
+[FAIL] TEST #10: Inventory Service Metrics (esperado: 200, obtenido: 000)
+
+>>> 3.3 - Metricas de Payment Service
+
+[FAIL] No se pueden obtener metricas (HTTP 000)
+[FAIL] TEST #11: Payment Service Metrics (esperado: 200, obtenido: 000)
+
+>>> 3.4 - Verificar que Prometheus esta scrapeando
+
+[OK] Prometheus tiene 1 targets activos
+[i] Verifica en http://localhost:9090/targets
+Prometheus targets UP: 1
+[OK] TEST #12: Prometheus Targets
+
+
+
+============================================================================
+PRUEBA 4: REDIS CACHE - HIT vs MISS
+============================================================================
+
+
+CONCEPTO: CACHE HIT vs CACHE MISS
+MISS: Dato no en cache, se busca en BD (lento)
+HIT: Dato en cache, se retorna directo (rapido)
+Hit Rate = hits / (hits + misses) * 100
+
+
+>>> 4.1 - Limpiar cache de Redis
+
+[OK] Cache limpiado (FLUSHALL)
+Redis cache limpiado con FLUSHALL
+
+>>> 4.2 - Primera consulta (CACHE MISS esperado)
+
+[i] Consultando producto LAPTOP-001 por primera vez...
+[i] El dato NO esta en cache, ira a PostgreSQL...
+[OK] Latencia 1ra consulta: 21ms (CACHE MISS - desde PostgreSQL)
+1ra consulta: 21ms (MISS)
+[FAIL] TEST #13: Primera consulta producto (CACHE MISS) (esperado: 200, obtenido: 000)
+
+>>> 4.3 - Segunda consulta (CACHE HIT esperado)
+
+[i] Consultando producto LAPTOP-001 nuevamente...
+[i] El dato DEBERIA estar en cache (mas rapido)...
+[OK] Latencia 2da consulta: 23ms (CACHE HIT - desde Redis)
+2da consulta: 23ms (HIT)
+[FAIL] TEST #14: Segunda consulta producto (CACHE HIT) (esperado: 200, obtenido: 000)
+
+>>> 4.4 - Tercera consulta (confirmando cache)
+
+[i] Latencia 3ra consulta: 22ms
+3ra consulta: 22ms (HIT)
+[FAIL] TEST #15: Tercera consulta producto (CACHE HIT) (esperado: 200, obtenido: 000)
+
+>>> 4.5 - Estadisticas de Cache
+
+
+COMPARACION DE LATENCIAS:
+  1ra consulta (MISS): 21ms
+  2da consulta (HIT):  23ms
+  3ra consulta (HIT):  22ms
+[i] Estadisticas de Redis:
+[i]   Keyspace Hits: 0
+[i]   Keyspace Misses: 0
+
+
+
+============================================================================
+PRUEBA 5: SAGA EXITOSO - CREAR ORDEN VALIDA
+============================================================================
+
+
+CONCEPTO: PATRON SAGA
+SAGA maneja transacciones distribuidas con compensaciones.
+Flujo: Order -> Inventory (reserva) -> Payment -> Confirmar
+
+
+>>> 5.1 - Crear orden con stock suficiente
+
+[i] Enviando orden:
+[i]   - 1x LAPTOP-001 ($899.99)
+[i]   - 2x MOUSE-001 ($99.99 c/u)
+[i]   - Total esperado: $1099.97
+Request: {"userId":"user-test-001","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":1},{"productCode":"MOUSE-001","quantity":2}]}
+Response: 
+[FAIL] SAGA fallo - Status: 
+[FAIL] TEST #16: Crear orden exitosa (SAGA completo) (esperado: 201, obtenido: 000)
+
+
+
+============================================================================
+PRUEBA 6: SAGA CON COMPENSACION - STOCK INSUFICIENTE
+============================================================================
+
+
+CONCEPTO: COMPENSACION EN SAGA
+Cuando falla un paso, se ejecutan compensaciones.
+Las compensaciones deben ser idempotentes.
+
+
+>>> 6.1 - Intentar orden con stock INSUFICIENTE
+
+[i] Enviando orden IMPOSIBLE:
+[i]   - 10,000x LAPTOP-001 (no hay suficiente stock)
+[i]   - Esto DEBE disparar la compensacion SAGA...
+Request: {"userId":"user-test-002","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":10000}]}
+Response: 
+[FAIL] Se esperaba FAILED pero se obtuvo: 
+[FAIL] TEST #17: Orden fallida con compensacion SAGA (esperado: 400, obtenido: 000)
+
+>>> 6.2 - Verificar que el inventario no fue afectado
+
+[FAIL] TEST #18: Verificar inventario despues de compensacion (esperado: 200, obtenido: 000)
+
+
+
+============================================================================
+PRUEBA 7: METRICAS EN PROMETHEUS
+============================================================================
+
+
+CONCEPTO: QUERIES DE PROMETHEUS (PromQL)
+rate() calcula incremento por segundo
+histogram_quantile() calcula percentiles
+
+
+>>> 7.1 - Consultar metricas de requests HTTP
+
+[OK] Prometheus tiene metricas de HTTP requests
+[i] Series encontradas: 0
+HTTP request metrics: 0 series
+[OK] TEST #19: Prometheus HTTP metrics
+
+>>> 7.2 - Consultar metricas de JVM
+
+[OK] Prometheus tiene metricas de JVM
+JVM metrics disponibles
+[OK] TEST #20: Prometheus JVM metrics
+[i] QUERIES PARA PROBAR EN PROMETHEUS (http://localhost:9090):
+
+QUERIES RECOMENDADAS:
+  rate(http_server_requests_seconds_count[1m])
+  histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m]))
+  jvm_memory_used_bytes{area="heap"}
+
+
+
+============================================================================
+RESUMEN DE PRUEBAS
+============================================================================
+
+
+================================================================================
+RESUMEN FINAL
+================================================================================
+
++================================================================+
+|                    RESULTADOS FINALES                          |
++================================================================+
+| Total de pruebas:    20
+| Pruebas exitosas:    8
+| Pruebas fallidas:    12
++================================================================+
+
+[FAIL] Algunas pruebas fallaron. Revisa los logs.
+
+CONCLUSION: Sistema con fallas. Revisar pruebas fallidas.
+
+Posibles causas:
+  - Contenedores Docker no iniciados
+  - Microservicios no corriendo
+  - Elasticsearch aun iniciando (esperar 2-3 min)
+
+
+================================================================================
+FIN DEL REPORTE
+================================================================================
+
+Archivo generado: test-monitoring-report-2025-11-25-144452.txt
+Fecha: 2025-11-25 14:45:45
+Sistema: macos
+
+Para mas informacion, consulta:
+  - README.md: Guia de instalacion
+  - TEORIA.md: Conceptos de observabilidad
+
+Capitulo 10: Monitoreo con Grafana y Kibana
+  - Prometheus para metricas
+  - Grafana para visualizacion
+  - ELK Stack para logs
+
+================================================================================
+[OK] Reporte guardado en: test-monitoring-report-2025-11-25-144452.txt
