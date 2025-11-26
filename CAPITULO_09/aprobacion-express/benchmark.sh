@@ -3,11 +3,17 @@
 # ============================================================================
 # BENCHMARK JVM vs NATIVE - SISTEMA DE PRE-APROBACION CREDITICIA
 # ============================================================================
-# VERSION 9.0 - 100% COMPATIBLE MAC + WINDOWS GIT BASH
+# VERSION 9.2 - 100% COMPATIBLE MAC + WINDOWS GIT BASH
+#
+# CARACTERISTICAS:
+#   - Levanta PostgreSQL automaticamente si no esta corriendo
+#   - Regenera Maven Wrapper automaticamente si falta
+#   - Detecta mvn vs ./mvnw automaticamente
+#   - Compatible con Git Bash en Windows
 #
 # REQUISITOS:
 #   - Docker Desktop corriendo
-#   - Maven instalado (el mvnw puede fallar en Windows)
+#   - Maven instalado
 #
 # USO:
 #   ./benchmark.sh              # 500 requests por defecto
@@ -179,7 +185,6 @@ wait_for_service() {
 wait_for_postgres() {
     local max_attempts=30
     local attempt=1
-    print_info "Esperando que PostgreSQL este listo..."
     while [ $attempt -le $max_attempts ]; do
         if docker exec "$DB_CONTAINER" pg_isready -U "$DB_USER" > /dev/null 2>&1; then
             if docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" > /dev/null 2>&1; then
@@ -200,22 +205,18 @@ extract_startup_time() {
     
     while [ $attempt -lt $max_wait ]; do
         if [ -f "$log_file" ]; then
-            # Buscar patron "started in X.XXXs"
             local startup_line
             startup_line=$(grep "started in" "$log_file" 2>/dev/null | head -1)
             
             if [ -n "$startup_line" ]; then
-                # Extraer numero (ej: "started in 1.234s" -> "1.234")
                 local seconds
                 seconds=$(echo "$startup_line" | grep -o '[0-9]*\.[0-9]*s' | sed 's/s$//')
                 
                 if [ -z "$seconds" ]; then
-                    # Intentar sin decimal (ej: "started in 1s")
                     seconds=$(echo "$startup_line" | grep -o '[0-9]*s' | sed 's/s$//')
                 fi
                 
                 if [ -n "$seconds" ]; then
-                    # Convertir a milisegundos - SOLO ENTEROS (compatible Git Bash)
                     local int_part
                     int_part=$(echo "$seconds" | cut -d'.' -f1)
                     
@@ -226,12 +227,10 @@ extract_startup_time() {
                         dec_part="0"
                     fi
                     
-                    # Padding a 3 digitos
                     while [ ${#dec_part} -lt 3 ]; do
                         dec_part="${dec_part}0"
                     done
                     
-                    # Truncar a 3 digitos
                     dec_part=${dec_part:0:3}
                     
                     local ms
@@ -254,7 +253,6 @@ extract_startup_time() {
 measure_docker_memory() {
     local container="$1"
     
-    # Obtener estadisticas de memoria
     local mem_str
     mem_str=$(docker stats --no-stream --format "{{.MemUsage}}" "$container" 2>/dev/null | head -1)
     
@@ -263,7 +261,6 @@ measure_docker_memory() {
         return
     fi
     
-    # Extraer primer valor (usado) - Formato: "123.4MiB / 7.775GiB"
     local used
     used=$(echo "$mem_str" | cut -d'/' -f1 | tr -d ' ')
     
@@ -272,7 +269,6 @@ measure_docker_memory() {
         return
     fi
     
-    # Extraer numero y unidad
     local num
     num=$(echo "$used" | sed 's/[^0-9.]//g')
     
@@ -284,7 +280,6 @@ measure_docker_memory() {
         return
     fi
     
-    # Convertir a MB (solo parte entera)
     local int_num
     int_num=$(echo "$num" | cut -d'.' -f1)
     
@@ -304,7 +299,7 @@ measure_docker_memory() {
     esac
 }
 
-# Funcion de load test mejorada - COMPATIBLE MAC/WINDOWS
+# Funcion de load test - COMPATIBLE MAC/WINDOWS
 load_test() {
     local url="$1"
     local requests="$2"
@@ -349,7 +344,6 @@ load_test() {
 get_docker_image_size() {
     local image="$1"
     
-    # Obtener tamano en bytes
     local size_str
     size_str=$(docker images --format "{{.Size}}" "$image" 2>/dev/null | head -1)
     
@@ -358,7 +352,6 @@ get_docker_image_size() {
         return
     fi
     
-    # Extraer numero
     local num
     num=$(echo "$size_str" | sed 's/[^0-9.]//g')
     
@@ -370,7 +363,6 @@ get_docker_image_size() {
         return
     fi
     
-    # Convertir a MB
     local int_num
     int_num=$(echo "$num" | cut -d'.' -f1)
     
@@ -439,24 +431,52 @@ fi
 print_success "Docker corriendo"
 
 print_section "Verificando PostgreSQL"
+
+# Si PostgreSQL no esta corriendo, levantarlo automaticamente
 if ! docker ps | grep -q "$DB_CONTAINER"; then
-    print_error "Contenedor PostgreSQL no encontrado: $DB_CONTAINER"
-    print_info "Ejecuta: docker-compose up -d"
-    exit 1
+    print_warning "Contenedor PostgreSQL no encontrado: $DB_CONTAINER"
+    print_info "Levantando PostgreSQL automaticamente..."
+    
+    if [ -f "docker-compose.yml" ]; then
+        run_docker_compose up -d
+        print_info "Esperando que PostgreSQL inicie (15 segundos)..."
+        sleep 15
+    else
+        print_error "No se encontro docker-compose.yml"
+        print_info "Ejecuta manualmente: docker-compose up -d"
+        exit 1
+    fi
 fi
 
+# Verificar que PostgreSQL responde
 if ! wait_for_postgres; then
-    print_error "PostgreSQL no responde"
+    print_error "PostgreSQL no responde despues de esperar"
+    print_info "Verifica los logs: docker logs $DB_CONTAINER"
     exit 1
 fi
 print_success "PostgreSQL listo"
 
 print_section "Verificando Maven"
-if ! command -v "$MVN_CMD" &> /dev/null && [ "$MVN_CMD" != "./mvnw" ]; then
-    print_error "Maven no encontrado"
+if ! command -v mvn &> /dev/null; then
+    print_error "Maven no encontrado. Instala Maven primero."
     exit 1
 fi
-print_success "Maven disponible: ${MVN_CMD}"
+print_success "Maven disponible"
+
+print_section "Verificando Maven Wrapper (requerido por Dockerfiles)"
+if [ ! -f ".mvn/wrapper/maven-wrapper.properties" ] || [ ! -f "mvnw" ]; then
+    print_warning "Maven Wrapper incompleto o faltante"
+    print_info "Regenerando Maven Wrapper automaticamente..."
+    if mvn wrapper:wrapper -q > /dev/null 2>&1; then
+        print_success "Maven Wrapper regenerado"
+    else
+        print_error "No se pudo regenerar Maven Wrapper"
+        print_info "Ejecuta manualmente: mvn wrapper:wrapper"
+        exit 1
+    fi
+else
+    print_success "Maven Wrapper presente"
+fi
 
 # ----------------------------------------------------------------------------
 # FASE 1: BUILD JVM (Docker)
@@ -465,11 +485,11 @@ print_success "Maven disponible: ${MVN_CMD}"
 print_header "FASE 1: BUILD JVM (Docker)"
 
 print_section "1.1 - Compilando con Maven (modo JVM)"
-print_info "${MVN_CMD} clean package -DskipTests"
+print_info "mvn clean package -DskipTests"
 
 START_BUILD_JVM=$(date +%s)
 
-if $MVN_CMD clean package -DskipTests > "$BUILD_JVM_LOG" 2>&1; then
+if mvn clean package -DskipTests > "$BUILD_JVM_LOG" 2>&1; then
     END_BUILD_JVM=$(date +%s)
     BUILD_TIME_JVM=$((END_BUILD_JVM - START_BUILD_JVM))
     print_success "Build JVM completado: ${BUILD_TIME_JVM}s"
