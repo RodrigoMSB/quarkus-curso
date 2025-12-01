@@ -1,0 +1,404 @@
+================================================================================
+REPORTE DE PRUEBAS FUNCIONALES
+Sistema E-Commerce con Patron SAGA y Redis Cache
+================================================================================
+
+Fecha de ejecucion: 2025-11-26 14:04:15
+Sistema operativo: macos
+Servicios bajo prueba:
+  - Order Service:     http://localhost:8080
+  - Inventory Service: http://localhost:8081
+  - Payment Service:   http://localhost:8082
+
+Generado por: test-saga.sh
+
+Este reporte contiene los resultados de las pruebas funcionales del sistema
+de microservicios con patron SAGA para transacciones distribuidas y Redis
+para caching, incluyendo:
+  - Health checks de los 3 microservicios
+  - Verificacion de productos disponibles
+  - SAGA exitosa (Reservar -> Pagar -> Confirmar)
+  - Redis Cache (medicion de latencia y mejora de rendimiento)
+  - SAGA con compensacion (Stock insuficiente)
+  - Verificacion de rollback
+
+================================================================================
+
+
+============================================================================
+>>> PRUEBAS FUNCIONALES - SAGA CON REDIS
+============================================================================
+
+
+PRUEBAS INCLUIDAS:
+   1. Health Checks de los 3 servicios
+   2. Verificacion de productos disponibles
+   3. SAGA exitosa (orden con stock suficiente)
+   4. Redis Cache - Medicion de rendimiento
+      - Cache MISS (primera consulta desde PostgreSQL)
+      - Cache HIT (consultas subsecuentes desde Redis)
+      - Comparacion de latencias
+   5. SAGA con compensacion (stock insuficiente)
+   6. Verificacion de rollback del inventario
+
+CASOS DE PRUEBA:
+   [OK] Orden con stock disponible -> SAGA COMPLETA -> Status: COMPLETED
+   [OK] Cache Redis -> Verificar mejora de rendimiento
+   [FAIL] Orden con stock insuficiente -> COMPENSACION SAGA -> Status: FAILED
+   [OK] Inventario liberado despues de compensacion
+
+
+
+
+============================================================================
+[i] PRUEBA 1: HEALTH CHECKS DE LOS SERVICIOS
+============================================================================
+
+
+>>> 1.1 - Health Check: Order Service (8080)
+
+Respuesta:
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "Database connections health check",
+      "status": "UP",
+      "data": {
+        "<default>": "UP"
+      }
+    },
+    {
+      "name": "Redis connection health check",
+      "status": "UP",
+      "data": {
+        "default": "PONG"
+      }
+    }
+  ]
+}
+[OK] TEST #1: Order Service Health
+
+>>> 1.2 - Health Check: Inventory Service (8081)
+
+Respuesta:
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "Database connections health check",
+      "status": "UP",
+      "data": {
+        "<default>": "UP"
+      }
+    }
+  ]
+}
+[OK] TEST #2: Inventory Service Health
+
+>>> 1.3 - Health Check: Payment Service (8082)
+
+Respuesta:
+{
+  "status": "UP",
+  "checks": [
+    {
+      "name": "Database connections health check",
+      "status": "UP",
+      "data": {
+        "<default>": "UP"
+      }
+    }
+  ]
+}
+[OK] TEST #3: Payment Service Health
+
+
+
+============================================================================
+[P] PRUEBA 2: VERIFICAR PRODUCTOS EN INVENTARIO
+============================================================================
+
+
+>>> 2.1 - Listar productos disponibles
+
+[i] Consultando inventario...
+[OK] Productos encontrados: 3
+Primeros 3 productos:
+[
+  {
+    "id": 1,
+    "productCode": "LAPTOP-001",
+    "name": "Laptop HP Pavilion 15",
+    "stock": 50,
+    "availableStock": 50,
+    "price": 899.99
+  },
+  {
+    "id": 2,
+    "productCode": "MOUSE-001",
+    "name": "Mouse Logitech MX Master",
+    "stock": 100,
+    "availableStock": 100,
+    "price": 99.99
+  },
+  {
+    "id": 3,
+    "productCode": "KEYBOARD-001",
+    "name": "Teclado Mecánico Corsair",
+    "stock": 80,
+    "availableStock": 80,
+    "price": 79.99
+  }
+]
+[OK] TEST #4: Listar productos
+
+>>> 2.2 - Consultar producto especifico (LAPTOP-001)
+
+Producto LAPTOP-001:
+{
+  "id": 1,
+  "productCode": "LAPTOP-001",
+  "name": "Laptop HP Pavilion 15",
+  "stock": 50,
+  "availableStock": 50,
+  "price": 899.99
+}
+[i] Stock disponible: 50 unidades
+[OK] TEST #5: Consultar producto LAPTOP-001
+
+
+
+============================================================================
+[OK] PRUEBA 3: SAGA EXITOSA - CREAR ORDEN
+============================================================================
+
+
+>>> 3.1 - Crear orden con stock suficiente
+
+[i] Enviando solicitud de orden...
+Request:
+{"userId":"test-user-saga-001","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":1},{"productCode":"MOUSE-001","quantity":2}]}
+
+Response:
+{
+  "orderId": "dccfb110-0c40-4c53-9b0f-9126f19e26a0",
+  "userId": "test-user-saga-001",
+  "status": "COMPLETED",
+  "totalAmount": 1099.97,
+  "items": [
+    {
+      "productCode": "LAPTOP-001",
+      "productName": "Laptop HP Pavilion 15",
+      "quantity": 1,
+      "price": 899.99,
+      "subtotal": 899.99
+    },
+    {
+      "productCode": "MOUSE-001",
+      "productName": "Mouse Logitech MX Master",
+      "quantity": 2,
+      "price": 99.99,
+      "subtotal": 199.98
+    }
+  ],
+  "createdAt": "2025-11-26T14:07:45.331094",
+  "message": "Orden creada exitosamente"
+}
+[OK] SAGA COMPLETADA EXITOSAMENTE!
+[i] Order ID: dccfb110-0c40-4c53-9b0f-9126f19e26a0
+[i] Status: COMPLETED
+[i] Total: $1099.97
+
+SAGA EJECUTADA:
+  1. [OK] Inventario reservado (LAPTOP-001 x 1, MOUSE-001 x 2)
+  2. [OK] Pago procesado ($1099.97)
+  3. [OK] Reserva confirmada
+  4. [OK] Orden guardada en BD
+[OK] TEST #6: Crear orden exitosa (SAGA completa)
+
+
+
+============================================================================
+[C] PRUEBA 4: VERIFICAR REDIS CACHE
+============================================================================
+
+
+>>> 4.1 - Primera consulta (Cache MISS esperado)
+
+[i] Consultando orden dccfb110-0c40-4c53-9b0f-9126f19e26a0 por primera vez...
+[i] Esta consulta va directo a PostgreSQL...
+[OK] Latencia primera consulta: 59ms (desde PostgreSQL)
+Latencia: 59ms (Cache MISS - consulta a BD)
+
+Response (primera consulta):
+{
+  "orderId": "dccfb110-0c40-4c53-9b0f-9126f19e26a0",
+  "userId": "test-user-saga-001",
+  "status": "COMPLETED",
+  "totalAmount": 1099.97,
+  "items": [
+    {
+      "productCode": "LAPTOP-001",
+      "productName": "Laptop HP Pavilion 15",
+      "quantity": 1,
+      "price": 899.99,
+      "subtotal": 899.99
+    },
+    {
+      "productCode": "MOUSE-001",
+      "productName": "Mouse Logitech MX Master",
+      "quantity": 2,
+      "price": 99.99,
+      "subtotal": 199.98
+    }
+  ],
+  "createdAt": "2025-11-26T14:07:45.331094",
+  "message": null
+}
+[OK] TEST #7: Primera consulta orden (Cache MISS)
+
+>>> 4.2 - Verificar que se guardo en Redis
+
+[i] Buscando clave en Redis...
+[i] No se pudo verificar Redis directamente con docker
+[i] Pero podemos validar el cache midiendo latencias...
+Redis Cache: No se pudo verificar con docker exec
+
+>>> 4.3 - Segunda consulta (Cache HIT esperado)
+
+[i] Consultando orden dccfb110-0c40-4c53-9b0f-9126f19e26a0 nuevamente...
+[i] Esta consulta deberia venir desde Redis (mas rapida)...
+[OK] Latencia segunda consulta: 31ms
+Latencia: 31ms (Cache HIT - desde Redis)
+[OK] Cache funcionando! Mejora de rendimiento: 48%
+[OK] La segunda consulta fue 48% mas rapida
+Mejora de rendimiento: 48%
+Comparacion: 59ms (BD) -> 31ms (Cache)
+[OK] TEST #8: Segunda consulta orden (Cache HIT)
+
+>>> 4.4 - Tercera consulta (validar cache persistente)
+
+[i] Consultando una vez mas para confirmar cache...
+[i] Latencia tercera consulta: 50ms
+Latencia tercera consulta: 50ms
+[i] 
+[i] Comparacion de las 3 consultas:
+[i]   1a consulta (Cache MISS):        59ms  <- Desde PostgreSQL
+[i]   2a consulta (Cache HIT):         31ms  <- Desde Redis
+[i]   3a consulta (Cache persistente): 50ms  <- Desde Redis
+
+RESUMEN CACHE:
+  1a: 59ms (MISS - PostgreSQL)
+  2a: 31ms (HIT - Redis)
+  3a: 50ms (HIT - Redis)
+[OK] 
+[OK] CACHE CONFIRMADO: Promedio 40ms vs 59ms inicial
+[OK]    Mejora total: 33%
+
+CONCLUSION CACHE: Funcionando correctamente (33% mejora)
+[OK] TEST #9: Tercera consulta orden (Cache persistente)
+
+
+
+============================================================================
+[FAIL] PRUEBA 5: SAGA CON COMPENSACION - STOCK INSUFICIENTE
+============================================================================
+
+
+>>> 5.1 - Crear orden con stock INSUFICIENTE
+
+[i] Enviando solicitud con cantidad imposible (10000 unidades)...
+[i] Esto deberia disparar la compensacion SAGA...
+Request:
+{"userId":"test-user-saga-002","paymentMethod":"credit_card","items":[{"productCode":"LAPTOP-001","quantity":10000}]}
+
+Response:
+{
+  "orderId": "a62e2a37-a9ed-4703-ba45-9d2756c99162",
+  "userId": "test-user-saga-002",
+  "status": "FAILED",
+  "totalAmount": 8999900.0,
+  "items": [
+    {
+      "productCode": "LAPTOP-001",
+      "productName": "Laptop HP Pavilion 15",
+      "quantity": 10000,
+      "price": 899.99,
+      "subtotal": 8999900.0
+    }
+  ],
+  "createdAt": "2025-11-26T14:10:27.218987",
+  "message": "Error al crear orden: Received: 'Conflict, status code 409' when invoking REST Client method: 'pe.banco.order.client.InventoryClient#reserveStock'"
+}
+[OK] COMPENSACION SAGA EJECUTADA CORRECTAMENTE!
+[i] Status: FAILED
+[i] El sistema detecto stock insuficiente y ejecuto rollback
+
+COMPENSACION EJECUTADA:
+  1. [X] Inventario rechazo reserva (stock insuficiente)
+  2. [<-] Rollback iniciado automaticamente
+  3. [OK] Orden marcada como FAILED
+[OK] TEST #10: Orden fallida con compensacion SAGA
+
+>>> 5.2 - Verificar que el inventario NO fue afectado
+
+[i] Consultando producto LAPTOP-001...
+[i] Stock total: 49
+[i] Stock reservado: 0
+[i] Stock disponible: 49
+
+Inventario despues de compensacion:
+{
+  "id": 1,
+  "productCode": "LAPTOP-001",
+  "name": "Laptop HP Pavilion 15",
+  "stock": 49,
+  "availableStock": 49,
+  "price": 899.99
+}
+[OK] Inventario correctamente liberado (reservedStock = 0)
+[OK] Rollback completo
+[OK] TEST #11: Verificar rollback de inventario
+
+
+
+============================================================================
+[R] RESUMEN DE PRUEBAS
+============================================================================
+
+
++================================================================+
+|                    RESULTADOS FINALES                          |
++================================================================+
+| Total de pruebas:    11
+| Pruebas exitosas:    11
+| Pruebas fallidas:    0
++================================================================+
+
+[OK] TODAS LAS PRUEBAS PASARON EXITOSAMENTE!
+
+CONCLUSION: Sistema funcionando correctamente.
+  - Patron SAGA funcionando con orquestacion y compensacion
+  - Redis Cache mejorando rendimiento
+  - Los 3 microservicios comunicandose correctamente
+  - Rollback automatico en caso de fallo
+
+================================================================================
+FIN DEL REPORTE
+================================================================================
+
+Archivo generado: test-saga-report-2025-11-26-140415.txt
+Fecha: 2025-11-26 14:11:44
+Sistema: macos
+
+Para mas informacion, consulta:
+- README.md: Guia de usuario
+- TEORIA.md: Conceptos tecnicos sobre SAGA y Redis
+
+Capitulo 10: Patrones y herramientas avanzadas para microservicios
+- Implementacion de caching con Redis
+- Patron SAGA para transacciones distribuidas
+
+================================================================================
+[OK] Reporte guardado en: test-saga-report-2025-11-26-140415.txt

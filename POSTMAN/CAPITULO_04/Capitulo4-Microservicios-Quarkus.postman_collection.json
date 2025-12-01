@@ -1,0 +1,1054 @@
+{
+	"info": {
+		"_postman_id": "cap4-microservicios-quarkus-v2",
+		"name": "Capitulo 4 - Microservicios Quarkus",
+		"description": "Coleccion completa del Capitulo 4 del Diplomado Quarkus\n\nEstructura:\n1. Prestamos Bancarios (CRUD completo)\n2. Productos Reactivo (Mutiny + Concurrencia)\n3. Productos Clasico (Blocking + Concurrencia)\n4. Comparativa (Nota - requiere herramienta 'hey')\n5. Clientes Seguros (SQL Server / Always Encrypted)\n6. Documentos Cifrados (Google Tink AES-256-GCM)\n7. Multi Streaming (Uni vs Multi - SSE)\n\nNOTA: Cada carpeta corresponde a un proyecto separado.\nCambia de proyecto y ejecuta ./mvnw quarkus:dev antes de probar cada seccion.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01 - Prestamos Bancarios",
+			"item": [
+				{
+					"name": "Modulo 1 - Gestion de Clientes",
+					"item": [
+						{
+							"name": "01 - Crear cliente Maria Gonzalez",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set('CLIENTE1_ID', jsonData.id);",
+											"    pm.test('Cliente creado con ID', function () {",
+											"        pm.expect(jsonData.id).to.be.above(0);",
+											"    });",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Maria Elena Gonzalez Quispe\",\n    \"dni\": \"47836291\",\n    \"email\": \"maria.gonzalez@banco.pe\",\n    \"telefono\": \"987654321\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/clientes", "host": ["{{API_URL}}"], "path": ["clientes"]}
+							}
+						},
+						{
+							"name": "02 - Crear cliente Carlos Huaman",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set('CLIENTE2_ID', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Carlos Alberto Huaman Rojas\",\n    \"dni\": \"72149803\",\n    \"email\": \"carlos.huaman@banco.pe\",\n    \"telefono\": \"956782341\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/clientes", "host": ["{{API_URL}}"], "path": ["clientes"]}
+							}
+						},
+						{
+							"name": "03 - Crear cliente Rosa Mendoza",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set('CLIENTE3_ID', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Rosa Maria Mendoza Vargas\",\n    \"dni\": \"68234519\",\n    \"email\": \"rosa.mendoza@banco.pe\",\n    \"telefono\": \"923456789\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/clientes", "host": ["{{API_URL}}"], "path": ["clientes"]}
+							}
+						},
+						{
+							"name": "04 - Validar DNI duplicado (409)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Debe rechazar DNI duplicado', function () {",
+											"    pm.expect(pm.response.code).to.eql(409);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Duplicado Test\",\n    \"dni\": \"47836291\",\n    \"email\": \"duplicado@test.com\",\n    \"telefono\": \"999999999\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/clientes", "host": ["{{API_URL}}"], "path": ["clientes"]}
+							}
+						},
+						{
+							"name": "05 - Validar email duplicado (409)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Debe rechazar email duplicado', function () {",
+											"    pm.expect(pm.response.code).to.eql(409);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Duplicado Test 2\",\n    \"dni\": \"99999999\",\n    \"email\": \"maria.gonzalez@banco.pe\",\n    \"telefono\": \"999999999\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/clientes", "host": ["{{API_URL}}"], "path": ["clientes"]}
+							}
+						},
+						{
+							"name": "06 - Listar todos los clientes",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"pm.test('Respuesta es array', function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData).to.be.an('array');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/clientes", "host": ["{{API_URL}}"], "path": ["clientes"]}
+							}
+						},
+						{
+							"name": "07 - Obtener cliente por ID",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/clientes/{{CLIENTE1_ID}}", "host": ["{{API_URL}}"], "path": ["clientes", "{{CLIENTE1_ID}}"]}
+							}
+						},
+						{
+							"name": "08 - Actualizar telefono cliente",
+							"request": {
+								"method": "PUT",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Carlos Alberto Huaman Rojas\",\n    \"dni\": \"72149803\",\n    \"email\": \"carlos.huaman@banco.pe\",\n    \"telefono\": \"999111222\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/clientes/{{CLIENTE2_ID}}", "host": ["{{API_URL}}"], "path": ["clientes", "{{CLIENTE2_ID}}"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Modulo 2 - Gestion de Prestamos",
+					"item": [
+						{
+							"name": "09 - Crear prestamo vehicular S/15000 (24 meses)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set('PRESTAMO1_ID', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clienteId\": {{CLIENTE1_ID}},\n    \"monto\": 15000.00,\n    \"plazoMeses\": 24,\n    \"tasaInteres\": 18.50\n}"
+								},
+								"url": {"raw": "{{API_URL}}/prestamos", "host": ["{{API_URL}}"], "path": ["prestamos"]}
+							}
+						},
+						{
+							"name": "10 - Crear prestamo personal S/8000 (12 meses)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set('PRESTAMO2_ID', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clienteId\": {{CLIENTE2_ID}},\n    \"monto\": 8000.00,\n    \"plazoMeses\": 12,\n    \"tasaInteres\": 22.00\n}"
+								},
+								"url": {"raw": "{{API_URL}}/prestamos", "host": ["{{API_URL}}"], "path": ["prestamos"]}
+							}
+						},
+						{
+							"name": "11 - Listar todos los prestamos",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/prestamos", "host": ["{{API_URL}}"], "path": ["prestamos"]}
+							}
+						},
+						{
+							"name": "12 - Obtener prestamo por ID",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/prestamos/{{PRESTAMO1_ID}}", "host": ["{{API_URL}}"], "path": ["prestamos", "{{PRESTAMO1_ID}}"]}
+							}
+						},
+						{
+							"name": "13 - Prestamos de Maria Gonzalez",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/prestamos/cliente/{{CLIENTE1_ID}}", "host": ["{{API_URL}}"], "path": ["prestamos", "cliente", "{{CLIENTE1_ID}}"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Modulo 3 - Sistema de Pagos",
+					"item": [
+						{
+							"name": "14 - Pagar cuota 1",
+							"request": {
+								"method": "PUT",
+								"url": {"raw": "{{API_URL}}/prestamos/{{PRESTAMO1_ID}}/pagar-cuota/1", "host": ["{{API_URL}}"], "path": ["prestamos", "{{PRESTAMO1_ID}}", "pagar-cuota", "1"]}
+							}
+						},
+						{
+							"name": "15 - Pagar cuota 2",
+							"request": {
+								"method": "PUT",
+								"url": {"raw": "{{API_URL}}/prestamos/{{PRESTAMO1_ID}}/pagar-cuota/2", "host": ["{{API_URL}}"], "path": ["prestamos", "{{PRESTAMO1_ID}}", "pagar-cuota", "2"]}
+							}
+						},
+						{
+							"name": "16 - Rechazar cuota ya pagada (409)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Debe rechazar cuota ya pagada', function () {",
+											"    pm.expect(pm.response.code).to.eql(409);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"url": {"raw": "{{API_URL}}/prestamos/{{PRESTAMO1_ID}}/pagar-cuota/1", "host": ["{{API_URL}}"], "path": ["prestamos", "{{PRESTAMO1_ID}}", "pagar-cuota", "1"]}
+							}
+						}
+					]
+				}
+			],
+			"description": "Sistema de Prestamos Bancarios con Clientes, Prestamos y Pagos de Cuotas.\n\nProyecto: Sistema tradicional con JPA/Hibernate"
+		},
+		{
+			"name": "02 - Productos Reactivo (Mutiny)",
+			"item": [
+				{
+					"name": "CRUD Basico Reactivo",
+					"item": [
+						{
+							"name": "01 - Listar todos los productos",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status 200', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"if (pm.response.code === 200) {",
+											"    var jsonData = pm.response.json();",
+											"    if (jsonData.length > 0) {",
+											"        pm.collectionVariables.set('PRODUCTO1_ID', jsonData[0].id);",
+											"        if (jsonData.length > 2) {",
+											"            pm.collectionVariables.set('PRODUCTO3_ID', jsonData[2].id);",
+											"        }",
+											"    }",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo"]}
+							}
+						},
+						{
+							"name": "02 - Buscar producto por ID",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/{{PRODUCTO1_ID}}", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "{{PRODUCTO1_ID}}"]}
+							}
+						},
+						{
+							"name": "03 - Crear producto Auriculares Sony",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set('PRODUCTO_NUEVO_ID', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Auriculares Sony WH-1000XM5\",\n    \"descripcion\": \"Auriculares inalambricos con cancelacion de ruido\",\n    \"precio\": 299.99,\n    \"stock\": 25\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo"]}
+							}
+						},
+						{
+							"name": "04 - Actualizar producto",
+							"request": {
+								"method": "PUT",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Laptop Dell XPS 15 Pro Actualizada\",\n    \"descripcion\": \"Laptop profesional de ultima generacion\",\n    \"precio\": 1800.00,\n    \"stock\": 20\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/{{PRODUCTO1_ID}}", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "{{PRODUCTO1_ID}}"]}
+							}
+						},
+						{
+							"name": "05 - Buscar producto inexistente (404)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Debe retornar 404', function () {",
+											"    pm.expect(pm.response.code).to.eql(404);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/99999", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "99999"]}
+							}
+						},
+						{
+							"name": "06 - Eliminar producto",
+							"request": {
+								"method": "DELETE",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/{{PRODUCTO3_ID}}", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "{{PRODUCTO3_ID}}"]}
+							}
+						},
+						{
+							"name": "07 - Verificar eliminacion (404)",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/{{PRODUCTO3_ID}}", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "{{PRODUCTO3_ID}}"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Operaciones Avanzadas Reactivo",
+					"item": [
+						{
+							"name": "08 - Productos con stock bajo",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/stock-bajo/30", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "stock-bajo", "30"]}
+							}
+						},
+						{
+							"name": "09 - Carga masiva 50 productos (concurrencia reactiva)",
+							"request": {
+								"method": "POST",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/carga-masiva/50", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "carga-masiva", "50"]},
+								"description": "Crea 50 productos de forma reactiva.\nDemuestra las ventajas de programacion reactiva en operaciones masivas."
+							}
+						},
+						{
+							"name": "10 - Verificar carga masiva",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Validaciones Reactivo",
+					"item": [
+						{
+							"name": "11 - Rechazar precio negativo (400)",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Producto Invalido\",\n    \"descripcion\": \"Precio negativo\",\n    \"precio\": -100.00,\n    \"stock\": 10\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo"]}
+							}
+						},
+						{
+							"name": "12 - Rechazar stock negativo (400)",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Producto Invalido 2\",\n    \"descripcion\": \"Stock negativo\",\n    \"precio\": 100.00,\n    \"stock\": -5\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo"]}
+							}
+						},
+						{
+							"name": "13 - Actualizar inexistente (404)",
+							"request": {
+								"method": "PUT",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Producto que no existe\",\n    \"descripcion\": \"Test\",\n    \"precio\": 100.00,\n    \"stock\": 10\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/99999", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "99999"]}
+							}
+						},
+						{
+							"name": "14 - Eliminar ya eliminado (404)",
+							"request": {
+								"method": "DELETE",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/{{PRODUCTO3_ID}}", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "{{PRODUCTO3_ID}}"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Test Concurrencia Reactivo (NOTA)",
+					"item": [
+						{
+							"name": "README - Test Concurrencia con Hey",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/1", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "1"]},
+								"description": "NOTA IMPORTANTE: Los tests de concurrencia NO se pueden hacer desde Postman.\n\nRequieren la herramienta 'hey' (HTTP load generator).\n\nPara ejecutar el test de concurrencia reactivo:\n\n1. Instalar hey:\n   Mac: brew install hey\n   Windows: choco install hey\n\n2. Ejecutar el script:\n   ./test-concurrencia-reactivo.sh\n\n3. Se ejecutaran 3 tests:\n   - 1,000 requests con 50 workers (carga ligera)\n   - 5,000 requests con 100 workers (SWEET SPOT)\n   - 10,000 requests con 200 workers (carga alta)\n\n4. Los resultados se guardan en:\n   resultados-reactivo-TIMESTAMP.txt\n\nMETRICAS CLAVE A OBSERVAR:\n- Requests/sec (throughput)\n- Latencia promedio\n- Percentil 50 (p50)\n- Percentil 95 (p95)\n- Percentil 99 (p99)"
+							}
+						}
+					],
+					"description": "Los tests de concurrencia requieren la herramienta 'hey'.\nNo se pueden replicar en Postman."
+				}
+			],
+			"description": "API Reactiva de Productos usando Mutiny (Uni y Multi).\n\nConceptos demostrados:\n- Operaciones no bloqueantes\n- Composicion reactiva con Mutiny\n- Transacciones reactivas (Panache.withTransaction)\n- Alta concurrencia\n- Driver PostgreSQL reactivo"
+		},
+		{
+			"name": "03 - Productos Clasico (Blocking)",
+			"item": [
+				{
+					"name": "CRUD Basico Clasico",
+					"item": [
+						{
+							"name": "01 - Listar todos los productos",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico"]}
+							}
+						},
+						{
+							"name": "02 - Buscar producto por ID",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/1", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "1"]}
+							}
+						},
+						{
+							"name": "03 - Crear producto",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Auriculares Sony WH-1000XM5\",\n    \"descripcion\": \"Auriculares inalambricos con cancelacion de ruido\",\n    \"precio\": 299.99,\n    \"stock\": 25\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico"]}
+							}
+						},
+						{
+							"name": "04 - Actualizar producto",
+							"request": {
+								"method": "PUT",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Laptop Dell XPS 15 Pro Actualizada\",\n    \"descripcion\": \"Laptop profesional de ultima generacion\",\n    \"precio\": 1800.00,\n    \"stock\": 20\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/1", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "1"]}
+							}
+						},
+						{
+							"name": "05 - Buscar inexistente (404)",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/99999", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "99999"]}
+							}
+						},
+						{
+							"name": "06 - Eliminar producto",
+							"request": {
+								"method": "DELETE",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/3", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "3"]}
+							}
+						},
+						{
+							"name": "07 - Verificar eliminacion (404)",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/3", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "3"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Operaciones Avanzadas Clasico",
+					"item": [
+						{
+							"name": "08 - Productos con stock bajo",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/stock-bajo/30", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "stock-bajo", "30"]}
+							}
+						},
+						{
+							"name": "09 - Carga masiva 50 productos (bloqueante)",
+							"request": {
+								"method": "POST",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/carga-masiva/50", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "carga-masiva", "50"]},
+								"description": "Crea 50 productos de forma bloqueante.\nPermite comparar el rendimiento con la version reactiva."
+							}
+						},
+						{
+							"name": "10 - Verificar carga masiva",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Validaciones Clasico",
+					"item": [
+						{
+							"name": "11 - Rechazar precio negativo (400)",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Producto Invalido\",\n    \"descripcion\": \"Precio negativo\",\n    \"precio\": -100.00,\n    \"stock\": 10\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico"]}
+							}
+						},
+						{
+							"name": "12 - Rechazar stock negativo (400)",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Producto Invalido 2\",\n    \"descripcion\": \"Stock negativo\",\n    \"precio\": 100.00,\n    \"stock\": -5\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico"]}
+							}
+						},
+						{
+							"name": "13 - Actualizar inexistente (404)",
+							"request": {
+								"method": "PUT",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Producto que no existe\",\n    \"descripcion\": \"Test\",\n    \"precio\": 100.00,\n    \"stock\": 10\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/99999", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "99999"]}
+							}
+						},
+						{
+							"name": "14 - Eliminar ya eliminado (404)",
+							"request": {
+								"method": "DELETE",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/3", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "3"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Test Concurrencia Clasico (NOTA)",
+					"item": [
+						{
+							"name": "README - Test Concurrencia con Hey",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/clasico/1", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "clasico", "1"]},
+								"description": "NOTA IMPORTANTE: Los tests de concurrencia NO se pueden hacer desde Postman.\n\nRequieren la herramienta 'hey' (HTTP load generator).\n\nPara ejecutar el test de concurrencia clasico:\n\n1. Instalar hey:\n   Mac: brew install hey\n   Windows: choco install hey\n\n2. Ejecutar el script:\n   ./test-concurrencia-clasico.sh\n\n3. Se ejecutaran 3 tests:\n   - 1,000 requests con 50 workers\n   - 5,000 requests con 100 workers (SWEET SPOT)\n   - 10,000 requests con 200 workers\n\n4. Los resultados se guardan en:\n   resultados-clasico-TIMESTAMP.txt\n\nESPERADO vs REACTIVO:\n- Menor throughput en el sweet spot (5K requests)\n- Mayor latencia p95 bajo alta concurrencia\n- Peor escalabilidad\n\nPERO:\n- Codigo mas simple y facil de debuggear\n- Suficiente para baja/media concurrencia\n- Menos curva de aprendizaje"
+							}
+						}
+					]
+				}
+			],
+			"description": "API Clasica de Productos usando enfoque bloqueante.\n\nConceptos demostrados:\n- Operaciones bloqueantes (sincronas)\n- Repository Pattern con PanacheRepositoryBase\n- Transacciones con @Transactional\n- Driver PostgreSQL JDBC\n- Thread bloqueado por request"
+		},
+		{
+			"name": "04 - Comparativa Reactivo vs Clasico (NOTA)",
+			"item": [
+				{
+					"name": "README - Generar Comparativa",
+					"request": {
+						"method": "GET",
+						"url": {"raw": "{{API_URL}}/health", "host": ["{{API_URL}}"], "path": ["health"]},
+						"description": "NOTA: La comparativa Reactivo vs Clasico NO es una prueba HTTP.\n\nEl script generar-comparativa.sh:\n1. Lee los archivos resultados-reactivo-*.txt y resultados-clasico-*.txt\n2. Extrae metricas (throughput, latencias p50/p95/p99)\n3. Genera un reporte Markdown con:\n   - Tablas comparativas\n   - Graficos ASCII dinamicos\n   - Analisis del sweet spot\n   - Guia de decision arquitectonica\n\nPASOS PARA GENERAR LA COMPARATIVA:\n\n1. Ejecutar test-concurrencia-reactivo.sh (genera resultados-reactivo-*.txt)\n2. Ejecutar test-concurrencia-clasico.sh (genera resultados-clasico-*.txt)\n3. Copiar ambos archivos .txt a la misma carpeta\n4. Ejecutar: ./generar-comparativa.sh\n5. Se genera: comparativa-TIMESTAMP.md\n\nREQUISITOS:\n- Herramienta 'hey' instalada\n- Comando 'bc' disponible (calculo matematico)\n- Ambos archivos de resultados en la misma carpeta"
+					}
+				}
+			],
+			"description": "El script generar-comparativa.sh analiza los resultados de los tests de concurrencia y genera un reporte Markdown.\n\nNo es una prueba HTTP - procesa archivos locales."
+		},
+		{
+			"name": "05 - Clientes Seguros (SQL Server)",
+			"item": [
+				{
+					"name": "CRUD Basico",
+					"item": [
+						{
+							"name": "01 - Listar todos los clientes",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 200) {",
+											"    var jsonData = pm.response.json();",
+											"    if (jsonData.length > 0) {",
+											"        pm.collectionVariables.set('CLIENTE_SEGURO1_ID', jsonData[0].id);",
+											"    }",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]}
+							}
+						},
+						{
+							"name": "02 - Buscar cliente por ID",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/clientes/{{CLIENTE_SEGURO1_ID}}", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes", "{{CLIENTE_SEGURO1_ID}}"]}
+							}
+						},
+						{
+							"name": "03 - Crear cliente Carlos Ramirez",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set('CLIENTE_NUEVO_ID', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Carlos Ramirez\",\n    \"numeroTarjeta\": \"5412-9876-5432-1098\",\n    \"email\": \"carlos.ramirez@banco.com\",\n    \"telefono\": \"+56987654321\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]}
+							}
+						},
+						{
+							"name": "04 - Crear cliente Ana Torres",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Ana Torres\",\n    \"numeroTarjeta\": \"4532-8888-9999-0000\",\n    \"email\": \"ana.torres@banco.com\",\n    \"telefono\": \"+56911223344\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]}
+							}
+						},
+						{
+							"name": "05 - Verificar clientes creados",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Busquedas por Tarjeta",
+					"item": [
+						{
+							"name": "06 - Buscar por tarjeta existente",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/clientes/tarjeta/5412-9876-5432-1098", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes", "tarjeta", "5412-9876-5432-1098"]},
+								"description": "Busqueda deterministica - funcionaria con Always Encrypted activado"
+							}
+						},
+						{
+							"name": "07 - Buscar por tarjeta inexistente",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/clientes/tarjeta/9999-9999-9999-9999", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes", "tarjeta", "9999-9999-9999-9999"]},
+								"description": "Esperado: Lista vacia []"
+							}
+						},
+						{
+							"name": "08 - Crear cliente Pedro Gonzalez",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Pedro Gonzalez\",\n    \"numeroTarjeta\": \"4111-1111-1111-1111\",\n    \"email\": \"pedro.gonzalez@banco.com\",\n    \"telefono\": \"+56944556677\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]}
+							}
+						},
+						{
+							"name": "09 - Buscar tarjeta recien creada",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/clientes/tarjeta/4111-1111-1111-1111", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes", "tarjeta", "4111-1111-1111-1111"]}
+							}
+						}
+					]
+				},
+				{
+					"name": "Tipos de Tarjeta",
+					"item": [
+						{
+							"name": "10 - Cliente inexistente (404)",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/clientes/99999", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes", "99999"]}
+							}
+						},
+						{
+							"name": "11 - Crear con tarjeta AMEX (37...)",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Laura Diaz\",\n    \"numeroTarjeta\": \"3782-8224-6310-005\",\n    \"email\": \"laura.diaz@banco.com\",\n    \"telefono\": \"+56933445566\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]},
+								"description": "American Express - empieza con 37"
+							}
+						},
+						{
+							"name": "12 - Crear con tarjeta Visa (4...)",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Roberto Silva\",\n    \"numeroTarjeta\": \"4532-1234-5678-9010\",\n    \"email\": \"roberto.silva@banco.com\",\n    \"telefono\": \"+56955667788\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]},
+								"description": "Visa - empieza con 4"
+							}
+						},
+						{
+							"name": "13 - Crear con tarjeta Mastercard (5...)",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Sofia Morales\",\n    \"numeroTarjeta\": \"5425-2334-3010-9903\",\n    \"email\": \"sofia.morales@banco.com\",\n    \"telefono\": \"+56966778899\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]},
+								"description": "Mastercard - empieza con 5"
+							}
+						},
+						{
+							"name": "14 - Crear con tarjeta AMEX 2 (34...)",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"nombre\": \"Javier Lopez\",\n    \"numeroTarjeta\": \"3714-4963-5398-431\",\n    \"email\": \"javier.lopez@banco.com\",\n    \"telefono\": \"+56977889900\"\n}"
+								},
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]}
+							}
+						},
+						{
+							"name": "15 - Listar todos (verificacion final)",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/clientes", "host": ["{{API_URL}}"], "path": ["api", "v1", "clientes"]}
+							}
+						}
+					]
+				}
+			],
+			"description": "API de Clientes con datos sensibles.\nBase de datos: SQL Server (BancoDB)\nSeguridad: Preparado para Always Encrypted\n\nNOTA: En esta demo, los datos NO estan cifrados.\nAlways Encrypted requiere:\n- Windows: Windows Certificate Store\n- Mac/Linux: Azure Key Vault"
+		},
+		{
+			"name": "06 - Documentos Cifrados (Tink)",
+			"item": [
+				{
+					"name": "01 - Crear documento confidencial",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.collectionVariables.set('DOC1_ID', jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"titulo\": \"Contrato Confidencial\",\n    \"contenido\": \"Informacion confidencial del cliente - DNI: 12345678\",\n    \"tipoDocumento\": \"CONFIDENCIAL\"\n}"
+						},
+						"url": {"raw": "{{API_URL}}/api/v1/documentos", "host": ["{{API_URL}}"], "path": ["api", "v1", "documentos"]},
+						"description": "El contenido se cifra automaticamente con AES-256-GCM (Google Tink) ANTES de guardarse en PostgreSQL.\n\nFlujo:\nCliente envia texto plano -> CryptoService.cifrar() -> BD guarda cifrado"
+					}
+				},
+				{
+					"name": "02 - Consultar documento (descifrado auto)",
+					"request": {
+						"method": "GET",
+						"url": {"raw": "{{API_URL}}/api/v1/documentos/{{DOC1_ID}}", "host": ["{{API_URL}}"], "path": ["api", "v1", "documentos", "{{DOC1_ID}}"]},
+						"description": "Flujo de descifrado:\nBD lee cifrado -> CryptoService.descifrar() -> API devuelve texto plano\n\nLa BD NUNCA ve el texto plano."
+					}
+				},
+				{
+					"name": "03 - Crear documento Datos Personales",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"titulo\": \"Datos Personales Cliente VIP\",\n    \"contenido\": \"Nombre: Juan Perez | Email: juan@mail.com | Telefono: 987654321\",\n    \"tipoDocumento\": \"PRIVADO\"\n}"
+						},
+						"url": {"raw": "{{API_URL}}/api/v1/documentos", "host": ["{{API_URL}}"], "path": ["api", "v1", "documentos"]}
+					}
+				},
+				{
+					"name": "04 - Crear documento Historial Crediticio",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"titulo\": \"Historial Crediticio\",\n    \"contenido\": \"Score: 850 | Deudas: S/0.00 | Linea de credito: S/50,000\",\n    \"tipoDocumento\": \"CONFIDENCIAL\"\n}"
+						},
+						"url": {"raw": "{{API_URL}}/api/v1/documentos", "host": ["{{API_URL}}"], "path": ["api", "v1", "documentos"]}
+					}
+				},
+				{
+					"name": "05 - Crear documento Info Bancaria",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"titulo\": \"Informacion Bancaria\",\n    \"contenido\": \"Banco: BCP | Cuenta: 191-1234567-0-89 | CCI: 00219100123456708912\",\n    \"tipoDocumento\": \"CONFIDENCIAL\"\n}"
+						},
+						"url": {"raw": "{{API_URL}}/api/v1/documentos", "host": ["{{API_URL}}"], "path": ["api", "v1", "documentos"]}
+					}
+				},
+				{
+					"name": "06 - Listar todos (descifrado masivo)",
+					"request": {
+						"method": "GET",
+						"url": {"raw": "{{API_URL}}/api/v1/documentos", "host": ["{{API_URL}}"], "path": ["api", "v1", "documentos"]},
+						"description": "Cada documento se descifra individualmente de forma automatica.\n\nConceptos demostrados:\n- AES-256-GCM (AEAD): Cifrado + Autenticacion\n- Google Tink: API segura y facil\n- Cifrado antes de INSERT\n- Descifrado despues de SELECT"
+					}
+				}
+			],
+			"description": "Cifrado a Nivel de Aplicacion con Google Tink.\nAlgoritmo: AES-256-GCM (Authenticated Encryption)\n\nADVERTENCIAS PARA PRODUCCION:\n- NO regenerar claves en cada inicio\n- NO hardcodear claves en codigo\n- Usar KMS (AWS/Google/Azure)\n- Rotacion de claves periodica\n- Backup seguro de claves"
+		},
+		{
+			"name": "07 - Multi Streaming (Uni vs Multi)",
+			"item": [
+				{
+					"name": "Preparacion",
+					"item": [
+						{
+							"name": "01 - Verificar servidor",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo"]}
+							}
+						},
+						{
+							"name": "02 - Crear datos de prueba (20 productos)",
+							"request": {
+								"method": "POST",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/carga-masiva/20", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "carga-masiva", "20"]},
+								"description": "Crea 20 productos para demostrar streaming"
+							}
+						}
+					]
+				},
+				{
+					"name": "Uni - Lista Completa",
+					"item": [
+						{
+							"name": "03 - GET Uni (toda la lista de una vez)",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo"]},
+								"description": "Tipo: Uni<List<Producto>>\n\nAnalogía: Un vaso de agua\n- Esperas a que se llene COMPLETAMENTE\n- Recibes el vaso COMPLETO de una vez\n- UNA SOLA entrega\n\nObservacion:\n- TODA la lista llega de una vez\n- Cliente espera hasta tener TODO"
+							}
+						}
+					],
+					"description": "Uni<T> = UN SOLO valor asincrono\n\nSimilar a Promise/CompletableFuture\nPerfecto para APIs REST tradicionales"
+				},
+				{
+					"name": "Multi - Streaming SSE",
+					"item": [
+						{
+							"name": "04 - GET Multi Stream (NOTA - usar curl)",
+							"request": {
+								"method": "GET",
+								"header": [{"key": "Accept", "value": "text/event-stream"}],
+								"url": {"raw": "{{API_URL}}/api/v1/productos/reactivo/stream", "host": ["{{API_URL}}"], "path": ["api", "v1", "productos", "reactivo", "stream"]},
+								"description": "Tipo: Multi<Producto>\n\nNOTA IMPORTANTE: Postman NO soporta SSE (Server-Sent Events) correctamente.\n\nPara ver el streaming real, usa curl en terminal:\n\ncurl -N -H \"Accept: text/event-stream\" http://localhost:8080/api/v1/productos/reactivo/stream\n\nAnalogía: Una manguera de agua\n- El agua fluye continuamente\n- MULTIPLES entregas en el tiempo\n- Delay de 1 segundo entre cada producto\n\nVeras cada producto llegar UNO POR UNO con timestamp."
+							}
+						}
+					],
+					"description": "Multi<T> = MULTIPLES valores en el tiempo\n\nSimilar a Observable/Stream\nPerfecto para streaming y tiempo real"
+				},
+				{
+					"name": "Comparacion Conceptual",
+					"item": [
+						{
+							"name": "README - Uni vs Multi",
+							"request": {
+								"method": "GET",
+								"url": {"raw": "{{API_URL}}/health", "host": ["{{API_URL}}"], "path": ["health"]},
+								"description": "COMPARACION UNI vs MULTI\n\n| Aspecto           | Uni          | Multi            |\n|-------------------|--------------|------------------|\n| Valores emitidos  | 1 (lista)    | N (stream)       |\n| Cuando llega      | Todo junto   | Progresivo       |\n| Memoria           | Alta         | Baja             |\n| Primera respuesta | Al final     | Inmediata        |\n| Uso tipico        | CRUD         | Streaming/RT     |\n\nUSA UNI:\n- APIs REST\n- Listas pequenas\n- Necesitas todo junto\n\nUSA MULTI:\n- Tiempo real\n- Grandes volumenes\n- Datos progresivos\n\nEJEMPLOS BANCARIOS:\n- Uni: Consultar saldo, crear transferencia\n- Multi: Cotizaciones USD en vivo, monitor de fraude"
+							}
+						}
+					]
+				}
+			],
+			"description": "Demostracion de la diferencia entre Uni<T> y Multi<T> en Mutiny.\n\nConceptos:\n1. UNI = UN SOLO valor asincrono (Promise)\n2. MULTI = MULTIPLES valores en el tiempo (Observable)\n3. Server-Sent Events (SSE)\n4. Backpressure automatico"
+		}
+	],
+	"variable": [
+		{"key": "CLIENTE1_ID", "value": "1"},
+		{"key": "CLIENTE2_ID", "value": "2"},
+		{"key": "CLIENTE3_ID", "value": "3"},
+		{"key": "PRESTAMO1_ID", "value": "1"},
+		{"key": "PRESTAMO2_ID", "value": "2"},
+		{"key": "PRODUCTO1_ID", "value": "1"},
+		{"key": "PRODUCTO3_ID", "value": "3"},
+		{"key": "PRODUCTO_NUEVO_ID", "value": ""},
+		{"key": "CLIENTE_SEGURO1_ID", "value": "1"},
+		{"key": "CLIENTE_NUEVO_ID", "value": ""},
+		{"key": "DOC1_ID", "value": "1"}
+	]
+}

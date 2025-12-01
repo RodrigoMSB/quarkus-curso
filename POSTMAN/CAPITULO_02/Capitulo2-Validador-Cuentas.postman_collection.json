@@ -1,0 +1,340 @@
+{
+	"info": {
+		"_postman_id": "cap2-validador-cuentas",
+		"name": "Capitulo 2 - Validador de Cuentas Bancarias",
+		"description": "API de validación de números de cuenta bancaria.\n\nCurso: Quarkus Microservices\nCapítulo 2: Contract-First con OpenAPI\n\nRegla de validación: Exactamente 10 dígitos numéricos (0-9)\nRegex: ^\\d{10}$",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Cuentas Validas",
+			"item": [
+				{
+					"name": "01 - Cuenta valida estandar",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta valida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/1234567890",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "1234567890"]
+						},
+						"description": "Cuenta válida estándar con 10 dígitos.\n\nEsperado: valido = true"
+					},
+					"response": []
+				},
+				{
+					"name": "02 - Cuenta con ceros al inicio",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta valida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/0000000123",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "0000000123"]
+						},
+						"description": "Cuenta con ceros al inicio (10 dígitos).\n\nEsperado: valido = true"
+					},
+					"response": []
+				},
+				{
+					"name": "03 - Cuenta todo nueves",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta valida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/9999999999",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "9999999999"]
+						},
+						"description": "Cuenta con todos nueves (10 dígitos).\n\nEsperado: valido = true"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cuentas Invalidas",
+			"item": [
+				{
+					"name": "04 - Cuenta muy corta (9 digitos)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta invalida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/123456789",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "123456789"]
+						},
+						"description": "Cuenta con solo 9 dígitos (muy corta).\n\nEsperado: valido = false"
+					},
+					"response": []
+				},
+				{
+					"name": "05 - Cuenta muy corta (5 digitos)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta invalida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/12345",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "12345"]
+						},
+						"description": "Cuenta con solo 5 dígitos (muy corta).\n\nEsperado: valido = false"
+					},
+					"response": []
+				},
+				{
+					"name": "06 - Cuenta muy larga (11 digitos)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta invalida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/12345678901",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "12345678901"]
+						},
+						"description": "Cuenta con 11 dígitos (muy larga).\n\nEsperado: valido = false"
+					},
+					"response": []
+				},
+				{
+					"name": "07 - Cuenta con letras",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta invalida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/123ABC7890",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "123ABC7890"]
+						},
+						"description": "Cuenta con letras mezcladas.\n\nEsperado: valido = false"
+					},
+					"response": []
+				},
+				{
+					"name": "08 - Cuenta todo letras",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta invalida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/ABCDEFGHIJ",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "ABCDEFGHIJ"]
+						},
+						"description": "Cuenta con solo letras.\n\nEsperado: valido = false"
+					},
+					"response": []
+				},
+				{
+					"name": "09 - Cuenta con guiones",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta invalida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/1234-56789",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "1234-56789"]
+						},
+						"description": "Cuenta con guiones.\n\nEsperado: valido = false"
+					},
+					"response": []
+				},
+				{
+					"name": "10 - Cuenta con arroba",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cuenta invalida', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valido).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/validar/1234@67890",
+							"host": ["{{API_URL}}"],
+							"path": ["validar", "1234@67890"]
+						},
+						"description": "Cuenta con símbolo arroba.\n\nEsperado: valido = false"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
