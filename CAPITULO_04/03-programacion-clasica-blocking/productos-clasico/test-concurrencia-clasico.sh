@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # ============================================================================
-# TEST DE CONCURRENCIA CON HEY - ENFOQUE CLÁSICO
+# TEST DE CONCURRENCIA CON K6 - ENFOQUE CLÁSICO
+# ============================================================================
+# Compatible con Mac y Windows (Git Bash)
 # ============================================================================
 
 # Colores para output
@@ -18,40 +20,42 @@ ENDPOINT="/api/v1/productos/clasico/1"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 OUTPUT_FILE="resultados-clasico-${TIMESTAMP}.txt"
 
-# Función para logging dual (consola + archivo)
-log_dual() {
-    echo -e "$1"
-    echo -e "$1" | sed 's/\x1b\[[0-9;]*m//g' >> "$OUTPUT_FILE"
-}
-
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║  TEST DE CONCURRENCIA - ENFOQUE CLÁSICO (Blocking)            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# Verificar que hey está instalado
-if ! command -v hey &> /dev/null; then
-    echo -e "${RED}❌ ERROR: 'hey' no está instalado${NC}"
-    exit 1
+# Verificar que k6 está instalado
+if ! command -v k6 &> /dev/null; then
+    if [ -f "/c/Program Files/k6/k6.exe" ]; then
+        export PATH="$PATH:/c/Program Files/k6"
+        echo -e "${YELLOW}⚠️  k6 encontrado en /c/Program Files/k6${NC}"
+    else
+        echo -e "${RED}❌ ERROR: 'k6' no está instalado${NC}"
+        echo ""
+        echo -e "${YELLOW}Instalación:${NC}"
+        echo -e "  Mac:     brew install k6"
+        echo -e "  Windows: https://dl.k6.io/msi/k6-latest-amd64.msi"
+        echo -e "           Luego: export PATH=\"\$PATH:/c/Program Files/k6\""
+        exit 1
+    fi
 fi
 
-# Verificar que el servicio está corriendo
-echo -e "${YELLOW}🔍 Verificando que el servicio esté activo...${NC}"
-RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: application/json" "${HOST}${ENDPOINT}")
-if [ "$RESPONSE" != "200" ]; then
-    echo -e "${RED}❌ ERROR: El servicio no está corriendo o el endpoint no responde correctamente${NC}"
-    echo -e "${RED}   HTTP Status: ${RESPONSE}${NC}"
-    echo -e "${YELLOW}   Endpoint: ${HOST}${ENDPOINT}${NC}"
-    echo ""
-    echo "Asegúrate de:"
-    echo "  1. Haber iniciado el proyecto: ./mvnw quarkus:dev"
-    echo "  2. Que exista el producto con ID=1 en la BD"
-    exit 1
-fi
-echo -e "${GREEN}✅ Servicio activo (HTTP 200)${NC}"
+echo -e "${GREEN}✅ k6 encontrado: $(k6 version 2>&1 | head -1)${NC}"
 echo ""
 
-# Iniciar archivo de resultados
+# Verificar servicio
+echo -e "${YELLOW}🔍 Verificando servicio...${NC}"
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: application/json" "${HOST}${ENDPOINT}")
+if [ "$RESPONSE" != "200" ]; then
+    echo -e "${RED}❌ ERROR: El servicio no responde (HTTP ${RESPONSE})${NC}"
+    echo "Asegúrate de ejecutar: ./mvnw quarkus:dev"
+    exit 1
+fi
+echo -e "${GREEN}✅ Servicio OK${NC}"
+echo ""
+
+# Header del archivo
 {
     echo "============================================================================"
     echo "TEST DE CONCURRENCIA - ENFOQUE CLÁSICO (Blocking)"
@@ -62,52 +66,127 @@ echo ""
     echo ""
 } > "$OUTPUT_FILE"
 
+# Crear script k6
+K6_SCRIPT=$(mktemp 2>/dev/null || echo "/tmp/k6_script_$$.js")
+cat > "$K6_SCRIPT" << 'EOFK6'
+import http from 'k6/http';
+import { check } from 'k6';
+
+export const options = {
+    summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
+};
+
+export default function() {
+    const res = http.get(__ENV.TARGET_URL, {
+        headers: { 'Accept': 'application/json' }
+    });
+    check(res, { 'status 200': (r) => r.status === 200 });
+}
+EOFK6
+
 # Función para ejecutar test
 run_test() {
     local requests=$1
     local concurrency=$2
     local description=$3
     
-    log_dual "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    log_dual "${CYAN}📊 TEST: ${description}${NC}"
-    log_dual "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    log_dual "${YELLOW}Requests totales: ${requests}${NC}"
-    log_dual "${YELLOW}Concurrencia: ${concurrency} workers${NC}"
-    log_dual ""
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}📊 TEST: ${description}${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo "Requests: ${requests} | Concurrencia: ${concurrency}"
+    echo ""
     
-    # Ejecutar hey con header Accept correcto
-    hey -n $requests -c $concurrency \
-        -H "Accept: application/json" \
-        "${HOST}${ENDPOINT}" 2>&1 | tee -a "$OUTPUT_FILE"
+    # Header en archivo
+    {
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📊 TEST: ${description}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "Requests totales: ${requests}"
+        echo "Concurrencia: ${concurrency} workers"
+        echo ""
+    } >> "$OUTPUT_FILE"
     
-    log_dual ""
-    log_dual "${GREEN}✅ Test completado${NC}"
-    log_dual ""
+    # Ejecutar k6 y capturar salida
+    local k6_output
+    k6_output=$(TARGET_URL="${HOST}${ENDPOINT}" k6 run \
+        --vus "$concurrency" \
+        --iterations "$requests" \
+        "$K6_SCRIPT" 2>&1)
+    
+    # Extraer métricas de la salida de k6
+    local duration_line=$(echo "$k6_output" | grep "http_req_duration")
+    local reqs_line=$(echo "$k6_output" | grep "http_reqs")
+    
+    # Extraer valores
+    local avg_ms=$(echo "$duration_line" | grep -oE 'avg=[0-9.]+' | cut -d= -f2)
+    local min_ms=$(echo "$duration_line" | grep -oE 'min=[0-9.]+' | cut -d= -f2)
+    local max_ms=$(echo "$duration_line" | grep -oE 'max=[0-9.]+' | cut -d= -f2)
+    local med_ms=$(echo "$duration_line" | grep -oE 'med=[0-9.]+' | cut -d= -f2)
+    local p90_ms=$(echo "$duration_line" | grep -oE 'p\(90\)=[0-9.]+' | cut -d= -f2)
+    local p95_ms=$(echo "$duration_line" | grep -oE 'p\(95\)=[0-9.]+' | cut -d= -f2)
+    local p99_ms=$(echo "$duration_line" | grep -oE 'p\(99\)=[0-9.]+' | cut -d= -f2)
+    local reqs_sec=$(echo "$reqs_line" | grep -oE '[0-9.]+/s' | sed 's|/s||')
+    
+    # Convertir ms a secs
+    local avg_secs=$(awk "BEGIN {printf \"%.4f\", ${avg_ms:-0}/1000}")
+    local min_secs=$(awk "BEGIN {printf \"%.4f\", ${min_ms:-0}/1000}")
+    local max_secs=$(awk "BEGIN {printf \"%.4f\", ${max_ms:-0}/1000}")
+    local med_secs=$(awk "BEGIN {printf \"%.4f\", ${med_ms:-0}/1000}")
+    local p90_secs=$(awk "BEGIN {printf \"%.4f\", ${p90_ms:-0}/1000}")
+    local p95_secs=$(awk "BEGIN {printf \"%.4f\", ${p95_ms:-0}/1000}")
+    local p99_secs=$(awk "BEGIN {printf \"%.4f\", ${p99_ms:-0}/1000}")
+    
+    # Mostrar en consola
+    echo -e "${GREEN}Requests/sec: ${reqs_sec}${NC}"
+    echo -e "Average: ${avg_ms}ms | p95: ${p95_ms}ms | p99: ${p99_ms}ms"
+    echo ""
+    
+    # Guardar en formato hey
+    {
+        echo ""
+        echo "Summary:"
+        echo "  Slowest:	${max_secs} secs"
+        echo "  Fastest:	${min_secs} secs"
+        echo "  Average:	${avg_secs} secs"
+        echo "  Requests/sec:	${reqs_sec}"
+        echo ""
+        echo "Latency distribution:"
+        echo "  50% in ${med_secs} secs"
+        echo "  90% in ${p90_secs} secs"
+        echo "  95% in ${p95_secs} secs"
+        echo "  99% in ${p99_secs} secs"
+        echo ""
+        echo "✅ Test completado"
+        echo ""
+    } >> "$OUTPUT_FILE"
+    
+    echo -e "${GREEN}✅ Test completado${NC}"
+    echo ""
 }
 
-echo -e "${CYAN}Ejecutaremos 3 tests con diferentes niveles de carga:${NC}"
+echo -e "${CYAN}Tests a ejecutar:${NC}"
+echo -e "  1️⃣  1,000 requests / 50 workers"
+echo -e "  2️⃣  5,000 requests / 100 workers  ${YELLOW}← SWEET SPOT${NC}"
+echo -e "  3️⃣  10,000 requests / 200 workers"
 echo ""
-echo -e "  1️⃣  1,000 requests con 50 workers"
-echo -e "  2️⃣  5,000 requests con 100 workers  ${YELLOW}← SWEET SPOT esperado${NC}"
-echo -e "  3️⃣  10,000 requests con 200 workers"
+echo -e "${YELLOW}📄 Resultados: ${OUTPUT_FILE}${NC}"
 echo ""
-echo -e "${YELLOW}📄 Los resultados se guardarán en: ${OUTPUT_FILE}${NC}"
-echo ""
-read -p "Presiona ENTER para comenzar..."
+read -p "ENTER para comenzar..."
 echo ""
 
-# Ejecutar tests
 run_test 1000 50 "Carga Ligera (1K requests)"
-read -p "Presiona ENTER para continuar con el siguiente test..."
+read -p "ENTER para siguiente test..."
 echo ""
 
 run_test 5000 100 "Carga Media (5K requests) - SWEET SPOT"
-read -p "Presiona ENTER para continuar con el siguiente test..."
+read -p "ENTER para siguiente test..."
 echo ""
 
 run_test 10000 200 "Carga Alta (10K requests)"
 
-# Resumen final
+rm -f "$K6_SCRIPT"
+
+# Footer
 {
     echo ""
     echo "============================================================================"
@@ -116,7 +195,7 @@ run_test 10000 200 "Carga Alta (10K requests)"
     echo "Fecha finalización: $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
     echo "ANÁLISIS COMPARATIVO:"
-    echo "  Compara estos resultados con el enfoque reactivo (capitulo_04_1)"
+    echo "  Compara estos resultados con el enfoque reactivo"
     echo ""
     echo "MÉTRICAS CLAVE:"
     echo "  • Requests/sec (throughput) - Menor que reactivo bajo alta concurrencia"
@@ -136,20 +215,9 @@ run_test 10000 200 "Carga Alta (10K requests)"
     echo "============================================================================"
 } >> "$OUTPUT_FILE"
 
-echo ""
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║  TESTS COMPLETADOS - ENFOQUE CLÁSICO                          ║${NC}"
+echo -e "${CYAN}║  TESTS COMPLETADOS                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${GREEN}✅ Todos los tests finalizados${NC}"
-echo -e "${GREEN}📄 Resultados guardados en: ${OUTPUT_FILE}${NC}"
-echo ""
-echo -e "${YELLOW}💡 ANÁLISIS:${NC}"
-echo -e "   Abre ambos archivos (reactivo y clásico) y compara lado a lado"
-echo -e "   Enfócate especialmente en el test de 5K requests (sweet spot)"
-echo ""
-echo -e "${CYAN}¿Qué buscar en la comparación?${NC}"
-echo -e "   1. Throughput (req/s) - ¿Cuánto más rápido es el reactivo?"
-echo -e "   2. Latencia p95 - ¿Experiencia consistente bajo carga?"
-echo -e "   3. Distribución de tiempos - ¿Más predecible el reactivo?"
+echo -e "${GREEN}📄 Resultados: ${OUTPUT_FILE}${NC}"
 echo ""

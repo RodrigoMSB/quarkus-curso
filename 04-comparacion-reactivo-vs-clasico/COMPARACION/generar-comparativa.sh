@@ -70,7 +70,7 @@ extract_metric() {
             ;;
     esac
     
-    # Extraer métrica según el tipo (formato hey)
+    # Extraer métrica según el tipo
     case $metric in
         "throughput")
             grep -A 50 "TEST: $section" "$file" | grep "Requests/sec:" | head -1 | awk '{print $2}'
@@ -79,13 +79,13 @@ extract_metric() {
             grep -A 50 "TEST: $section" "$file" | grep "Average:" | head -1 | awk '{print $2}'
             ;;
         "p50")
-            grep -A 50 "TEST: $section" "$file" | grep "50% in" | head -1 | awk '{print $3}'
+            grep -A 50 "TEST: $section" "$file" | grep "50% in" | awk '{print $3}'
             ;;
         "p95")
-            grep -A 50 "TEST: $section" "$file" | grep "95% in" | head -1 | awk '{print $3}'
+            grep -A 50 "TEST: $section" "$file" | grep "95% in" | awk '{print $3}'
             ;;
         "p99")
-            grep -A 50 "TEST: $section" "$file" | grep "99% in" | head -1 | awk '{print $3}'
+            grep -A 50 "TEST: $section" "$file" | grep "99% in" | awk '{print $3}'
             ;;
     esac
 }
@@ -213,7 +213,7 @@ Este documento presenta un análisis comparativo detallado entre dos enfoques de
 - **Enfoque Reactivo (Mutiny)**: Programación no bloqueante con tipos reactivos \`Uni<T>\` y \`Multi<T>\`
 - **Enfoque Clásico (Blocking)**: Programación tradicional con operaciones síncronas
 
-Los tests se ejecutaron con **k6** (Grafana Labs - herramienta profesional de benchmarking) bajo tres niveles de carga:
+Los tests se ejecutaron con **hey** (herramienta profesional de benchmarking) bajo tres niveles de carga:
 - **1,000 requests** con 50 workers (carga ligera)
 - **5,000 requests** con 100 workers (carga media)
 - **10,000 requests** con 200 workers (carga alta)
@@ -591,7 +591,7 @@ if (concurrencia > 1000 req/s || SLA p95 < 100ms) {
 - [Hibernate Reactive](https://hibernate.org/reactive/)
 
 ### Herramientas de Benchmarking
-- [k6](https://k6.io/) - HTTP load generator usado en estos tests (Grafana Labs)
+- [hey](https://github.com/rakyll/hey) - HTTP load generator usado en estos tests
 - [wrk](https://github.com/wg/wrk) - Alternativa potente
 - [Apache JMeter](https://jmeter.apache.org/) - Suite completa de testing
 
