@@ -3,17 +3,18 @@
 # ============================================================================
 # BENCHMARK JVM vs NATIVE - SISTEMA DE PRE-APROBACION CREDITICIA
 # ============================================================================
-# VERSION 9.2 - 100% COMPATIBLE MAC + WINDOWS GIT BASH
-#
-# CARACTERISTICAS:
-#   - Levanta PostgreSQL automaticamente si no esta corriendo
-#   - Regenera Maven Wrapper automaticamente si falta
-#   - Detecta mvn vs ./mvnw automaticamente
-#   - Compatible con Git Bash en Windows
+# VERSION 10.0 - CON K6 PARA THROUGHPUT REAL
+# COMPATIBLE CON: macOS, Linux, Windows (Git Bash)
 #
 # REQUISITOS:
 #   - Docker Desktop corriendo
 #   - Maven instalado
+#   - k6 instalado (recomendado para throughput preciso)
+#
+# INSTALAR K6:
+#   - Windows: https://dl.k6.io/msi/k6-latest-amd64.msi
+#   - Mac: brew install k6
+#   - Linux: sudo snap install k6
 #
 # USO:
 #   ./benchmark.sh              # 500 requests por defecto
@@ -28,6 +29,7 @@ set -e
 # ----------------------------------------------------------------------------
 
 NUM_REQUESTS=${1:-500}
+CONCURRENCY=50
 
 BASE_URL="http://localhost:8080"
 API_URL="${BASE_URL}/api/preaprobacion"
@@ -118,6 +120,7 @@ THROUGHPUT_JVM_RAW=0
 THROUGHPUT_NATIVE_RAW=0
 SIZE_JVM_RAW=0
 SIZE_NATIVE_RAW=0
+LOAD_TEST_TOOL="curl"
 
 # ----------------------------------------------------------------------------
 # FUNCIONES AUXILIARES
@@ -305,30 +308,92 @@ measure_docker_memory() {
     esac
 }
 
-# Funcion de load test - COMPATIBLE MAC/WINDOWS
+# ----------------------------------------------------------------------------
+# FUNCION DE LOAD TEST - CON K6 PARA CONCURRENCIA REAL
+# ----------------------------------------------------------------------------
+
 load_test() {
     local url="$1"
     local requests="$2"
+    local concurrency="$CONCURRENCY"
     
-    echo -e "${BLUE}   Ejecutando ${requests} requests...${NC}" >&2
+    # Opcion 1: k6 (mejor - concurrencia real)
+    if command -v k6 &> /dev/null; then
+        LOAD_TEST_TOOL="k6"
+        echo -e "${BLUE}   Usando k6 (${requests} requests, ${concurrency} VUs)...${NC}" >&2
+        
+        local k6_script
+        k6_script=$(mktemp)
+        
+        cat > "$k6_script" << SCRIPT
+import http from 'k6/http';
+export const options = {
+    vus: ${concurrency},
+    iterations: ${requests},
+    insecureSkipTLSVerify: true,
+};
+export default function() {
+    http.get('${url}');
+}
+SCRIPT
+        
+        local k6_output
+        k6_output=$(k6 run --quiet "$k6_script" 2>&1)
+        
+        rm -f "$k6_script"
+        
+        # Extraer requests/sec del output de k6
+        local rps
+        rps=$(echo "$k6_output" | grep "http_reqs" | grep -o '[0-9]*\.[0-9]*/s' | sed 's|/s||' | cut -d'.' -f1)
+        
+        if [ -z "$rps" ]; then
+            rps=$(echo "$k6_output" | grep "http_reqs" | awk '{print $2}' | cut -d'.' -f1)
+        fi
+        
+        if is_number "$rps" && [ "$rps" -gt 0 ]; then
+            echo "$rps"
+            return 0
+        fi
+    fi
+    
+    # Opcion 2: hey (buena alternativa)
+    if command -v hey &> /dev/null; then
+        LOAD_TEST_TOOL="hey"
+        echo -e "${BLUE}   Usando hey (${requests} requests, ${concurrency} concurrentes)...${NC}" >&2
+        
+        local hey_output
+        hey_output=$(hey -n "$requests" -c "$concurrency" -q 1000 "$url" 2>&1)
+        
+        local rps
+        rps=$(echo "$hey_output" | grep "Requests/sec:" | awk '{print $2}' | cut -d'.' -f1)
+        
+        if is_number "$rps" && [ "$rps" -gt 0 ]; then
+            echo "$rps"
+            return 0
+        fi
+    fi
+    
+    # Opcion 3: curl paralelo con xargs (fallback)
+    LOAD_TEST_TOOL="curl-parallel"
+    echo -e "${BLUE}   Usando curl paralelo (${requests} requests, ${concurrency} procesos)...${NC}" >&2
+    echo -e "${YELLOW}   NOTA: Instala k6 para mediciones mas precisas${NC}" >&2
     
     local start_time
     start_time=$(date +%s)
     
-    local success=0
-    local i=1
+    local temp_urls
+    temp_urls=$(mktemp)
     
+    local i=1
     while [ $i -le "$requests" ]; do
-        if curl -s -f -o /dev/null "$url" 2>/dev/null; then
-            success=$((success + 1))
-        fi
-        
-        if [ $((i % 100)) -eq 0 ]; then
-            echo -e "${BLUE}   Progreso: ${i}/${requests}${NC}" >&2
-        fi
-        
+        echo "$url" >> "$temp_urls"
         i=$((i + 1))
     done
+    
+    local success
+    success=$(cat "$temp_urls" | xargs -P "$concurrency" -I {} curl -s -f -o /dev/null -w "1\n" {} 2>/dev/null | wc -l | tr -d ' ')
+    
+    rm -f "$temp_urls"
     
     local end_time
     end_time=$(date +%s)
@@ -410,6 +475,7 @@ Sistema de Pre-aprobacion Crediticia
 Fecha: $(date +"%Y-%m-%d %H:%M:%S")
 Sistema: ${CURRENT_OS}
 Requests: ${NUM_REQUESTS}
+Concurrencia: ${CONCURRENCY}
 Maven: ${MVN_CMD}
 
 ================================================================================
@@ -421,6 +487,7 @@ echo ""
 echo "   Sistema operativo: ${CURRENT_OS}"
 echo "   Maven: ${MVN_CMD}"
 echo "   Requests: ${NUM_REQUESTS}"
+echo "   Concurrencia: ${CONCURRENCY}"
 echo ""
 
 # ----------------------------------------------------------------------------
@@ -435,6 +502,18 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 print_success "Docker corriendo"
+
+print_section "Verificando herramienta de load testing"
+if command -v k6 &> /dev/null; then
+    print_success "k6 disponible (concurrencia real)"
+elif command -v hey &> /dev/null; then
+    print_success "hey disponible (concurrencia real)"
+else
+    print_warning "k6/hey no encontrados, usando curl paralelo"
+    print_info "Para mejores resultados instala k6:"
+    print_info "  Windows: https://dl.k6.io/msi/k6-latest-amd64.msi"
+    print_info "  Mac: brew install k6"
+fi
 
 print_section "Verificando PostgreSQL"
 
@@ -563,7 +642,7 @@ print_info "Memoria JVM: ${MEMORY_JVM_RAW} MB"
 
 print_section "2.3 - Midiendo throughput JVM"
 THROUGHPUT_JVM_RAW=$(load_test "$API_URL/estadisticas" "$NUM_REQUESTS")
-print_success "Throughput JVM: ${THROUGHPUT_JVM_RAW} req/s"
+print_success "Throughput JVM: ${THROUGHPUT_JVM_RAW} req/s (${LOAD_TEST_TOOL})"
 
 print_section "2.4 - Deteniendo contenedor JVM"
 docker stop "$DOCKER_CONTAINER_JVM" > /dev/null 2>&1 || true
@@ -642,7 +721,7 @@ print_info "Memoria Native: ${MEMORY_NATIVE_RAW} MB"
 
 print_section "4.3 - Midiendo throughput Native"
 THROUGHPUT_NATIVE_RAW=$(load_test "$API_URL/estadisticas" "$NUM_REQUESTS")
-print_success "Throughput Native: ${THROUGHPUT_NATIVE_RAW} req/s"
+print_success "Throughput Native: ${THROUGHPUT_NATIVE_RAW} req/s (${LOAD_TEST_TOOL})"
 
 print_section "4.4 - Deteniendo contenedor Native"
 docker stop "$DOCKER_CONTAINER_NATIVE" > /dev/null 2>&1 || true
@@ -659,6 +738,8 @@ print_header "FASE 5: COMPARATIVA FINAL"
 COMPILE_RATIO=0
 STARTUP_RATIO=0
 MEMORY_SAVINGS=0
+THROUGHPUT_DIFF=0
+THROUGHPUT_MSG="Similar"
 
 if [ "$BUILD_TIME_JVM" -gt 0 ]; then
     COMPILE_RATIO=$((BUILD_TIME_NATIVE / BUILD_TIME_JVM))
@@ -672,11 +753,21 @@ if [ "$MEMORY_JVM_RAW" -gt 0 ] && [ "$MEMORY_NATIVE_RAW" -gt 0 ]; then
     MEMORY_SAVINGS=$(( (MEMORY_JVM_RAW - MEMORY_NATIVE_RAW) * 100 / MEMORY_JVM_RAW ))
 fi
 
+if [ "$THROUGHPUT_JVM_RAW" -gt 0 ] && [ "$THROUGHPUT_NATIVE_RAW" -gt 0 ]; then
+    if [ "$THROUGHPUT_NATIVE_RAW" -gt "$THROUGHPUT_JVM_RAW" ]; then
+        THROUGHPUT_DIFF=$(( (THROUGHPUT_NATIVE_RAW - THROUGHPUT_JVM_RAW) * 100 / THROUGHPUT_JVM_RAW ))
+        THROUGHPUT_MSG="Native ${THROUGHPUT_DIFF}% mas rapido"
+    else
+        THROUGHPUT_DIFF=$(( (THROUGHPUT_JVM_RAW - THROUGHPUT_NATIVE_RAW) * 100 / THROUGHPUT_JVM_RAW ))
+        THROUGHPUT_MSG="Rendimiento similar (-${THROUGHPUT_DIFF}%)"
+    fi
+fi
+
 # Tabla (caracteres ASCII para compatibilidad)
 printf "\n"
 printf "+------------------------------------------------------------------------------+\n"
 printf "|                        RESULTADOS DEL BENCHMARK                              |\n"
-printf "|                        (%s requests)                                          |\n" "$NUM_REQUESTS"
+printf "|                 (%s requests, %s VUs, %s)                              |\n" "$NUM_REQUESTS" "$CONCURRENCY" "$LOAD_TEST_TOOL"
 printf "+------------------------------------------------------------------------------+\n"
 printf "| %-27s | %-18s | %-18s |\n" "METRICA" "JVM (Docker)" "NATIVE (Docker)"
 printf "+------------------------------------------------------------------------------+\n"
@@ -696,7 +787,7 @@ echo -e "2. ARRANQUE: ${GREEN}Native ${STARTUP_RATIO}x MAS RAPIDO${NC}"
 echo ""
 echo -e "3. MEMORIA: ${GREEN}Native usa ${MEMORY_SAVINGS}% MENOS${NC}"
 echo ""
-echo "4. THROUGHPUT: Rendimiento similar"
+echo "4. THROUGHPUT: ${THROUGHPUT_MSG}"
 echo ""
 
 echo "================================================================================"
@@ -739,7 +830,7 @@ RESULTADOS
 Build: JVM ${BUILD_TIME_JVM}s vs Native ${BUILD_TIME_NATIVE}s
 Arranque: JVM ${STARTUP_MS_JVM}ms vs Native ${STARTUP_MS_NATIVE}ms
 Memoria: JVM ${MEMORY_JVM_RAW}MB vs Native ${MEMORY_NATIVE_RAW}MB
-Throughput: JVM ${THROUGHPUT_JVM_RAW}req/s vs Native ${THROUGHPUT_NATIVE_RAW}req/s
+Throughput: JVM ${THROUGHPUT_JVM_RAW}req/s vs Native ${THROUGHPUT_NATIVE_RAW}req/s (${LOAD_TEST_TOOL})
 Imagen: JVM ${SIZE_JVM_RAW}MB vs Native ${SIZE_NATIVE_RAW}MB
 
 Ratios: Arranque ${STARTUP_RATIO}x, Memoria -${MEMORY_SAVINGS}%
