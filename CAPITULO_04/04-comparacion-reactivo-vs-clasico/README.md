@@ -29,7 +29,7 @@
 - ✅ Identificar cuándo el enfoque clásico es suficiente
 
 ### Performance y Concurrencia
-- ✅ Ejecutar tests de carga con `hey`
+- ✅ Ejecutar tests de carga con `k6` (Grafana Labs)
 - ✅ Interpretar métricas: throughput, latencia, percentiles (p50, p95, p99)
 - ✅ Identificar el "sweet spot" donde reactivo brilla
 - ✅ Tomar decisiones arquitectónicas basadas en datos reales
@@ -69,6 +69,28 @@ Enfoque Clásico (Módulo 03):
 
 ---
 
+## 🛠️ Instalación de k6
+
+### Mac
+```bash
+brew install k6
+```
+
+### Windows
+1. Descargar: https://dl.k6.io/msi/k6-latest-amd64.msi
+2. Ejecutar el instalador
+3. En Git Bash, agregar al PATH:
+```bash
+export PATH="$PATH:/c/Program Files/k6"
+```
+
+### Verificar instalación
+```bash
+k6 version
+```
+
+---
+
 ## 🚀 Ejecución Rápida
 
 ### Paso 1: Proyecto Reactivo
@@ -83,7 +105,7 @@ docker-compose up -d
 ./mvnw quarkus:dev
 
 # En otra terminal - tests
-./test-concurrency-hey.sh
+./test-concurrencia-reactivo.sh
 ```
 
 **Output:** `resultados-reactivo-TIMESTAMP.txt`
@@ -99,7 +121,7 @@ cd ../../03-programacion-clasica-blocking/productos-clasico
 ./mvnw quarkus:dev
 
 # En otra terminal - tests
-./test-concurrency-hey.sh
+./test-concurrencia-clasico.sh
 ```
 
 **Output:** `resultados-clasico-TIMESTAMP.txt`
@@ -109,11 +131,11 @@ cd ../../03-programacion-clasica-blocking/productos-clasico
 ### Paso 3: Generar Comparativa
 
 ```bash
-cd ../../04-comparacion-reactivo-vs-clasico
+cd ../../04-comparacion-reactivo-vs-clasico/COMPARACION
 
 # Copiar resultados
-cp ../02-programacion-reactiva-mutiny/productos-reactive/resultados-reactivo-*.txt .
-cp ../03-programacion-clasica-blocking/productos-clasico/resultados-clasico-*.txt .
+cp ../../02-programacion-reactiva-mutiny/productos-reactive/resultados-reactivo-*.txt .
+cp ../../03-programacion-clasica-blocking/productos-clasico/resultados-clasico-*.txt .
 
 # Generar análisis
 ./generar-comparativa.sh
@@ -129,13 +151,13 @@ En **5,000 requests con 100 workers** observarás la máxima diferencia:
 
 ```
 THROUGHPUT:
-├─ Reactivo: ~7,900 req/s  ⚡⚡⚡
-└─ Clásico:  ~1,600 req/s  📦
-   Diferencia: 4.9X MÁS RÁPIDO
+├─ Reactivo: ~8,100 req/s  ⚡⚡⚡
+└─ Clásico:  ~1,950 req/s  📦
+   Diferencia: 4X MÁS RÁPIDO
 
 LATENCIA p95:
 ├─ Reactivo: ~17ms   ✅ Consistente
-└─ Clásico:  ~180ms  ⚠️ 10X peor
+└─ Clásico:  ~188ms  ⚠️ 11X peor
 ```
 
 ### ¿Por qué?
@@ -226,9 +248,9 @@ Punto donde una tecnología muestra su máxima ventaja:
 
 | Carga | Comportamiento |
 |-------|----------------|
-| **1K (Baja)** | Ambos funcionan bien. Diferencia moderada (+39%). |
-| **5K (Media)** 🎯 | **SWEET SPOT**: Clásico satura, reactivo brilla. Diferencia brutal (+375%). |
-| **10K (Alta)** | Clásico saturado, BD cuello de botella. Diferencia grande pero menor (+320%). |
+| **1K (Baja)** | Ambos funcionan bien. Diferencia moderada. |
+| **5K (Media)** 🎯 | **SWEET SPOT**: Clásico satura, reactivo brilla. Diferencia brutal (4X). |
+| **10K (Alta)** | Clásico saturado, BD cuello de botella. Diferencia grande pero menor. |
 
 ---
 
@@ -256,12 +278,12 @@ Punto donde una tecnología muestra su máxima ventaja:
 
 ---
 
-## 🔗 Recursos
+## 📗 Recursos
 
 - [Quarkus Reactive Architecture](https://quarkus.io/guides/quarkus-reactive-architecture)
 - [Mutiny Documentation](https://smallrye.io/smallrye-mutiny/)
 - [Hibernate Reactive Panache](https://quarkus.io/guides/hibernate-reactive-panache)
-- [hey - HTTP load testing](https://github.com/rakyll/hey)
+- [k6 Documentation](https://k6.io/docs/) - HTTP load testing (Grafana Labs)
 - [Reactive Manifesto](https://www.reactivemanifesto.org/)
 
 ---
@@ -272,4 +294,4 @@ Este capítulo te dará comprensión **científica y práctica** de cuándo usar
 
 ---
 
-**Nivel:** Avanzado  
+**Nivel:** Avanzado
