@@ -1,0 +1,272 @@
+{
+  "info": {
+    "_postman_id": "cap8-rest-client-fault-tolerance",
+    "name": "Capitulo 8 - REST Client y Fault Tolerance",
+    "description": "# Capitulo 8: REST Client y Fault Tolerance\n\n## Contenido\n- **01 Fault Tolerance**: Patrones de resiliencia (@Retry, @Timeout, @Fallback, @CircuitBreaker)\n- **02 Microservicios Distribuidos**: 4 servicios independientes en terminales separadas\n- **03 Microservicios Docker**: Arquitectura contenerizada con Docker Compose\n\n## Arquitectura General\n```\nCliente --> Evaluacion Service (8080)\n                |\n                +---> Identidad Service (8082)\n                +---> Bureau Service (8081)\n                +---> Scoring Service (8083)\n```\n\n## DNIs para Testing\n| Patron | Comportamiento |\n|--------|----------------|\n| PAR (ej: 12345678) | Buen score, sin morosidad |\n| IMPAR (ej: 12345679) | Morosidad activa |\n| 000... | Identidad suspendida |\n| 111... (PAR) | Flujo exitoso |\n| 222... (PAR) | Activa @Retry |\n| 333... (PAR) | Activa @Timeout |\n| 444... | Activa @Fallback y @CircuitBreaker |",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "bureauUrl",
+      "value": "http://localhost:8081",
+      "type": "string"
+    },
+    {
+      "key": "identidadUrl",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "scoringUrl",
+      "value": "http://localhost:8083",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Fault Tolerance",
+      "description": "## Ejercicio 01: REST Client + Fault Tolerance\n\nAplicacion **monolitica** que demuestra patrones de resiliencia.\n\n### Prerequisitos\n```bash\ncd evaluacion-crediticia\n./mvnw quarkus:dev\n```\n\n### Patrones Demostrados\n- @Retry: Reintentos automaticos\n- @Timeout: Limites de tiempo\n- @Fallback: Respuestas alternativas\n- @CircuitBreaker: Proteccion contra servicios caidos",
+      "item": [
+        {
+          "name": "01 - Happy Path",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"11122334456\",\n  \"nombres\": \"Juan\",\n  \"apellidos\": \"Perez Lopez\",\n  \"montoSolicitado\": 30000,\n  \"mesesPlazo\": 24\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "## Happy Path\n\nFlujo exitoso sin activar patrones de resiliencia.\n\n- **DNI**: 11122334456 (PAR = buen score)\n- **Resultado esperado**: APROBADO"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('APROBADO', () => pm.expect(pm.response.json().decision).to.eql('APROBADO'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "02 - @Retry (Reintentos)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"22233445568\",\n  \"nombres\": \"Maria\",\n  \"apellidos\": \"Garcia Ruiz\",\n  \"montoSolicitado\": 40000,\n  \"mesesPlazo\": 36\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "## @Retry - Reintentos Automaticos\n\nBureau falla temporalmente, @Retry reintenta hasta 3 veces.\n\n- **DNI**: 22233445568 (codigo especial)\n- **Config**: maxRetries=3, delay=1s\n- **Observar**: Logs de Quarkus muestran reintentos"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "console.log('@Retry: Observa los logs de Quarkus');"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "03 - @Timeout (Limite Tiempo)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"33344556678\",\n  \"nombres\": \"Carlos\",\n  \"apellidos\": \"Mendez Silva\",\n  \"montoSolicitado\": 25000,\n  \"mesesPlazo\": 12\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "## @Timeout - Limite de Tiempo\n\nScoring tarda 5s pero @Timeout corta a 3s y activa @Fallback.\n\n- **DNI**: 33344556678 (demora 5s)\n- **Config**: timeout=3s\n- **Tiempo respuesta**: ~3s (no 5s)"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Respuesta < 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));", "console.log('Tiempo:', pm.response.responseTime, 'ms');"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "04 - @Fallback (Plan B)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"44455667788\",\n  \"nombres\": \"Ana\",\n  \"apellidos\": \"Rodriguez Torres\",\n  \"montoSolicitado\": 35000,\n  \"mesesPlazo\": 48\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "## @Fallback - Respuesta Alternativa\n\nScoring falla completamente, @Fallback usa scoring basico.\n\n- **DNI**: 44455667788 (fallo permanente)\n- **Resultado**: REQUIERE_ANALISIS_MANUAL\n- **La app NO falla** a pesar del error"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200 (no 500)', () => pm.response.to.have.status(200));", "console.log('@Fallback activo - app degradada gracefully');"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "05 - @CircuitBreaker (5 veces)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"44455667788\",\n  \"nombres\": \"Test\",\n  \"apellidos\": \"Circuit Breaker\",\n  \"montoSolicitado\": 30000,\n  \"mesesPlazo\": 24\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "## @CircuitBreaker - Apertura del Circuito\n\n**EJECUTAR 5 VECES** para ver el circuito abrirse.\n\n- **Config**: requestVolumeThreshold=4, failureRatio=0.5\n- **Solicitudes 1-4**: Llama al servicio\n- **Solicitud 5+**: Circuito ABIERTO, no intenta"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "console.log('Ejecuta 5 veces - observa cuando el circuito se abre');"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "06 - Identidad Invalida",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"00011223344\",\n  \"nombres\": \"Usuario\",\n  \"apellidos\": \"Suspendido\",\n  \"montoSolicitado\": 20000,\n  \"mesesPlazo\": 12\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "## Identidad Invalida\n\nRechazo inmediato sin Fault Tolerance.\n\n- **DNI**: 00011223344 (suspendido)\n- **Resultado**: RECHAZADO"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('RECHAZADO', () => pm.expect(pm.response.json().decision).to.eql('RECHAZADO'));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "02 Microservicios Distribuidos",
+      "description": "## Ejercicio 02: Microservicios Distribuidos\n\n4 servicios independientes corriendo en terminales separadas.\n\n### Prerequisitos\n```bash\n# Terminal 1\ncd bureau-service && ./mvnw quarkus:dev\n\n# Terminal 2\ncd identidad-service && ./mvnw quarkus:dev\n\n# Terminal 3\ncd scoring-service && ./mvnw quarkus:dev\n\n# Terminal 4\ncd evaluacion-service && ./mvnw quarkus:dev\n```",
+      "item": [
+        {
+          "name": "Health Checks",
+          "item": [
+            {
+              "name": "Health - Bureau (8081)",
+              "request": {"method": "GET", "url": {"raw": "{{bureauUrl}}/api/bureau/health", "host": ["{{bureauUrl}}"], "path": ["api", "bureau", "health"]}},
+              "event": [{"listen": "test", "script": {"exec": ["pm.test('Bureau OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+            },
+            {
+              "name": "Health - Identidad (8082)",
+              "request": {"method": "GET", "url": {"raw": "{{identidadUrl}}/api/identidad/health", "host": ["{{identidadUrl}}"], "path": ["api", "identidad", "health"]}},
+              "event": [{"listen": "test", "script": {"exec": ["pm.test('Identidad OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+            },
+            {
+              "name": "Health - Scoring (8083)",
+              "request": {"method": "GET", "url": {"raw": "{{scoringUrl}}/api/scoring/health", "host": ["{{scoringUrl}}"], "path": ["api", "scoring", "health"]}},
+              "event": [{"listen": "test", "script": {"exec": ["pm.test('Scoring OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+            },
+            {
+              "name": "Health - Evaluacion (8080)",
+              "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/evaluacion/health", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "health"]}},
+              "event": [{"listen": "test", "script": {"exec": ["pm.test('Evaluacion OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+            }
+          ]
+        },
+        {
+          "name": "01 - Happy Path",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"dni\": \"12345678\",\n  \"nombres\": \"Juan\",\n  \"apellidos\": \"Perez Lopez\",\n  \"montoSolicitado\": 30000,\n  \"mesesPlazo\": 24\n}"},
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "Comunicacion exitosa entre 4 microservicios.\n\n- **DNI**: 12345678 (PAR)\n- **Resultado**: APROBADO"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('APROBADO', () => pm.expect(pm.response.json().decision).to.eql('APROBADO'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "02 - Identidad Invalida",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"dni\": \"00012345\",\n  \"nombres\": \"Usuario\",\n  \"apellidos\": \"Suspendido\",\n  \"montoSolicitado\": 20000,\n  \"mesesPlazo\": 12\n}"},
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "Identidad Service rechaza DNI suspendido.\n\n- **DNI**: 00012345\n- **Resultado**: RECHAZADO"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('RECHAZADO', () => pm.expect(pm.response.json().decision).to.eql('RECHAZADO'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "03 - Morosidad Activa",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"dni\": \"12345679\",\n  \"nombres\": \"Maria\",\n  \"apellidos\": \"Garcia Ruiz\",\n  \"montoSolicitado\": 25000,\n  \"mesesPlazo\": 36\n}"},
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "Bureau Service detecta morosidad.\n\n- **DNI**: 12345679 (IMPAR = morosidad)\n- **Resultado**: RECHAZADO"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('RECHAZADO', () => pm.expect(pm.response.json().decision).to.eql('RECHAZADO'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "04 - Monto Alto",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"dni\": \"87654320\",\n  \"nombres\": \"Carlos\",\n  \"apellidos\": \"Mendez Silva\",\n  \"montoSolicitado\": 100000,\n  \"mesesPlazo\": 48\n}"},
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "Scoring Service rechaza monto alto.\n\n- **DNI**: 87654320 (PAR)\n- **Monto**: S/ 100,000\n- **Resultado**: RECHAZADO o REQUIERE_ANALISIS_MANUAL"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Rechazado o analisis', () => {", "  const d = pm.response.json().decision;", "  pm.expect(['RECHAZADO','REQUIERE_ANALISIS_MANUAL']).to.include(d);", "});"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "03 Microservicios Docker",
+      "description": "## Ejercicio 03: Microservicios con Docker\n\nArquitectura contenerizada con Docker Compose.\n\n### Prerequisitos\n```bash\ndocker-compose up -d\ndocker-compose ps\n```\n\n### Red Docker\n- **Nombre**: microservices-network\n- **Driver**: bridge\n- **DNS**: Contenedores se comunican por nombre",
+      "item": [
+        {
+          "name": "Health Checks",
+          "item": [
+            {
+              "name": "Health - Bureau Container",
+              "request": {"method": "GET", "url": {"raw": "{{bureauUrl}}/api/bureau/health", "host": ["{{bureauUrl}}"], "path": ["api", "bureau", "health"]}},
+              "event": [{"listen": "test", "script": {"exec": ["pm.test('Bureau Container OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+            },
+            {
+              "name": "Health - Identidad Container",
+              "request": {"method": "GET", "url": {"raw": "{{identidadUrl}}/api/identidad/health", "host": ["{{identidadUrl}}"], "path": ["api", "identidad", "health"]}},
+              "event": [{"listen": "test", "script": {"exec": ["pm.test('Identidad Container OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+            },
+            {
+              "name": "Health - Scoring Container",
+              "request": {"method": "GET", "url": {"raw": "{{scoringUrl}}/api/scoring/health", "host": ["{{scoringUrl}}"], "path": ["api", "scoring", "health"]}},
+              "event": [{"listen": "test", "script": {"exec": ["pm.test('Scoring Container OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+            },
+            {
+              "name": "Health - Evaluacion Container",
+              "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/evaluacion/health", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "health"]}},
+              "event": [{"listen": "test", "script": {"exec": ["pm.test('Evaluacion Container OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+            }
+          ]
+        },
+        {
+          "name": "01 - Happy Path (Docker)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"dni\": \"12345678\",\n  \"nombres\": \"Juan\",\n  \"apellidos\": \"Perez Lopez\",\n  \"montoSolicitado\": 30000,\n  \"mesesPlazo\": 24\n}"},
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "Comunicacion entre 4 contenedores via red Docker.\n\n- **DNI**: 12345678 (PAR)\n- **Red**: microservices-network\n- **Resultado**: APROBADO"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('APROBADO', () => pm.expect(pm.response.json().decision).to.eql('APROBADO'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "02 - Identidad Invalida (Docker)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"dni\": \"00012345\",\n  \"nombres\": \"Usuario\",\n  \"apellidos\": \"Suspendido\",\n  \"montoSolicitado\": 20000,\n  \"mesesPlazo\": 12\n}"},
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "identidad-service container rechaza DNI.\n\n- **DNI**: 00012345\n- **Resultado**: RECHAZADO"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('RECHAZADO', () => pm.expect(pm.response.json().decision).to.eql('RECHAZADO'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "03 - Morosidad Activa (Docker)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"dni\": \"12345679\",\n  \"nombres\": \"Maria\",\n  \"apellidos\": \"Garcia Ruiz\",\n  \"montoSolicitado\": 25000,\n  \"mesesPlazo\": 36\n}"},
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "bureau-service container detecta morosidad.\n\n- **DNI**: 12345679 (IMPAR)\n- **Resultado**: RECHAZADO"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('RECHAZADO', () => pm.expect(pm.response.json().decision).to.eql('RECHAZADO'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "04 - Monto Alto (Docker)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"dni\": \"87654320\",\n  \"nombres\": \"Carlos\",\n  \"apellidos\": \"Mendez Silva\",\n  \"montoSolicitado\": 100000,\n  \"mesesPlazo\": 48\n}"},
+            "url": {"raw": "{{baseUrl}}/api/evaluacion/credito", "host": ["{{baseUrl}}"], "path": ["api", "evaluacion", "credito"]},
+            "description": "scoring-service container rechaza monto alto.\n\n- **DNI**: 87654320\n- **Monto**: S/ 100,000\n- **Resultado**: RECHAZADO o REQUIERE_ANALISIS_MANUAL"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Rechazado o analisis', () => {", "  const d = pm.response.json().decision;", "  pm.expect(['RECHAZADO','REQUIERE_ANALISIS_MANUAL']).to.include(d);", "});"], "type": "text/javascript"}}]
+        }
+      ]
+    }
+  ]
+}
