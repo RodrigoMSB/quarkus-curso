@@ -1,0 +1,208 @@
+{
+  "info": {
+    "_postman_id": "cap10-monitoring-grafana-kibana",
+    "name": "Capitulo 10 - Monitoreo Grafana y Kibana",
+    "description": "# Capitulo 10: Monitoreo con Grafana y Kibana\n\n## Stack de Observabilidad\n\n### Los 3 Pilares\n1. **METRICAS** (Prometheus + Grafana): Valores numericos en el tiempo\n2. **LOGS** (Elasticsearch + Kibana): Registros de eventos\n3. **TRACES**: Seguimiento de requests distribuidos\n\n## Arquitectura\n```\nMicroservicios (8080, 8081, 8082)\n       |\n       +---> /q/metrics ---> Prometheus (9090) ---> Grafana (3000)\n       |\n       +---> logs ---> Filebeat ---> Elasticsearch (9200) ---> Kibana (5601)\n       |\n       +---> Redis Cache\n```\n\n## URLs\n| Servicio | Puerto | Funcion |\n|----------|--------|----------|\n| Order Service | 8080 | Orquestador SAGA |\n| Inventory Service | 8081 | Gestion inventario |\n| Payment Service | 8082 | Procesamiento pagos |\n| Prometheus | 9090 | Recoleccion metricas |\n| Grafana | 3000 | Visualizacion (admin/admin) |\n| Elasticsearch | 9200 | Almacen de logs |\n| Kibana | 5601 | Exploracion de logs |\n\n## Prerequisitos\n```bash\ndocker-compose up -d\n# Esperar ~2 min para Elasticsearch/Kibana\n```",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "orderUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "inventoryUrl",
+      "value": "http://localhost:8081",
+      "type": "string"
+    },
+    {
+      "key": "paymentUrl",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "prometheusUrl",
+      "value": "http://localhost:9090",
+      "type": "string"
+    },
+    {
+      "key": "grafanaUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "elasticsearchUrl",
+      "value": "http://localhost:9200",
+      "type": "string"
+    },
+    {
+      "key": "kibanaUrl",
+      "value": "http://localhost:5601",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Health Checks Microservicios",
+      "description": "## Health Checks\n\nQuarkus expone `/health` con:\n- **LIVENESS**: El servicio esta vivo\n- **READINESS**: El servicio puede recibir trafico\n\nKubernetes usa estos endpoints para gestionar pods.",
+      "item": [
+        {
+          "name": "Health - Order Service (8080)",
+          "request": {"method": "GET", "url": {"raw": "{{orderUrl}}/health", "host": ["{{orderUrl}}"], "path": ["health"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Order Service OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Health - Inventory Service (8081)",
+          "request": {"method": "GET", "url": {"raw": "{{inventoryUrl}}/health", "host": ["{{inventoryUrl}}"], "path": ["health"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Inventory Service OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Health - Payment Service (8082)",
+          "request": {"method": "GET", "url": {"raw": "{{paymentUrl}}/health", "host": ["{{paymentUrl}}"], "path": ["health"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Payment Service OK', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "02 Stack de Monitoreo",
+      "description": "## Stack de Observabilidad\n\n- **Prometheus (9090)**: Recolecta metricas cada 15s (pull model)\n- **Grafana (3000)**: Visualiza metricas en dashboards\n- **Elasticsearch (9200)**: Almacena logs (motor full-text)\n- **Kibana (5601)**: Explora logs con interfaz web",
+      "item": [
+        {
+          "name": "Prometheus Health",
+          "request": {"method": "GET", "url": {"raw": "{{prometheusUrl}}/-/healthy", "host": ["{{prometheusUrl}}"], "path": ["-", "healthy"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Prometheus OK', () => pm.response.to.have.status(200));", "console.log('Prometheus: http://localhost:9090');"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Grafana Health",
+          "request": {"method": "GET", "url": {"raw": "{{grafanaUrl}}/api/health", "host": ["{{grafanaUrl}}"], "path": ["api", "health"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Grafana OK', () => pm.response.to.have.status(200));", "console.log('Grafana: http://localhost:3000 (admin/admin)');"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Elasticsearch Cluster Health",
+          "request": {"method": "GET", "url": {"raw": "{{elasticsearchUrl}}/_cluster/health", "host": ["{{elasticsearchUrl}}"], "path": ["_cluster", "health"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Elasticsearch OK', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "console.log('Elasticsearch cluster:', json.status);", "console.log('GREEN=optimo, YELLOW=funcional sin replicas');"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Kibana Status",
+          "request": {"method": "GET", "url": {"raw": "{{kibanaUrl}}/api/status", "host": ["{{kibanaUrl}}"], "path": ["api", "status"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Kibana OK', () => pm.response.to.have.status(200));", "console.log('Kibana: http://localhost:5601');", "console.log('NOTA: Kibana tarda ~2 min en iniciar');"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "03 Endpoints de Metricas",
+      "description": "## Metricas de Prometheus\n\nQuarkus expone metricas en `/q/metrics`.\n\n### Tipos de Metricas\n- **Counter**: Solo aumenta (ej: total_requests)\n- **Gauge**: Sube y baja (ej: memoria_usada)\n- **Histogram**: Distribucion de valores (ej: latencia)\n\n### Metricas Comunes\n- `http_server_requests_seconds`: Latencia HTTP\n- `jvm_memory_used_bytes`: Memoria JVM\n- `jvm_threads_live_threads`: Threads activos",
+      "item": [
+        {
+          "name": "Metricas - Order Service",
+          "request": {"method": "GET", "url": {"raw": "{{orderUrl}}/q/metrics", "host": ["{{orderUrl}}"], "path": ["q", "metrics"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Metricas disponibles', () => pm.response.to.have.status(200));", "const body = pm.response.text();", "console.log('Order Service /q/metrics');", "console.log('Contiene jvm_memory:', body.includes('jvm_memory'));", "console.log('Contiene http_server:', body.includes('http_server'));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Metricas - Inventory Service",
+          "request": {"method": "GET", "url": {"raw": "{{inventoryUrl}}/q/metrics", "host": ["{{inventoryUrl}}"], "path": ["q", "metrics"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Metricas disponibles', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Metricas - Payment Service",
+          "request": {"method": "GET", "url": {"raw": "{{paymentUrl}}/q/metrics", "host": ["{{paymentUrl}}"], "path": ["q", "metrics"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Metricas disponibles', () => pm.response.to.have.status(200));"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Prometheus Targets",
+          "request": {"method": "GET", "url": {"raw": "{{prometheusUrl}}/api/v1/targets", "host": ["{{prometheusUrl}}"], "path": ["api", "v1", "targets"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Targets OK', () => pm.response.to.have.status(200));", "const body = pm.response.text();", "const upCount = (body.match(/\"health\":\"up\"/g) || []).length;", "console.log('Prometheus targets UP:', upCount);"], "type": "text/javascript"}}],
+          "description": "Verifica que Prometheus esta scrapeando los microservicios."
+        }
+      ]
+    },
+    {
+      "name": "04 Redis Cache (HIT vs MISS)",
+      "description": "## Cache HIT vs MISS\n\n### CACHE MISS (1ra consulta)\n```\nClient --X--> Redis (no esta) --> PostgreSQL (lento)\n                 |<-- guarda en cache --|\n```\n\n### CACHE HIT (siguientes)\n```\nClient <-- Redis (encontrado, rapido)\n```\n\n### Beneficios\n- Reduce carga en BD\n- Mejora tiempo de respuesta\n- Hit Rate ideal: > 80%\n\n**EJECUTAR EN SECUENCIA** para ver diferencia de latencias.",
+      "item": [
+        {
+          "name": "1ra Consulta (CACHE MISS)",
+          "request": {"method": "GET", "url": {"raw": "{{inventoryUrl}}/api/inventory/products/LAPTOP-001", "host": ["{{inventoryUrl}}"], "path": ["api", "inventory", "products", "LAPTOP-001"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('latency1', pm.response.responseTime);", "console.log('=== CACHE MISS (PostgreSQL) ===');", "console.log('Latencia:', pm.response.responseTime, 'ms');", "console.log('Dato NO estaba en cache, fue a BD');"], "type": "text/javascript"}}],
+          "description": "Primera consulta - va a PostgreSQL y guarda en Redis."
+        },
+        {
+          "name": "2da Consulta (CACHE HIT)",
+          "request": {"method": "GET", "url": {"raw": "{{inventoryUrl}}/api/inventory/products/LAPTOP-001", "host": ["{{inventoryUrl}}"], "path": ["api", "inventory", "products", "LAPTOP-001"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "const lat1 = pm.collectionVariables.get('latency1') || 0;", "const lat2 = pm.response.responseTime;", "console.log('=== CACHE HIT (Redis) ===');", "console.log('Latencia:', lat2, 'ms');", "console.log('');", "console.log('Comparacion:');", "console.log('  1ra (MISS):', lat1, 'ms');", "console.log('  2da (HIT):', lat2, 'ms');", "if (lat1 > lat2) {", "  const mejora = Math.round((1 - lat2/lat1) * 100);", "  console.log('  Mejora:', mejora, '%');", "}"], "type": "text/javascript"}}],
+          "description": "Segunda consulta - viene desde Redis (mas rapida)."
+        },
+        {
+          "name": "3ra Consulta (Cache Persistente)",
+          "request": {"method": "GET", "url": {"raw": "{{inventoryUrl}}/api/inventory/products/LAPTOP-001", "host": ["{{inventoryUrl}}"], "path": ["api", "inventory", "products", "LAPTOP-001"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "console.log('=== CACHE PERSISTENTE ===');", "console.log('Latencia:', pm.response.responseTime, 'ms');"], "type": "text/javascript"}}],
+          "description": "Tercera consulta - confirma cache activo."
+        }
+      ]
+    },
+    {
+      "name": "05 SAGA Exitoso",
+      "description": "## Patron SAGA\n\nTransacciones distribuidas con compensaciones.\n\n### Flujo Exitoso\n```\n1. Order (PENDING)\n2. Inventory (RESERVA)\n3. Payment (PAID)\n4. Inventory (CONFIRMA)\n5. Order (COMPLETED)\n```",
+      "item": [
+        {
+          "name": "Crear Orden (SAGA Completo)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"userId\": \"user-test-001\",\n  \"paymentMethod\": \"credit_card\",\n  \"items\": [\n    {\"productCode\": \"LAPTOP-001\", \"quantity\": 1},\n    {\"productCode\": \"MOUSE-001\", \"quantity\": 2}\n  ]\n}"},
+            "url": {"raw": "{{orderUrl}}/api/orders", "host": ["{{orderUrl}}"], "path": ["api", "orders"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 201', () => pm.response.to.have.status(201));", "const json = pm.response.json();", "pm.test('SAGA COMPLETED', () => pm.expect(json.status).to.eql('COMPLETED'));", "if (json.orderId) pm.collectionVariables.set('orderId', json.orderId);", "console.log('=== SAGA COMPLETADO ===');", "console.log('Order ID:', json.orderId);", "console.log('Status:', json.status);", "console.log('Total: $' + json.totalAmount);"], "type": "text/javascript"}}],
+          "description": "Orden con stock suficiente.\n\n- 1x LAPTOP-001 ($899.99)\n- 2x MOUSE-001 ($99.99 c/u)\n- Total: ~$1099.97"
+        }
+      ]
+    },
+    {
+      "name": "06 SAGA Compensacion",
+      "description": "## Compensacion SAGA\n\nCuando un paso falla, se ejecutan compensaciones (rollback distribuido).\n\n### Flujo con Fallo\n```\n1. Order (PENDING)\n2. Inventory (FALLA - sin stock)\n3. COMPENSACION:\n   - Inventory libera reserva\n   - Order -> FAILED\n```\n\n**IMPORTANTE**: Las compensaciones deben ser IDEMPOTENTES.",
+      "item": [
+        {
+          "name": "Orden Fallida (Stock Insuficiente)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"userId\": \"user-test-002\",\n  \"paymentMethod\": \"credit_card\",\n  \"items\": [\n    {\"productCode\": \"LAPTOP-001\", \"quantity\": 10000}\n  ]\n}"},
+            "url": {"raw": "{{orderUrl}}/api/orders", "host": ["{{orderUrl}}"], "path": ["api", "orders"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 400', () => pm.response.to.have.status(400));", "const json = pm.response.json();", "pm.test('SAGA FAILED', () => pm.expect(json.status).to.eql('FAILED'));", "console.log('=== COMPENSACION SAGA ===');", "console.log('Status:', json.status);", "console.log('Rollback ejecutado automaticamente');"], "type": "text/javascript"}}],
+          "description": "Intenta crear orden con 10,000 LAPTOPS (imposible).\n\nDispara compensacion y rollback."
+        },
+        {
+          "name": "Verificar Inventario (Rollback OK)",
+          "request": {"method": "GET", "url": {"raw": "{{inventoryUrl}}/api/inventory/products/LAPTOP-001", "host": ["{{inventoryUrl}}"], "path": ["api", "inventory", "products", "LAPTOP-001"]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "console.log('=== VERIFICACION ROLLBACK ===');", "console.log('Stock total:', json.stock);", "console.log('Stock reservado:', json.reservedStock || 0);", "if (!json.reservedStock || json.reservedStock === 0) {", "  console.log('ROLLBACK OK: Inventario limpio');", "}"], "type": "text/javascript"}}],
+          "description": "Verifica que el inventario NO fue afectado."
+        }
+      ]
+    },
+    {
+      "name": "07 Metricas Prometheus",
+      "description": "## Queries PromQL\n\n### Queries Utiles\n```promql\n# Requests por segundo\nrate(http_server_requests_seconds_count[1m])\n\n# Latencia P95\nhistogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m]))\n\n# Memoria JVM usada\njvm_memory_used_bytes{area=\"heap\"}\n\n# Error rate (5xx / total)\nrate(http_server_requests_seconds_count{status=~\"5..\"}[5m])\n/\nrate(http_server_requests_seconds_count[5m])\n```",
+      "item": [
+        {
+          "name": "Query - HTTP Requests Count",
+          "request": {"method": "GET", "url": {"raw": "{{prometheusUrl}}/api/v1/query?query=http_server_requests_seconds_count", "host": ["{{prometheusUrl}}"], "path": ["api", "v1", "query"], "query": [{"key": "query", "value": "http_server_requests_seconds_count"}]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Query OK', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "const count = json.data?.result?.length || 0;", "console.log('Series de HTTP requests:', count);"], "type": "text/javascript"}}],
+          "description": "Consulta metricas de requests HTTP."
+        },
+        {
+          "name": "Query - JVM Memory",
+          "request": {"method": "GET", "url": {"raw": "{{prometheusUrl}}/api/v1/query?query=jvm_memory_used_bytes", "host": ["{{prometheusUrl}}"], "path": ["api", "v1", "query"], "query": [{"key": "query", "value": "jvm_memory_used_bytes"}]}},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Query OK', () => pm.response.to.have.status(200));", "console.log('Metricas JVM disponibles');"], "type": "text/javascript"}}],
+          "description": "Consulta metricas de memoria JVM."
+        }
+      ]
+    }
+  ]
+}

@@ -2,9 +2,9 @@
 set -e
 
 # ============================================================================
-# SCRIPT DE INICIALIZACIÓN DE BASES DE DATOS
+# SCRIPT DE INICIALIZACION DE BASES DE DATOS
 # ============================================================================
-# Este script se ejecuta automáticamente cuando Docker crea el contenedor
+# Este script se ejecuta automaticamente cuando Docker crea el contenedor
 # de PostgreSQL por primera vez.
 #
 # CREA:
@@ -12,7 +12,7 @@ set -e
 #   - inventory_db  (para Inventory Service)
 #   - payment_db    (para Payment Service)
 #
-# NOTA: Los datos de prueba se insertan automáticamente cuando cada servicio
+# NOTA: Los datos de prueba se insertan automaticamente cuando cada servicio
 #       arranca por primera vez (via import.sql en cada microservicio)
 # ============================================================================
 
@@ -22,4 +22,4 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
     CREATE DATABASE payment_db;
 EOSQL
 
-echo "✅ Bases de datos creadas: orders_db, inventory_db, payment_db"
+echo "Bases de datos creadas: orders_db, inventory_db, payment_db"

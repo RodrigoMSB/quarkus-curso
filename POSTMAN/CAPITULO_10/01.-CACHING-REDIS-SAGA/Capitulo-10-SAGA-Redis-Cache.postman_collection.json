@@ -1,0 +1,322 @@
+{
+  "info": {
+    "_postman_id": "cap10-saga-redis",
+    "name": "Capitulo 10 - SAGA y Redis Cache",
+    "description": "# Capitulo 10: Patron SAGA y Redis Cache\n\n## Contenido\n- **01 Health Checks**: Verificacion de los 3 microservicios\n- **02 Inventario**: Verificacion de productos disponibles\n- **03 SAGA Exitosa**: Orden completa (Reservar -> Pagar -> Confirmar)\n- **04 Redis Cache**: Medicion de latencias (MISS vs HIT)\n- **05 SAGA Compensacion**: Rollback por stock insuficiente\n\n## Arquitectura\n```\nCliente --> Order Service (8080)\n                |\n                +---> Inventory Service (8081)\n                +---> Payment Service (8082)\n                +---> Redis Cache\n                +---> PostgreSQL\n```\n\n## Microservicios\n| Servicio | Puerto | Funcion |\n|----------|--------|----------|\n| order-service | 8080 | Orquestador SAGA |\n| inventory-service | 8081 | Gestion de inventario |\n| payment-service | 8082 | Procesamiento de pagos |\n\n## Prerequisitos\n```bash\n# Levantar infraestructura\ndocker-compose up -d\n\n# Iniciar servicios (en terminales separadas)\ncd order-service && ./mvnw quarkus:dev\ncd inventory-service && ./mvnw quarkus:dev\ncd payment-service && ./mvnw quarkus:dev\n```\n\n## Flujo SAGA\n1. Reservar inventario\n2. Procesar pago\n3. Confirmar reserva\n4. Si falla: Compensacion (rollback)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "orderUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "inventoryUrl",
+      "value": "http://localhost:8081",
+      "type": "string"
+    },
+    {
+      "key": "paymentUrl",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Health Checks",
+      "description": "## Verificacion de Servicios\n\nVerifica que los 3 microservicios esten corriendo correctamente.",
+      "item": [
+        {
+          "name": "Health - Order Service (8080)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderUrl}}/health",
+              "host": ["{{orderUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verifica que Order Service (orquestador SAGA) este activo."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Order Service OK', () => pm.response.to.have.status(200));", "console.log('Order Service (8080): OK');"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Health - Inventory Service (8081)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{inventoryUrl}}/health",
+              "host": ["{{inventoryUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verifica que Inventory Service este activo."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Inventory Service OK', () => pm.response.to.have.status(200));", "console.log('Inventory Service (8081): OK');"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Health - Payment Service (8082)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{paymentUrl}}/health",
+              "host": ["{{paymentUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verifica que Payment Service este activo."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Payment Service OK', () => pm.response.to.have.status(200));", "console.log('Payment Service (8082): OK');"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "02 Inventario",
+      "description": "## Verificacion de Productos\n\nConsulta los productos disponibles en el inventario.",
+      "item": [
+        {
+          "name": "Listar todos los productos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{inventoryUrl}}/api/inventory/products",
+              "host": ["{{inventoryUrl}}"],
+              "path": ["api", "inventory", "products"]
+            },
+            "description": "Lista todos los productos disponibles en el inventario."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "pm.test('Es un array', () => pm.expect(pm.response.json()).to.be.an('array'));", "console.log('Productos encontrados:', pm.response.json().length);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Consultar LAPTOP-001",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{inventoryUrl}}/api/inventory/products/LAPTOP-001",
+              "host": ["{{inventoryUrl}}"],
+              "path": ["api", "inventory", "products", "LAPTOP-001"]
+            },
+            "description": "Consulta el producto LAPTOP-001 para verificar stock disponible."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "pm.test('Tiene stock', () => pm.expect(json.stock).to.be.above(0));", "console.log('LAPTOP-001 - Stock:', json.stock);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "Consultar MOUSE-001",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{inventoryUrl}}/api/inventory/products/MOUSE-001",
+              "host": ["{{inventoryUrl}}"],
+              "path": ["api", "inventory", "products", "MOUSE-001"]
+            },
+            "description": "Consulta el producto MOUSE-001 para verificar stock disponible."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "pm.test('Tiene stock', () => pm.expect(json.stock).to.be.above(0));", "console.log('MOUSE-001 - Stock:', json.stock);"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "03 SAGA Exitosa",
+      "description": "## SAGA Completa\n\nCrea una orden con stock suficiente y verifica que la SAGA se complete exitosamente:\n1. Reservar inventario\n2. Procesar pago\n3. Confirmar reserva\n4. Orden COMPLETED",
+      "item": [
+        {
+          "name": "Crear Orden (SAGA)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"test-user-saga-001\",\n  \"paymentMethod\": \"credit_card\",\n  \"items\": [\n    {\"productCode\": \"LAPTOP-001\", \"quantity\": 1},\n    {\"productCode\": \"MOUSE-001\", \"quantity\": 2}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{orderUrl}}/api/orders",
+              "host": ["{{orderUrl}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "## Crear Orden con SAGA\n\nEnvia una orden con stock suficiente.\n\n### Flujo SAGA esperado:\n1. Reservar LAPTOP-001 x 1\n2. Reservar MOUSE-001 x 2\n3. Procesar pago\n4. Confirmar reservas\n5. Status: COMPLETED\n\n### Resultado esperado:\n- HTTP 201\n- status: \"COMPLETED\"\n- orderId generado"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('SAGA COMPLETED', () => pm.expect(json.status).to.eql('COMPLETED'));",
+                  "",
+                  "pm.test('Tiene orderId', () => pm.expect(json.orderId).to.not.be.undefined);",
+                  "",
+                  "// Guardar orderId para pruebas siguientes",
+                  "if (json.orderId) {",
+                  "    pm.collectionVariables.set('orderId', json.orderId);",
+                  "    console.log('orderId guardado:', json.orderId);",
+                  "}",
+                  "",
+                  "console.log('=== SAGA COMPLETADA ===');",
+                  "console.log('Order ID:', json.orderId);",
+                  "console.log('Status:', json.status);",
+                  "console.log('Total:', json.totalAmount);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar Orden Creada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderUrl}}/api/orders/{{orderId}}",
+              "host": ["{{orderUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            },
+            "description": "Consulta la orden creada para verificar sus detalles."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "pm.test('Status COMPLETED', () => pm.expect(json.status).to.eql('COMPLETED'));", "console.log('Orden:', json.orderId, '- Status:', json.status);"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "04 Redis Cache",
+      "description": "## Verificacion de Cache\n\nMide latencias para verificar que Redis Cache esta funcionando:\n- **Cache MISS**: Primera consulta (desde PostgreSQL)\n- **Cache HIT**: Consultas siguientes (desde Redis)\n\n**Ejecutar en secuencia** para ver la diferencia de latencias.",
+      "item": [
+        {
+          "name": "1ra Consulta (Cache MISS)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderUrl}}/api/orders/{{orderId}}",
+              "host": ["{{orderUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            },
+            "description": "## Cache MISS\n\nPrimera consulta - va directo a PostgreSQL y guarda en Redis.\n\n**Observar**: Tiempo de respuesta (sera mayor que las siguientes)."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "", "console.log('=== CACHE MISS (PostgreSQL) ===');", "console.log('Tiempo de respuesta:', pm.response.responseTime, 'ms');", "console.log('Esta consulta fue a la base de datos');", "", "// Guardar latencia para comparar", "pm.collectionVariables.set('latency1', pm.response.responseTime);"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "2da Consulta (Cache HIT)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderUrl}}/api/orders/{{orderId}}",
+              "host": ["{{orderUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            },
+            "description": "## Cache HIT\n\nSegunda consulta - viene desde Redis (mas rapida).\n\n**Observar**: Tiempo de respuesta deberia ser menor."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "", "const latency1 = pm.collectionVariables.get('latency1') || 0;", "const latency2 = pm.response.responseTime;", "", "console.log('=== CACHE HIT (Redis) ===');", "console.log('Tiempo de respuesta:', latency2, 'ms');", "console.log('Comparacion:');", "console.log('  1ra consulta (BD):', latency1, 'ms');", "console.log('  2da consulta (Cache):', latency2, 'ms');", "", "if (latency1 > latency2) {", "    const mejora = Math.round((1 - latency2/latency1) * 100);", "    console.log('  Mejora:', mejora, '%');", "}"], "type": "text/javascript"}}]
+        },
+        {
+          "name": "3ra Consulta (Cache Persistente)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderUrl}}/api/orders/{{orderId}}",
+              "host": ["{{orderUrl}}"],
+              "path": ["api", "orders", "{{orderId}}"]
+            },
+            "description": "## Cache Persistente\n\nTercera consulta - confirma que el cache sigue activo."
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));", "", "console.log('=== CACHE PERSISTENTE ===');", "console.log('Tiempo de respuesta:', pm.response.responseTime, 'ms');", "console.log('Cache sigue funcionando');"], "type": "text/javascript"}}]
+        }
+      ]
+    },
+    {
+      "name": "05 SAGA Compensacion",
+      "description": "## SAGA con Rollback\n\nCrea una orden con stock INSUFICIENTE para probar la compensacion:\n1. Intenta reservar 10000 unidades\n2. Inventario rechaza\n3. Se ejecuta compensacion (rollback)\n4. Orden FAILED",
+      "item": [
+        {
+          "name": "Crear Orden Fallida (Stock Insuficiente)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"test-user-saga-002\",\n  \"paymentMethod\": \"credit_card\",\n  \"items\": [\n    {\"productCode\": \"LAPTOP-001\", \"quantity\": 10000}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{orderUrl}}/api/orders",
+              "host": ["{{orderUrl}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "## Orden con Stock Insuficiente\n\nIntenta crear una orden con 10000 LAPTOPS (imposible).\n\n### Flujo SAGA esperado:\n1. Intenta reservar LAPTOP-001 x 10000\n2. Inventario rechaza (stock insuficiente)\n3. **COMPENSACION**: Rollback automatico\n4. Status: FAILED\n\n### Resultado esperado:\n- HTTP 400\n- status: \"FAILED\"\n- Inventario NO afectado"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 (rechazado)', () => pm.response.to.have.status(400));",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('SAGA FAILED (compensacion)', () => pm.expect(json.status).to.eql('FAILED'));",
+                  "",
+                  "console.log('=== COMPENSACION SAGA ===');",
+                  "console.log('Status:', json.status);",
+                  "console.log('El sistema detecto stock insuficiente');",
+                  "console.log('Rollback ejecutado automaticamente');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar Inventario (Rollback OK)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{inventoryUrl}}/api/inventory/products/LAPTOP-001",
+              "host": ["{{inventoryUrl}}"],
+              "path": ["api", "inventory", "products", "LAPTOP-001"]
+            },
+            "description": "## Verificar Rollback\n\nConsulta el inventario para confirmar que NO fue afectado.\n\n- reservedStock debe ser 0 (o sin cambios)\n- El rollback funciono correctamente"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "console.log('=== VERIFICACION ROLLBACK ===');",
+                  "console.log('Producto:', json.productCode);",
+                  "console.log('Stock total:', json.stock);",
+                  "console.log('Stock reservado:', json.reservedStock || 0);",
+                  "console.log('Stock disponible:', json.availableStock);",
+                  "",
+                  "if (json.reservedStock === 0 || json.reservedStock === undefined) {",
+                  "    console.log('ROLLBACK OK: Inventario no afectado');",
+                  "} else {",
+                  "    console.log('ALERTA: reservedStock =', json.reservedStock);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
